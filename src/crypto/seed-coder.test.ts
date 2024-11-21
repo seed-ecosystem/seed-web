@@ -1,16 +1,16 @@
 import { describe, expect, it } from 'vitest'
-import {createSeedCoder} from "@/crypto/create-seed-coder.ts";
+import {createMessageCoder} from "@/crypto/create-message-coder.ts";
 import {RegularContent} from "@/crypto/message/content/regular-content.ts";
 import {randomAESKey} from "@/crypto/subtle-crypto.ts";
 
 describe('seed-coder checks', () => {
   it('encode and decode valid', async () => {
-    const coder = createSeedCoder();
+    const coder = createMessageCoder();
     const messageKey = await randomAESKey();
 
     const expectedContent: RegularContent = {
       type: "regular",
-      author: "Alex Sokol",
+      title: "Alex Sokol",
       text: "Hello world!"
     };
 
@@ -34,7 +34,7 @@ describe('seed-coder checks', () => {
   })
 
   it('message list decoding valid', async () => {
-    const coder = createSeedCoder();
+    const coder = createMessageCoder();
     const messageKey0 = await randomAESKey();
 
     const expectedList = [

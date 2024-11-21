@@ -1,7 +1,6 @@
 import {MessageContent} from "@/crypto/message/content/message-content.ts";
-import {Message} from "@/api/message/message.ts";
 
-export interface SeedCoder {
+export interface MessageCoder {
   decode(options: {
     content: string;
     contentIV: string;

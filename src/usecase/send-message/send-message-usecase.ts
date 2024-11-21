@@ -1,7 +1,9 @@
 export interface SendMessageUsecase {
   (
-    text: string,
-    previousMessageId: string | null,
-    chatId: string,
+    options: {
+      title: string;
+      text: string;
+      chatId: string;
+    }
   ): Promise<void>;
 }

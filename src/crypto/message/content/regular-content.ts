@@ -1,5 +1,5 @@
 export interface RegularContent {
   type: "regular";
-  author: string;
+  title: string;
   text: string;
 }

@@ -1,7 +1,9 @@
+import {Chat} from "@/persistence/chat/chat.ts";
+
 export interface Message {
   nonce: number;
-  signature: string;
-  author: string;
-  content: string;
+  chat: Chat;
+  title: string;
+  text: string;
   key: string;
 }

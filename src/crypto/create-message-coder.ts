@@ -1,8 +1,8 @@
-import {SeedCoder} from "@/crypto/seed-coder.ts";
+import {MessageCoder} from "@/crypto/message-coder.ts";
 import {MessageContent} from "@/crypto/message/content/message-content.ts";
 import {decryptAes256, encryptAes256, hmacSha256, verifyHmacSha256} from "@/crypto/subtle-crypto.ts";
 
-export function createSeedCoder(): SeedCoder {
+export function createMessageCoder(): MessageCoder {
   return {
     async decode({ content, contentIV, signature, key }) {
       // Check that message is signed
