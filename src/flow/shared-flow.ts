@@ -21,6 +21,7 @@ export function mutableSharedFlow<T>(): MutableSharedFlow<T> {
         cancel(): void {
           const index = subscriptions.indexOf(collector);
           subscriptions.splice(index, 1);
+          collector.cancel();
         }
       }
     },

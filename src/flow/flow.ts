@@ -1,14 +1,15 @@
 export interface FlowCollector<T> {
-  emit(event: T): void
+  emit(event: T): void;
+  cancel(): void;
 }
 
 export function flowCollector<T>(
-  block: (event: T) => void
+  block: (event: T) => void,
+  cancel: () => void = () => {},
 ): FlowCollector<T> {
   return {
-    emit(event: T) {
-      block(event)
-    }
+    emit: block,
+    cancel: cancel
   }
 }
 
@@ -32,7 +33,9 @@ export function flow<T>(
         return result;
       }
 
-      return { cancel: () => {} };
+      return {
+        cancel: collector.cancel
+      };
     }
   }
 }
