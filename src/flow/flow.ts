@@ -14,6 +14,7 @@ export function flowCollector<T>(
 
 export interface Flow<T> {
   collect(collector: FlowCollector<T>): Subscription
+  collect(block: (event: T) => void): Subscription
 }
 
 export function flow<T>(
@@ -21,11 +22,17 @@ export function flow<T>(
 ): Flow<T> {
   return {
     collect: (collector) => {
-      const result = block(collector)
-      if (result) {
-        return result
+      if (!("emit" in collector)) {
+        collector = flowCollector(collector);
       }
-      return { cancel: () => {} }
+
+      const result = block(collector);
+
+      if (result) {
+        return result;
+      }
+
+      return { cancel: () => {} };
     }
   }
 }

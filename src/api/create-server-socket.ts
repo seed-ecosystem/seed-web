@@ -6,23 +6,15 @@ import {Message} from "@/api/message/message.ts";
 import {SocketRequest} from "@/api/request/socket-request.ts";
 import {SocketEventUnknown} from "@/api/event/socket-event-unknown.ts";
 import {JsonEncoded} from "@/api/json/json-encoded.ts";
+import {mutableSharedFlow} from "@/flow/shared-flow.ts";
 
 export function createServerSocket(url: string): SeedSocket {
-  const events: FlowCollector<SocketEvent>[] = [];
   const responseQueue: ((_: JsonEncoded) => void)[] = [];
+  const events = mutableSharedFlow<SocketEvent>();
   let ws: WebSocket | undefined;
 
   return {
-    events: flow((collector): Subscription => {
-      events.push(collector);
-
-      return {
-        cancel(): void {
-          const index = events.indexOf(collector);
-          events.splice(index, 1);
-        }
-      }
-    }),
+    events: events,
 
     messages: {
       async loadPage(): Promise<Page<Message>> {
@@ -45,9 +37,7 @@ export function createServerSocket(url: string): SeedSocket {
 
           switch (event.type) {
             case "new":
-              for (let collector of events) {
-                collector.emit(event);
-              }
+              events.emit(event);
               return;
             case "response":
               const responseHandler = responseQueue.pop();
