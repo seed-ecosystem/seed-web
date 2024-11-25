@@ -12,11 +12,13 @@ describe('persistence checks', () => {
     const key = await randomAESKey();
 
     const message: Message = {
-      title: "Alex Sokol!",
       chat: { chatId: chatId },
-      text: "Hello world!",
       key: key,
       nonce: 0,
+      content: {
+        text: "Hello world!",
+        title: "Alex Sokol!",
+      }
     };
 
     await storage.message.add(message);
@@ -49,11 +51,13 @@ describe('persistence checks', () => {
       }
 
       return {
-        title: "Alex Sokol!",
         chat: chat,
-        text: "Hello world!",
         key: key,
-        nonce: nonce
+        nonce: nonce,
+        content: {
+          text: "Hello world!",
+          title: "Alex Sokol!",
+        }
       };
     }
 
@@ -71,11 +75,13 @@ describe('persistence checks', () => {
 
     function getMessage(nonce: number): Message {
       return {
-        title: "Alex Sokol!",
         chat: { chatId: chatId },
-        text: "Hello world!",
         key: key,
         nonce: nonce,
+        content: {
+          text: "Hello world!",
+          title: "Alex Sokol!",
+        }
       };
     }
 

@@ -21,8 +21,8 @@ export function MessagesList(
           const variant = message.isAuthor ? 'sent' : 'received';
 
           return <ChatBubble variant={variant}>
-            <ChatBubbleAvatar fallback={message.title}/>
-            <ChatBubbleMessage variant={variant}>{message.text}</ChatBubbleMessage>
+            <ChatBubbleAvatar fallback={message.content.title}/>
+            <ChatBubbleMessage variant={variant}>{message.content.text}</ChatBubbleMessage>
           </ChatBubble>
         })}
       </ChatMessageList>

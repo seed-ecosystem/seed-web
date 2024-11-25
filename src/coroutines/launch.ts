@@ -1,4 +1,5 @@
 
 export function launch(block: () => Promise<void>): void {
-  return block();
+  // noinspection JSIgnoredPromiseFromCall
+  block();
 }

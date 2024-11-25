@@ -7,6 +7,7 @@ interface ChatMessageListProps extends Props {}
 
 const ChatMessageList = React.forwardRef<InfiniteScroll, ChatMessageListProps>(
   ({ className, children, ...props }, ref) => (
+    // https://tanstack.com/virtual/latest
     <InfiniteScroll
       ref={ref}
       inverse={true}
