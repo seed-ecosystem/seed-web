@@ -1,5 +1,5 @@
 import {ChatBubble, ChatBubbleAvatar, ChatBubbleMessage} from "@/components/ui/chat/chat-bubble.tsx";
-import {Message} from "@/usecase/message/message.ts";
+import {Message} from "@/usecase/chat/message/message.ts";
 import {ChatMessageList} from "@/components/ui/chat/chat-message-list.tsx";
 import * as React from "react";
 

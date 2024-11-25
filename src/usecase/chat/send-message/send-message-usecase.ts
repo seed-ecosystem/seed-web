@@ -5,5 +5,5 @@ export interface SendMessageUsecase {
       text: string;
       chatId: string;
     }
-  ): Promise<void>;
+  ): Promise<boolean>;
 }

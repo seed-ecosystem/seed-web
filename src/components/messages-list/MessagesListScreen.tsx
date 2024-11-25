@@ -1,5 +1,5 @@
 import {SiteHeader} from "@/components/messages-list/SiteHeader.tsx";
-import {Message} from "@/usecase/message/message.ts";
+import {Message} from "@/usecase/chat/message/message.ts";
 import {MessagesList} from "@/components/messages-list/MessagesList.tsx";
 import {EmptyMessages} from "@/components/messages-list/EmptyMessages.tsx";
 import {MessageInput} from "@/components/messages-list/MessageInput.tsx";

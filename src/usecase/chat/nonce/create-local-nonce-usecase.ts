@@ -1,4 +1,4 @@
-import {LocalNonceUsecase} from "@/usecase/nonce/local-nonce-usecase.ts";
+import {LocalNonceUsecase} from "@/usecase/chat/nonce/local-nonce-usecase.ts";
 
 export function createLocalNonceUsecase(): LocalNonceUsecase {
   let nonce = 0;

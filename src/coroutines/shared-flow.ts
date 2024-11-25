@@ -1,4 +1,4 @@
-import {Flow, flowCollector, FlowCollector, Subscription} from "@/flow/flow.ts";
+import {Flow, flowCollector, FlowCollector, Subscription} from "@/coroutines/flow.ts";
 
 export interface SharedFlow<T> extends Flow<T> {}
 
