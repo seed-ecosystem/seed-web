@@ -8,9 +8,11 @@ export type ChatEvent = {
   type: "edit";
   nonce: { server: number; } | { local: number; };
   message: Message;
+} | {
+  type: "has_no_more";
 }
 
-export interface EventsUsecase {
+export interface EventBus {
   flow: Flow<ChatEvent>;
   emit(message: ChatEvent): void;
 }

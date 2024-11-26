@@ -1,4 +1,4 @@
-import {ImportChat} from "@/components/messages-list/ImportChat.tsx";
+import {ImportChat} from "@/components/chat/ImportChat.tsx";
 
 export function SiteHeader() {
   return (

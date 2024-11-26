@@ -4,7 +4,7 @@ import {MessageCoder} from "@/crypto/message-coder.ts";
 import {Message as ApiMessage} from "@/api/message/message.ts";
 import {SeedSocket} from "@/api/seed-socket.ts";
 import {SendMessageRequest, SendMessageResponse} from "@/api/request/send-message-request.ts";
-import {EventsUsecase} from "@/usecase/chat/events-usecase/events-usecase.ts";
+import {EventBus} from "@/usecase/chat/event-bus/event-bus.ts";
 import {Message} from "@/usecase/chat/message/message.ts";
 import {LocalNonceUsecase} from "@/usecase/chat/nonce/local-nonce-usecase.ts";
 import {ChatStorage} from "@/persistence/chat/chat-storage.ts";
@@ -15,7 +15,7 @@ export function createSendMessageUsecase({ socket, messageKey, messageStorage, c
   messageKey: GetMessageKeyUsecase;
   messageStorage: MessageStorage;
   coder: MessageCoder;
-  events: EventsUsecase;
+  events: EventBus;
   localNonce: LocalNonceUsecase;
 }): SendMessageUsecase {
 

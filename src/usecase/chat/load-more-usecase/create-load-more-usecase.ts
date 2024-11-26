@@ -1,23 +1,39 @@
 import {LoadMoreUsecase} from "@/usecase/chat/load-more-usecase/load-more-usecase.ts";
-import {SeedSocket} from "@/api/seed-socket.ts";
 import {launch} from "@/coroutines/launch.ts";
-import {GetHistoryRequest, GetHistoryResponse} from "@/api/request/get-history-request.ts";
-import {HasMoreUsecase} from "@/usecase/chat/has-more-usecase/has-more-usecase.ts";
-import {EventsUsecase} from "@/usecase/chat/events-usecase/events-usecase.ts";
-import {MessageCoder} from "@/crypto/message-coder.ts";
+import {EventBus} from "@/usecase/chat/event-bus/event-bus.ts";
+import {GetHistoryUsecase} from "@/usecase/chat/get-history-usecase/get-history-usecase.ts";
 
 export function createLoadMoreUsecase(
-  api: SeedSocket,
-  hasMoreUsecase: HasMoreUsecase,
-  eventsUsecase: EventsUsecase,
-  coder: MessageCoder
+  {getHistory, events}: {
+    getHistory: GetHistoryUsecase,
+    events: EventBus
+  }
 ): LoadMoreUsecase {
-  let nonce: number | undefined;
+  let nonce: number | null = null;
   const pageSize = 100;
 
   return () => {
     launch(async () => {
+      const messages = await getHistory({
+        nonce: nonce,
+        amount: pageSize
+      });
 
+      if (messages.length == 0) {
+        events.emit({
+          type: "has_no_more",
+        })
+        return;
+      }
+
+      nonce = messages[messages.length - 1].nonce.server - 1;
+
+      for (const message of messages) {
+        events.emit({
+          type: "new",
+          message: message,
+        });
+      }
     });
   };
 }

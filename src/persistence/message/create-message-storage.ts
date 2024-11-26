@@ -25,7 +25,7 @@ export function createMessageStorage(db: IDBPDatabase): MessageStorage {
     },
 
     async add(message: Message): Promise<void> {
-      await db.transaction("message", "readwrite")
+      await (await db).transaction("message", "readwrite")
         .objectStore("message")
         .add({
           chatId: message.chat.chatId,

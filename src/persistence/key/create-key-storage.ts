@@ -1,5 +1,4 @@
 import {KeyStorage} from "@/persistence/key/key-storage.ts";
-import {Chat} from "@/persistence/chat/chat.ts";
 import {IDBPDatabase} from "idb";
 import {Key} from "@/persistence/key/key.ts";
 
@@ -40,7 +39,7 @@ export function createKeyStorage(db: IDBPDatabase): KeyStorage {
     },
 
     async push({ chat, key, nonce }) {
-      await db.transaction("key", "readwrite").store
+      await (await db).transaction("key", "readwrite").store
         .add({
           chatId: chat.chatId,
           string: key,

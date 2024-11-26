@@ -6,18 +6,18 @@ import {Chat} from "@/persistence/chat/chat.ts";
 import {GetMessageKeyUsecase} from "@/usecase/chat/get-message-key-usecase/get-message-key-usecase.ts";
 
 export function createGetHistoryUsecase(
-  { socket, messageCoder, chat, getMessageKey }: {
+  { socket, coder, chat, getMessageKey }: {
     socket: SeedSocket;
-    messageCoder: MessageCoder;
+    coder: MessageCoder;
     chat: Chat;
     getMessageKey: GetMessageKeyUsecase;
   },
 ): GetHistoryUsecase {
-  return async ({fromNonce, amount}) => {
+  return async ({nonce, amount}) => {
     const request: GetHistoryRequest = {
-      amount: amount,
-      fromNonce: fromNonce,
       type: "history",
+      nonce: nonce,
+      amount: amount,
       chatId: chat.chatId,
     }
 
@@ -29,7 +29,7 @@ export function createGetHistoryUsecase(
       const key = await getMessageKey(message.nonce);
       if (!key) throw new Error("Can't get message key");
 
-      const content = await messageCoder.decode({
+      const content = await coder.decode({
         content: message.content,
         contentIV: message.contentIV,
         signature: message.signature,

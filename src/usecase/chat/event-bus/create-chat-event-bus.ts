@@ -1,7 +1,7 @@
-import {EventsUsecase, ChatEvent} from "@/usecase/chat/events-usecase/events-usecase.ts";
+import {EventBus, ChatEvent} from "@/usecase/chat/event-bus/event-bus.ts";
 import {mutableSharedFlow} from "@/coroutines/shared-flow.ts";
 
-export function createChatEventsUsecase(): EventsUsecase {
+export function createChatEventBus(): EventBus {
   const flow = mutableSharedFlow<ChatEvent>();
 
   return {

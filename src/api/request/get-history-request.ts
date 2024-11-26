@@ -3,7 +3,7 @@ import {Message} from "@/api/message/message.ts";
 
 export interface GetHistoryRequest extends SocketRequest<GetHistoryResponse> {
   type: "history";
-  fromNonce: number | undefined;
+  nonce: number | null;
   amount: number;
   chatId: string;
 }

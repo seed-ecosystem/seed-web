@@ -1,28 +1,15 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
-import {MessagesListScreen} from "@/components/messages-list/MessagesListScreen.tsx";
+import {ChatScreen} from "@/components/chat/ChatScreen.tsx";
+import {createAppDependencies} from "@/components/AppDependencies.ts";
+
+const app = await createAppDependencies();
+
+const chat = { chatId: "bHKhl2cuQ01pDXSRaqq/OMJeDFJVNIY5YuQB2w7ve+c=" };
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <MessagesListScreen messages={[
-      {
-        nonce: { server: 0 },
-        isSending: false,
-        content: {
-          title: "Mark",
-          text: "ZOV!",
-        },
-        isAuthor: true
-      }, {
-        nonce: { server: 0 },
-        isSending: false,
-        content: {
-          title: "Alex",
-          text: "Penis!",
-        },
-        isAuthor: true
-      }
-    ]}/>
+    <ChatScreen app={app} chat={chat}/>
   </StrictMode>
 )
