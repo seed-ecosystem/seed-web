@@ -17,11 +17,11 @@ describe('get message key checks', () => {
     const coder = createMessageCoder();
     const initial = await randomAESKey();
 
-    await persistence.key.push([{
+    await persistence.key.push({
       chat: chat,
       key: initial,
       nonce: 0
-    }]);
+    });
 
     const usecase = createGetMessageKeyUsecase({
       keyStorage: persistence.key,

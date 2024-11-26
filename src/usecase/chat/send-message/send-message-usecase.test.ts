@@ -7,6 +7,7 @@ import {createServerSocket} from "@/api/create-server-socket.ts";
 import {createMessageCoder} from "@/crypto/create-message-coder.ts";
 import {createChatEventsUsecase} from "@/usecase/chat/events-usecase/create-chat-events-usecase.ts";
 import {createLocalNonceUsecase} from "@/usecase/chat/nonce/create-local-nonce-usecase.ts";
+import {createGetMessageKeyUsecase} from "@/usecase/chat/get-message-key-usecase/create-get-message-key-usecase.ts";
 
 describe('send message checks', () => {
   it('check usecase', async () => {
@@ -18,11 +19,19 @@ describe('send message checks', () => {
     const chatId = await randomAESKey();
     const events = createChatEventsUsecase();
 
+    const coder = createMessageCoder();
+
+    const messageKey = createGetMessageKeyUsecase({
+      keyStorage: persistence.key,
+      coder: coder,
+      chat: { chatId: chatId },
+    });
+
     const usecase = createSendMessageUsecase({
       socket: socket,
-      coder: createMessageCoder(),
+      coder: coder,
+      messageKey: messageKey,
       messageStorage: persistence.message,
-      chatStorage: persistence.chat,
       events: events,
       localNonce: createLocalNonceUsecase()
     });

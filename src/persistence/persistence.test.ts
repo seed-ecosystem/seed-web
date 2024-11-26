@@ -9,11 +9,9 @@ describe('persistence checks', () => {
     const storage = await createPersistence();
 
     const chatId = await randomAESKey();
-    const key = await randomAESKey();
 
     const message: Message = {
       chat: { chatId: chatId },
-      key: key,
       nonce: 0,
       content: {
         text: "Hello world!",
@@ -40,19 +38,15 @@ describe('persistence checks', () => {
       const message = await storage.message.lastMessage(chat);
 
       let nonce
-      let key
 
       if (message == null) {
-        key = await randomAESKey();
         nonce = 0
       } else {
-        key = await coder.deriveNextKey(message.key);
         nonce = message.nonce + 1;
       }
 
       return {
         chat: chat,
-        key: key,
         nonce: nonce,
         content: {
           text: "Hello world!",
@@ -76,7 +70,6 @@ describe('persistence checks', () => {
     function getMessage(nonce: number): Message {
       return {
         chat: { chatId: chatId },
-        key: key,
         nonce: nonce,
         content: {
           text: "Hello world!",
