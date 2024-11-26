@@ -8,11 +8,12 @@ import {EventsUsecase} from "@/usecase/chat/events-usecase/events-usecase.ts";
 import {Message} from "@/usecase/chat/message/message.ts";
 import {LocalNonceUsecase} from "@/usecase/chat/nonce/local-nonce-usecase.ts";
 import {ChatStorage} from "@/persistence/chat/chat-storage.ts";
+import {GetMessageKeyUsecase} from "@/usecase/chat/get-message-key-usecase/get-message-key-usecase.ts";
 
-export function createSendMessageUsecase({ socket, messageStorage, chatStorage, coder, events, localNonce }: {
+export function createSendMessageUsecase({ socket, messageKey, messageStorage, coder, events, localNonce }: {
   socket: SeedSocket;
+  messageKey: GetMessageKeyUsecase;
   messageStorage: MessageStorage;
-  chatStorage: ChatStorage;
   coder: MessageCoder;
   events: EventsUsecase;
   localNonce: LocalNonceUsecase;
@@ -46,16 +47,9 @@ export function createSendMessageUsecase({ socket, messageStorage, chatStorage, 
       // new nonce and key
       const previous = await messageStorage.lastMessage({ chatId: chatId });
 
-      let nonce
-      let key
-
-      if (previous) {
-        nonce = previous.nonce + 1;
-        key = await coder.deriveNextKey(previous.key);
-      } else {
-        nonce = 0;
-        key = await chatStorage.getInitialKey({ chatId: chatId });
-      }
+      const nonce = previous?.nonce ?? 0;
+      const key = await messageKey(nonce);
+      if (!key) throw new Error("Can't get message key");
 
       const {content, contentIV, signature} = await coder.encode({
         key: key,
@@ -80,8 +74,6 @@ export function createSendMessageUsecase({ socket, messageStorage, chatStorage, 
 
       const response: SendMessageResponse = await socket.execute(request);
 
-      console.log(response);
-
       if (response.status) {
         await messageStorage.add({
           chat: { chatId: chatId },
@@ -89,7 +81,6 @@ export function createSendMessageUsecase({ socket, messageStorage, chatStorage, 
             title: title,
             text: text,
           },
-          key: key,
           nonce: nonce
         });
 

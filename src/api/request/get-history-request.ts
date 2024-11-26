@@ -5,8 +5,9 @@ export interface GetHistoryRequest extends SocketRequest<GetHistoryResponse> {
   type: "history";
   fromNonce: number | undefined;
   amount: number;
+  chatId: string;
 }
 
 export interface GetHistoryResponse {
-  messages: Message[];
+  messages: Message[] | undefined;
 }

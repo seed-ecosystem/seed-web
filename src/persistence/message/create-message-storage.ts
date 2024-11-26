@@ -3,7 +3,7 @@ import {Chat} from "@/persistence/chat/chat.ts";
 import {MessageStorage} from "@/persistence/message/message-storage.ts";
 import {Message} from "@/persistence/message/message.ts";
 
-export function createChatObjectStore(db: IDBPDatabase){
+export function createMessageObjectStore(db: IDBPDatabase){
   db.createObjectStore("message", {
     keyPath: ["nonce", "chatId"]
   }).createIndex("chatId", "chatId", { unique: false });
@@ -21,7 +21,7 @@ export function createMessageStorage(db: IDBPDatabase): MessageStorage {
         return;
       }
 
-      return cursor.value
+      return cursor.value;
     },
 
     async add(message: Message): Promise<void> {

@@ -4,6 +4,5 @@ import {MessageContent} from "@/crypto/message/content/message-content.ts";
 export interface Message {
   nonce: number;
   chat: Chat;
-  content: MessageContent
-  key: string;
+  content: MessageContent;
 }

@@ -52,8 +52,12 @@ export function createServerSocket(url: string): SeedSocket {
     execute<T>(request: SocketRequest<T>) {
       return new Promise((resolve, reject) => {
         ready(ws);
+        console.log(">> ws:", request, '\n');
         ws.send(JSON.stringify(request));
-        responseQueue.push(resolve);
+        responseQueue.push((value) => {
+          console.log("<< ws:", value, '\n');
+          resolve(value);
+        });
       })
     },
   }
