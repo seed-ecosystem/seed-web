@@ -21,9 +21,14 @@ export function ChatScreen(
           setHasMore(false);
           break;
         case "new":
-          setMessages((messages) => [...messages, event.message]);
-          console.log()
+          setMessages((messages) => [event.message, ...messages]);
           break;
+        case "history":
+          setMessages((messages) => [...messages, event.message]);
+          break;
+        case "reset_text":
+          setText("");
+          break
       }
     });
 

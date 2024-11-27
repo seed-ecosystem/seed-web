@@ -33,6 +33,8 @@ export function createSendMessageUsecase({ socket, getMessageKey, coder, events,
   });
 
   return async ({ title, text, chatId }) => {
+    events.emit({ type: "reset_text" });
+
     const message: Message = {
       nonce: {
         local: localNonce.incrementAndGet()

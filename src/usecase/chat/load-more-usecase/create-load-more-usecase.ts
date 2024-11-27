@@ -32,7 +32,7 @@ export function createLoadMoreUsecase(
 
       for (const message of messages) {
         events.emit({
-          type: "new",
+          type: "history",
           message: message,
         });
       }

@@ -1,6 +1,5 @@
 import {describe, expect, it} from "vitest";
 import {createPersistence} from "@/persistence/create-persistence.ts";
-import {randomAESKey} from "@/crypto/subtle-crypto.ts";
 import {createServerSocket} from "@/api/create-server-socket.ts";
 import {createMessageCoder} from "@/crypto/create-message-coder.ts";
 import {createChatEventBus} from "@/usecase/chat/event-bus/create-chat-event-bus.ts";
