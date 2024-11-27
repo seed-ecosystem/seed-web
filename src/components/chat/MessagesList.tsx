@@ -22,7 +22,11 @@ export function MessagesList(
         {messages.map((message) => {
           const variant = message.isAuthor ? 'sent' : 'received';
 
-          return <ChatBubble variant={variant}>
+          const key = "server" in message.nonce
+            ? `server:${message.nonce.server}`
+            : `local:${message.nonce.local}`;
+
+          return <ChatBubble variant={variant} key={key}>
             <ChatBubbleAvatar fallback={message.content.title}/>
             <ChatBubbleMessage variant={variant}>{message.content.text}</ChatBubbleMessage>
           </ChatBubble>

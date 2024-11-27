@@ -14,6 +14,8 @@ export function createLoadMoreUsecase(
 
   return () => {
     launch(async () => {
+      console.log("GET MESSAGES", nonce, pageSize);
+
       const messages = await getHistory({
         nonce: nonce,
         amount: pageSize

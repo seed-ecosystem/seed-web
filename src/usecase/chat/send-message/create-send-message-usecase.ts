@@ -10,16 +10,29 @@ import {LocalNonceUsecase} from "@/usecase/chat/nonce/local-nonce-usecase.ts";
 import {ChatStorage} from "@/persistence/chat/chat-storage.ts";
 import {GetMessageKeyUsecase} from "@/usecase/chat/get-message-key-usecase/get-message-key-usecase.ts";
 
-export function createSendMessageUsecase({ socket, messageKey, messageStorage, coder, events, localNonce }: {
+export function createSendMessageUsecase({ socket, getMessageKey, coder, events, localNonce }: {
   socket: SeedSocket;
-  messageKey: GetMessageKeyUsecase;
-  messageStorage: MessageStorage;
+  getMessageKey: GetMessageKeyUsecase;
   coder: MessageCoder;
   events: EventBus;
   localNonce: LocalNonceUsecase;
 }): SendMessageUsecase {
 
-  return async ({ title, text, chatId }): Promise<boolean> => {
+  let nonce = 0;
+
+  events.flow.collect((event) => {
+    switch (event.type) {
+      case "new":
+        if ("server" in event.message.nonce) {
+          if (event.message.nonce.server >= nonce) {
+            nonce = event.message.nonce.server + 1;
+          }
+        }
+        break;
+    }
+  });
+
+  return async ({ title, text, chatId }) => {
     const message: Message = {
       nonce: {
         local: localNonce.incrementAndGet()
@@ -43,12 +56,7 @@ export function createSendMessageUsecase({ socket, messageKey, messageStorage, c
     // and that's why we need to repeat our request everytime server returned 'false'
     // in status field
     while (true) {
-      // If new user wrote a encodedMessage, we expect it to appear in the storage and provide
-      // new nonce and key
-      const previous = await messageStorage.lastMessage({ chatId: chatId });
-
-      const nonce = previous?.nonce ?? 0;
-      const key = await messageKey(nonce);
+      const key = await getMessageKey(nonce);
       if (!key) throw new Error("Can't get message key");
 
       const {content, contentIV, signature} = await coder.encode({
@@ -75,15 +83,6 @@ export function createSendMessageUsecase({ socket, messageKey, messageStorage, c
       const response: SendMessageResponse = await socket.execute(request);
 
       if (response.status) {
-        await messageStorage.add({
-          chat: { chatId: chatId },
-          content: {
-            title: title,
-            text: text,
-          },
-          nonce: nonce
-        });
-
         events.emit({
           type: "edit",
           nonce: message.nonce,

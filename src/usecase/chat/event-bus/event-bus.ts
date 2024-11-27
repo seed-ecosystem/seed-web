@@ -10,7 +10,7 @@ export type ChatEvent = {
   message: Message;
 } | {
   type: "has_no_more";
-}
+};
 
 export interface EventBus {
   flow: Flow<ChatEvent>;

@@ -2,11 +2,13 @@ import {SeedSocket} from "@/api/seed-socket.ts";
 import {createServerSocket} from "@/api/create-server-socket.ts";
 import {Persistence} from "@/persistence/persistence.ts";
 import {createPersistence} from "@/persistence/create-persistence.ts";
-import {Chat} from "@/persistence/chat/chat.ts";
+import {ChatDependencies, createChatDependencies} from "@/components/chat/ChatDependencies.ts";
 
 export interface AppDependencies {
   socket: SeedSocket;
   persistence: Persistence;
+
+  createChat(): ChatDependencies;
 }
 
 export async function createAppDependencies(): Promise<AppDependencies> {
@@ -26,8 +28,16 @@ export async function createAppDependencies(): Promise<AppDependencies> {
     });
   }
 
-  return {
+  // noinspection UnnecessaryLocalVariableJS
+  const app: AppDependencies = {
     socket: socket,
     persistence: persistence,
+    createChat() {
+      const result = createChatDependencies(this, chat);
+      result.loadMore();
+      return result;
+    }
   };
+
+  return app;
 }

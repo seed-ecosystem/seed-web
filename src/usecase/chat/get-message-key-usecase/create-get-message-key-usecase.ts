@@ -34,7 +34,7 @@ export function createGetMessageKeyUsecase(
     let keyNonce = last.nonce;
     const messages = [];
 
-    while (keyNonce !== nonce) {
+    while (keyNonce != nonce) {
       key = await coder.deriveNextKey(key);
       keyNonce++;
       messages.push({

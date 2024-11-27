@@ -26,7 +26,7 @@ export function createKeyStorage(db: IDBPDatabase): KeyStorage {
       const result = await db.transaction("key")
         .objectStore("key")
         .index("chatId")
-        .openCursor(IDBKeyRange.only(chat.chatId), "next")
+        .openCursor(IDBKeyRange.only(chat.chatId), "prev")
 
       if (!result) {
         return;

@@ -7,10 +7,15 @@ import {createGetMessageKeyUsecase} from "@/usecase/chat/get-message-key-usecase
 import {Chat} from "@/persistence/chat/chat.ts";
 import {EventBus} from "@/usecase/chat/event-bus/event-bus.ts";
 import {LoadMoreUsecase} from "@/usecase/chat/load-more-usecase/load-more-usecase.ts";
+import {SendMessageUsecase} from "@/usecase/chat/send-message/send-message-usecase.ts";
+import {createSendMessageUsecase} from "@/usecase/chat/send-message/create-send-message-usecase.ts";
+import {createLocalNonceUsecase} from "@/usecase/chat/nonce/create-local-nonce-usecase.ts";
 
 export interface ChatDependencies {
+  chat: Chat;
   events: EventBus;
   loadMore: LoadMoreUsecase;
+  sendMessage: SendMessageUsecase;
 }
 
 export function createChatDependencies(
@@ -28,7 +33,14 @@ export function createChatDependencies(
   const getHistory = createGetHistoryUsecase({ socket, coder, chat, getMessageKey });
   const loadMore = createLoadMoreUsecase({ getHistory, events });
 
+  const localNonce = createLocalNonceUsecase();
+
+  const sendMessage = createSendMessageUsecase({
+    coder, events, localNonce,
+    getMessageKey, socket
+  });
+
   return {
-    events, loadMore
+    events, loadMore, sendMessage, chat
   };
 }

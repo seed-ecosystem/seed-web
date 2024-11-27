@@ -44,8 +44,7 @@ describe('get messages checks', () => {
 
     const sendMessage = createSendMessageUsecase({
       socket: socket,
-      messageKey: getMessageKey,
-      messageStorage: persistence.message,
+      getMessageKey: getMessageKey,
       events: events,
       localNonce: createLocalNonceUsecase(),
       coder: messageCoder

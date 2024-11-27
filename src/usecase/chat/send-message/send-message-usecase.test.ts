@@ -30,8 +30,7 @@ describe('send message checks', () => {
     const usecase = createSendMessageUsecase({
       socket: socket,
       coder: coder,
-      messageKey: messageKey,
-      messageStorage: persistence.message,
+      getMessageKey: messageKey,
       events: events,
       localNonce: createLocalNonceUsecase()
     });

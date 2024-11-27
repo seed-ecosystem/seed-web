@@ -43,7 +43,7 @@ export function createGetHistoryUsecase(
         isAuthor: false, // todo: later differentiate by nickname
         isSending: false,
         content: content
-      })
+      });
     }
 
     return result;

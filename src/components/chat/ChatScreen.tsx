@@ -4,34 +4,30 @@ import {MessagesList} from "@/components/chat/MessagesList.tsx";
 import {EmptyMessages} from "@/components/chat/EmptyMessages.tsx";
 import {MessageInput} from "@/components/chat/MessageInput.tsx";
 import {useEffect, useState} from "react";
-import {createChatDependencies} from "@/components/chat/ChatDependencies.ts";
-import {AppDependencies} from "@/components/AppDependencies.ts";
-import {Chat} from "@/persistence/chat/chat.ts";
+import {ChatDependencies} from "@/components/chat/ChatDependencies.ts";
 
 export function ChatScreen(
-  {app, chat}: {
-    app: AppDependencies,
-    chat: Chat
-  }
+  {chat, events, loadMore, sendMessage}: ChatDependencies
 ) {
-  const {events, loadMore} = createChatDependencies(app, chat);
-
   const [messages, setMessages] = useState<Message[]>([]);
+
   const [hasMore, setHasMore] = useState(true);
+  const [text, setText] = useState("");
 
   useEffect(() => {
-    events.flow.collect((event) => {
+    const subscription = events.flow.collect((event) => {
       switch (event.type) {
         case "has_no_more":
           setHasMore(false);
           break;
         case "new":
-          setMessages([...messages, event.message]);
+          setMessages((messages) => [...messages, event.message]);
+          console.log()
           break;
       }
     });
 
-    loadMore();
+    return () => { subscription.cancel(); };
   }, []);
 
   return (
@@ -50,7 +46,10 @@ export function ChatScreen(
                     next={loadMore} />
             }
 
-            <MessageInput/>
+            <MessageInput
+              text={text}
+              setText={setText}
+              onClick={() => sendMessage({ title: "Test", text, ...chat })}/>
           </div>
         </div>
       </div>
