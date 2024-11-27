@@ -22,6 +22,7 @@ export function createSendMessageUsecase({ socket, getMessageKey, coder, events,
 
   events.flow.collect((event) => {
     switch (event.type) {
+      case "history":
       case "new":
         if ("server" in event.message.nonce) {
           if (event.message.nonce.server >= nonce) {

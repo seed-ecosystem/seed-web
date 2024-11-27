@@ -14,7 +14,7 @@ export type ChatEvent = {
 } | {
   type: "has_no_more";
 } | {
-  type: "reset_text"
+  type: "reset_text";
 };
 
 export interface EventBus {
