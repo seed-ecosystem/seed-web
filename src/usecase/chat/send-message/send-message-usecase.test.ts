@@ -8,6 +8,7 @@ import {createMessageCoder} from "@/crypto/create-message-coder.ts";
 import {createChatEventBus} from "@/usecase/chat/event-bus/create-chat-event-bus.ts";
 import {createLocalNonceUsecase} from "@/usecase/chat/nonce/create-local-nonce-usecase.ts";
 import {createGetMessageKeyUsecase} from "@/usecase/chat/get-message-key-usecase/create-get-message-key-usecase.ts";
+import {createGetNicknameUsecase} from "@/usecase/chat/nickname/create-get-nickname-usecase.ts";
 
 describe('send message checks', () => {
   it('check usecase', async () => {
@@ -32,7 +33,11 @@ describe('send message checks', () => {
       coder: coder,
       getMessageKey: messageKey,
       events: events,
-      localNonce: createLocalNonceUsecase()
+      localNonce: createLocalNonceUsecase(),
+      nickname: createGetNicknameUsecase({
+        events, storage:
+        persistence.nickname
+      })
     });
 
     events.flow.collect((event) => {
@@ -40,7 +45,6 @@ describe('send message checks', () => {
     });
 
     await usecase({
-      title: "Alex Sokol!",
       text: "Text!",
       chatId: chatId
     });

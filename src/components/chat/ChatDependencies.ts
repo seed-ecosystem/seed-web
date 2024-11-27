@@ -10,12 +10,18 @@ import {LoadMoreUsecase} from "@/usecase/chat/load-more-usecase/load-more-usecas
 import {SendMessageUsecase} from "@/usecase/chat/send-message/send-message-usecase.ts";
 import {createSendMessageUsecase} from "@/usecase/chat/send-message/create-send-message-usecase.ts";
 import {createLocalNonceUsecase} from "@/usecase/chat/nonce/create-local-nonce-usecase.ts";
+import {SetNicknameUsecase} from "@/usecase/chat/nickname/set-nickname-usecase.ts";
+import {createSetNicknameUsecase} from "@/usecase/chat/nickname/create-set-nickname-usecase.ts";
+import {GetNicknameUsecase} from "@/usecase/chat/nickname/get-nickname-usecase.ts";
+import {createGetNicknameUsecase} from "@/usecase/chat/nickname/create-get-nickname-usecase.ts";
 
 export interface ChatDependencies {
   chat: Chat;
   events: EventBus;
   loadMore: LoadMoreUsecase;
   sendMessage: SendMessageUsecase;
+  setNickname: SetNicknameUsecase;
+  getNickname: GetNicknameUsecase;
 }
 
 export function createChatDependencies(
@@ -35,12 +41,28 @@ export function createChatDependencies(
 
   const localNonce = createLocalNonceUsecase();
 
+  const nickname = createGetNicknameUsecase({
+    events, storage: persistence.nickname
+  })
+
   const sendMessage = createSendMessageUsecase({
     coder, events, localNonce,
-    getMessageKey, socket
+    getMessageKey, socket,
+    nickname
+  });
+
+  const setNickname = createSetNicknameUsecase({
+    events,
+    storage: persistence.nickname
+  });
+
+  const getNickname = createGetNicknameUsecase({
+    events,
+    storage: persistence.nickname
   });
 
   return {
-    events, loadMore, sendMessage, chat
+    events, loadMore, sendMessage,
+    chat, setNickname, getNickname
   };
 }

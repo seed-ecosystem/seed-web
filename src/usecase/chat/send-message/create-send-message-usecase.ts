@@ -9,13 +9,15 @@ import {Message} from "@/usecase/chat/message/message.ts";
 import {LocalNonceUsecase} from "@/usecase/chat/nonce/local-nonce-usecase.ts";
 import {ChatStorage} from "@/persistence/chat/chat-storage.ts";
 import {GetMessageKeyUsecase} from "@/usecase/chat/get-message-key-usecase/get-message-key-usecase.ts";
+import {GetNicknameUsecase} from "@/usecase/chat/nickname/get-nickname-usecase.ts";
 
-export function createSendMessageUsecase({ socket, getMessageKey, coder, events, localNonce }: {
+export function createSendMessageUsecase({ socket, getMessageKey, coder, events, localNonce, nickname }: {
   socket: SeedSocket;
   getMessageKey: GetMessageKeyUsecase;
   coder: MessageCoder;
   events: EventBus;
   localNonce: LocalNonceUsecase;
+  nickname: GetNicknameUsecase;
 }): SendMessageUsecase {
 
   let nonce = 0;
@@ -33,7 +35,7 @@ export function createSendMessageUsecase({ socket, getMessageKey, coder, events,
     }
   });
 
-  return async ({ title, text, chatId }) => {
+  return async ({ text, chatId }) => {
     events.emit({ type: "reset_text" });
 
     const message: Message = {
@@ -43,7 +45,7 @@ export function createSendMessageUsecase({ socket, getMessageKey, coder, events,
       isAuthor: true,
       isSending: true,
       content: {
-        title: title,
+        title: nickname(),
         text: text
       }
     };
@@ -64,10 +66,7 @@ export function createSendMessageUsecase({ socket, getMessageKey, coder, events,
 
       const {content, contentIV, signature} = await coder.encode({
         key: key,
-        content: {
-          text: text,
-          title: title,
-        },
+        content: message.content,
       });
 
       const encodedMessage: ApiMessage = {

@@ -7,6 +7,7 @@ import {createGetHistoryUsecase} from "@/usecase/chat/get-history-usecase/create
 import {createGetMessageKeyUsecase} from "@/usecase/chat/get-message-key-usecase/create-get-message-key-usecase.ts";
 import {createSendMessageUsecase} from "@/usecase/chat/send-message/create-send-message-usecase.ts";
 import {createLocalNonceUsecase} from "@/usecase/chat/nonce/create-local-nonce-usecase.ts";
+import {createGetNicknameUsecase} from "@/usecase/chat/nickname/create-get-nickname-usecase.ts";
 
 describe('get messages checks', () => {
   it('check usecase', async () => {
@@ -46,12 +47,14 @@ describe('get messages checks', () => {
       getMessageKey: getMessageKey,
       events: events,
       localNonce: createLocalNonceUsecase(),
-      coder: messageCoder
+      coder: messageCoder,
+      nickname: createGetNicknameUsecase({
+        events, storage: persistence.nickname
+      })
     })
 
     await sendMessage({
       ...chat,
-      title: "Alex Sokol",
       text: "Hello world!"
     });
 
