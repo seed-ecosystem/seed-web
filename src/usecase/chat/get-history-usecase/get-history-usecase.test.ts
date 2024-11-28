@@ -24,6 +24,7 @@ describe('get messages checks', () => {
     const events = createChatEventBus();
     const messageCoder = createMessageCoder();
     const sanitizeContent = createSanitizeContentUsecase();
+    const nickname = createGetNicknameUsecase({events, storage: persistence.nickname});
 
     await persistence.key.push({
       chat: chat,
@@ -42,7 +43,8 @@ describe('get messages checks', () => {
       coder: createMessageCoder(),
       chat: chat,
       getMessageKey: getMessageKey,
-      sanitizeContent
+      sanitizeContent,
+      getNickname: nickname
     });
 
     const sendMessage = createSendMessageUsecase({

@@ -36,16 +36,15 @@ export function createChatDependencies(
   const events = createChatEventBus();
   const coder = createMessageCoder();
   const sanitizeContent = createSanitizeContentUsecase();
-
-  const getMessageKey = createGetMessageKeyUsecase({ keyStorage: key, coder, chat });
-  const getHistory = createGetHistoryUsecase({ socket, coder, chat, getMessageKey, sanitizeContent });
-  const loadMore = createLoadMoreUsecase({ getHistory, events });
-
-  const localNonce = createLocalNonceUsecase();
-
   const nickname = createGetNicknameUsecase({
     events, storage: persistence.nickname
   })
+
+  const getMessageKey = createGetMessageKeyUsecase({ keyStorage: key, coder, chat });
+  const getHistory = createGetHistoryUsecase({ socket, coder, chat, getMessageKey, sanitizeContent, getNickname: nickname });
+  const loadMore = createLoadMoreUsecase({ getHistory, events });
+
+  const localNonce = createLocalNonceUsecase();
 
   const sendMessage = createSendMessageUsecase({
     coder, events, localNonce,

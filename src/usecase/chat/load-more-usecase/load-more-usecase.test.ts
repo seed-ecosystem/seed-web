@@ -8,6 +8,7 @@ import {createChatEventBus} from "@/usecase/chat/event-bus/create-chat-event-bus
 import {createGetHistoryUsecase} from "@/usecase/chat/get-history-usecase/create-get-history-usecase.ts";
 import {createLoadMoreUsecase} from "@/usecase/chat/load-more-usecase/create-load-more-usecase.ts";
 import {createSanitizeContentUsecase} from "@/usecase/chat/sanitize-content-usecase/create-sanitize-content-usecase.ts";
+import {createGetNicknameUsecase} from "@/usecase/chat/nickname/create-get-nickname-usecase.ts";
 
 describe('load more checks', () => {
   it('check usecase', async () => {
@@ -25,6 +26,7 @@ describe('load more checks', () => {
     const events = createChatEventBus();
     const messageCoder = createMessageCoder();
     const sanitizeContent = createSanitizeContentUsecase();
+    const nickname = createGetNicknameUsecase({events, storage: persistence.nickname});
 
     events.flow.collect((event) => {
       console.log(event, '\n');
@@ -47,7 +49,8 @@ describe('load more checks', () => {
       coder: createMessageCoder(),
       chat: chat,
       getMessageKey,
-      sanitizeContent
+      sanitizeContent,
+      getNickname: nickname
     });
 
     const loadMore = createLoadMoreUsecase({
