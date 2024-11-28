@@ -10,6 +10,9 @@ import {createLocalNonceUsecase} from "@/usecase/chat/nonce/create-local-nonce-u
 import {createGetMessageKeyUsecase} from "@/usecase/chat/get-message-key-usecase/create-get-message-key-usecase.ts";
 import {createGetNicknameUsecase} from "@/usecase/chat/nickname/create-get-nickname-usecase.ts";
 import {createSanitizeContentUsecase} from "@/usecase/chat/sanitize-content-usecase/create-sanitize-content-usecase.ts";
+import {
+  createMessagesSnapshotUsecase
+} from "@/usecase/chat/messages-snapshot-usecase/create-messages-snapshot-usecase.ts";
 
 describe('send message checks', () => {
   it('check usecase', async () => {
@@ -30,6 +33,7 @@ describe('send message checks', () => {
     });
 
     const sanitizeContent = createSanitizeContentUsecase();
+    const messagesSnapshot = createMessagesSnapshotUsecase({events});
 
     const usecase = createSendMessageUsecase({
       socket: socket,
@@ -39,7 +43,8 @@ describe('send message checks', () => {
       localNonce: createLocalNonceUsecase(),
       nickname: createGetNicknameUsecase({
         events, storage:
-        persistence.nickname
+        persistence.nickname,
+        messagesSnapshot
       }),
       sanitizeContent,
     });

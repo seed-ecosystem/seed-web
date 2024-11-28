@@ -2,18 +2,28 @@ import {GetNicknameUsecase} from "@/usecase/chat/nickname/get-nickname-usecase.t
 import {EventBus} from "@/usecase/chat/event-bus/event-bus.ts";
 import {NicknameStorage} from "@/persistence/nickname/nickname-storage.ts";
 import {launch} from "@/coroutines/launch.ts";
+import {MessagesSnapshotUsecase} from "@/usecase/chat/messages-snapshot-usecase/messages-snapshot-usecase.ts";
 
 export function createGetNicknameUsecase(
-  {events, storage}: {
+  {events, storage, messagesSnapshot}: {
     events: EventBus,
     storage: NicknameStorage,
+    messagesSnapshot: MessagesSnapshotUsecase
   }
 ): GetNicknameUsecase {
-  let nickname = "Anonymous";
+  let nickname: string;
+
+  function setName(string?: string) {
+    nickname = string || "Anonymous";
+  }
+
+  setName();
 
   launch(async () => {
-    const nickname = await storage.getName();
-    if (!nickname) return
+    const storageName = await storage.getName();
+
+    setName(storageName);
+
     events.emit({
       type: "nickname",
       nickname: nickname,
@@ -23,7 +33,33 @@ export function createGetNicknameUsecase(
   events.flow.collect((event) => {
     switch (event.type) {
       case "nickname":
-        nickname = event.nickname;
+        setName(event.nickname);
+
+        for (const message of messagesSnapshot()) {
+          if (message.content.type != "regular") continue;
+
+          if (message.isAuthor && message.content.title != nickname) {
+            events.emit({
+              type: "edit",
+              nonce: message.nonce,
+              message: {
+                ...message,
+                isAuthor: false
+              }
+            });
+          }
+
+          if (!message.isAuthor && message.content.title == nickname) {
+            events.emit({
+              type: "edit",
+              nonce: message.nonce,
+              message: {
+                ...message,
+                isAuthor: true
+              }
+            });
+          }
+        }
         break;
     }
   });

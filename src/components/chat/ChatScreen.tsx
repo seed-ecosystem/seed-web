@@ -21,32 +21,14 @@ export function ChatScreen(
         case "has_no_more":
           setHasMore(false);
           break;
-        case "new":
-          setMessages((messages) => [event.message, ...messages]);
-          break;
-        case "history":
-          setMessages((messages) => [...messages, event.message]);
+        case "messages_snapshot":
+          setMessages(event.messages);
           break;
         case "reset_text":
           setText("");
           break;
         case "nickname":
           setNicknameState(event.nickname)
-          break;
-        case "edit":
-          setMessages((messages) =>
-            messages.map((message) =>
-              message.nonce == event.nonce ? event.message : message
-            )
-          );
-          break;
-        case "failure":
-          setMessages((messages) =>
-            messages.map((message) =>
-              message.nonce == event.nonce
-                ? {...message, isFailure: true, isSending: false} : message
-            )
-          );
           break;
       }
     });

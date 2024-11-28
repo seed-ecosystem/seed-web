@@ -9,6 +9,9 @@ import {createGetHistoryUsecase} from "@/usecase/chat/get-history-usecase/create
 import {createLoadMoreUsecase} from "@/usecase/chat/load-more-usecase/create-load-more-usecase.ts";
 import {createSanitizeContentUsecase} from "@/usecase/chat/sanitize-content-usecase/create-sanitize-content-usecase.ts";
 import {createGetNicknameUsecase} from "@/usecase/chat/nickname/create-get-nickname-usecase.ts";
+import {
+  createMessagesSnapshotUsecase
+} from "@/usecase/chat/messages-snapshot-usecase/create-messages-snapshot-usecase.ts";
 
 describe('load more checks', () => {
   it('check usecase', async () => {
@@ -26,7 +29,8 @@ describe('load more checks', () => {
     const events = createChatEventBus();
     const messageCoder = createMessageCoder();
     const sanitizeContent = createSanitizeContentUsecase();
-    const nickname = createGetNicknameUsecase({events, storage: persistence.nickname});
+    const messagesSnapshot = createMessagesSnapshotUsecase({events});
+    const nickname = createGetNicknameUsecase({events, messagesSnapshot, storage: persistence.nickname});
 
     events.flow.collect((event) => {
       console.log(event, '\n');

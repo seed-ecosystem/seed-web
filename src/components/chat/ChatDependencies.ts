@@ -15,6 +15,9 @@ import {createSetNicknameUsecase} from "@/usecase/chat/nickname/create-set-nickn
 import {GetNicknameUsecase} from "@/usecase/chat/nickname/get-nickname-usecase.ts";
 import {createGetNicknameUsecase} from "@/usecase/chat/nickname/create-get-nickname-usecase.ts";
 import {createSanitizeContentUsecase} from "@/usecase/chat/sanitize-content-usecase/create-sanitize-content-usecase.ts";
+import {
+  createMessagesSnapshotUsecase
+} from "@/usecase/chat/messages-snapshot-usecase/create-messages-snapshot-usecase.ts";
 
 export interface ChatDependencies {
   chat: Chat;
@@ -36,8 +39,10 @@ export function createChatDependencies(
   const events = createChatEventBus();
   const coder = createMessageCoder();
   const sanitizeContent = createSanitizeContentUsecase();
+  const messagesSnapshot = createMessagesSnapshotUsecase({events});
+
   const nickname = createGetNicknameUsecase({
-    events, storage: persistence.nickname
+    events, messagesSnapshot, storage: persistence.nickname
   })
 
   const getMessageKey = createGetMessageKeyUsecase({ keyStorage: key, coder, chat });
@@ -59,6 +64,7 @@ export function createChatDependencies(
 
   const getNickname = createGetNicknameUsecase({
     events,
+    messagesSnapshot,
     storage: persistence.nickname
   });
 
