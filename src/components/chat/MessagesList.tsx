@@ -20,14 +20,7 @@ export function MessagesList(
         dataLength={messages.length}
         next={next}
         hasMore={hasMore}
-        loader={
-          <>
-            <div className="w-full flex justify-center"><LoadingSpinner/></div>
-            <div className="h-8"/>
-          </>
-        }
-        style={{display: 'flex', flexDirection: 'column-reverse'}}
-      >
+        style={{display: 'flex', flexDirection: 'column-reverse'}}>
         {messages.map((message) => {
           const variant = message.isAuthor ? 'sent' : 'received';
 

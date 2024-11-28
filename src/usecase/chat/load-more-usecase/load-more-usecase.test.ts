@@ -7,6 +7,7 @@ import {createServerSocket} from "@/api/create-server-socket.ts";
 import {createChatEventBus} from "@/usecase/chat/event-bus/create-chat-event-bus.ts";
 import {createGetHistoryUsecase} from "@/usecase/chat/get-history-usecase/create-get-history-usecase.ts";
 import {createLoadMoreUsecase} from "@/usecase/chat/load-more-usecase/create-load-more-usecase.ts";
+import {createSanitizeContentUsecase} from "@/usecase/chat/sanitize-content-usecase/create-sanitize-content-usecase.ts";
 
 describe('load more checks', () => {
   it('check usecase', async () => {
@@ -23,6 +24,7 @@ describe('load more checks', () => {
     const persistence = await createPersistence();
     const events = createChatEventBus();
     const messageCoder = createMessageCoder();
+    const sanitizeContent = createSanitizeContentUsecase();
 
     events.flow.collect((event) => {
       console.log(event, '\n');
@@ -44,7 +46,8 @@ describe('load more checks', () => {
       socket: socket,
       coder: createMessageCoder(),
       chat: chat,
-      getMessageKey: getMessageKey
+      getMessageKey,
+      sanitizeContent
     });
 
     const loadMore = createLoadMoreUsecase({

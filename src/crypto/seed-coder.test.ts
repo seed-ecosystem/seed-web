@@ -37,15 +37,15 @@ describe('seed-coder checks', () => {
     const coder = createMessageCoder();
     const messageKey0 = await randomAESKey();
 
-    const expectedList = [
+    const expectedList: RegularContent[] = [
       {
-        type: "content",
-        author: "Alex Sokol",
+        type: "regular",
+        title: "Alex Sokol",
         text: "Hello world!"
       },
       {
-        type: "content",
-        author: "Mark",
+        type: "regular",
+        title: "Mark",
         text: "ZVO!"
       },
     ];

@@ -9,6 +9,7 @@ import {createChatEventBus} from "@/usecase/chat/event-bus/create-chat-event-bus
 import {createLocalNonceUsecase} from "@/usecase/chat/nonce/create-local-nonce-usecase.ts";
 import {createGetMessageKeyUsecase} from "@/usecase/chat/get-message-key-usecase/create-get-message-key-usecase.ts";
 import {createGetNicknameUsecase} from "@/usecase/chat/nickname/create-get-nickname-usecase.ts";
+import {createSanitizeContentUsecase} from "@/usecase/chat/sanitize-content-usecase/create-sanitize-content-usecase.ts";
 
 describe('send message checks', () => {
   it('check usecase', async () => {
@@ -28,6 +29,8 @@ describe('send message checks', () => {
       chat: { chatId: chatId },
     });
 
+    const sanitizeContent = createSanitizeContentUsecase();
+
     const usecase = createSendMessageUsecase({
       socket: socket,
       coder: coder,
@@ -37,17 +40,20 @@ describe('send message checks', () => {
       nickname: createGetNicknameUsecase({
         events, storage:
         persistence.nickname
-      })
+      }),
+      sanitizeContent,
     });
 
     events.flow.collect((event) => {
       console.log(event);
     });
 
-    await usecase({
+    usecase({
       text: "Text!",
       chatId: chatId
     });
+
+
   });
 });
 

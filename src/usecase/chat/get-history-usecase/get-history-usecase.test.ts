@@ -8,6 +8,7 @@ import {createGetMessageKeyUsecase} from "@/usecase/chat/get-message-key-usecase
 import {createSendMessageUsecase} from "@/usecase/chat/send-message/create-send-message-usecase.ts";
 import {createLocalNonceUsecase} from "@/usecase/chat/nonce/create-local-nonce-usecase.ts";
 import {createGetNicknameUsecase} from "@/usecase/chat/nickname/create-get-nickname-usecase.ts";
+import {createSanitizeContentUsecase} from "@/usecase/chat/sanitize-content-usecase/create-sanitize-content-usecase.ts";
 
 describe('get messages checks', () => {
   it('check usecase', async () => {
@@ -22,6 +23,7 @@ describe('get messages checks', () => {
     const persistence = await createPersistence();
     const events = createChatEventBus();
     const messageCoder = createMessageCoder();
+    const sanitizeContent = createSanitizeContentUsecase();
 
     await persistence.key.push({
       chat: chat,
@@ -39,7 +41,8 @@ describe('get messages checks', () => {
       socket: socket,
       coder: createMessageCoder(),
       chat: chat,
-      getMessageKey: getMessageKey
+      getMessageKey: getMessageKey,
+      sanitizeContent
     });
 
     const sendMessage = createSendMessageUsecase({
@@ -50,7 +53,8 @@ describe('get messages checks', () => {
       coder: messageCoder,
       nickname: createGetNicknameUsecase({
         events, storage: persistence.nickname
-      })
+      }),
+      sanitizeContent
     })
 
     await sendMessage({

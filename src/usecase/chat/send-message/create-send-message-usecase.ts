@@ -10,14 +10,18 @@ import {LocalNonceUsecase} from "@/usecase/chat/nonce/local-nonce-usecase.ts";
 import {ChatStorage} from "@/persistence/chat/chat-storage.ts";
 import {GetMessageKeyUsecase} from "@/usecase/chat/get-message-key-usecase/get-message-key-usecase.ts";
 import {GetNicknameUsecase} from "@/usecase/chat/nickname/get-nickname-usecase.ts";
+import {SanitizeContentUsecase} from "@/usecase/chat/sanitize-content-usecase/sanitize-content-usecase.ts";
+import {RegularContent} from "@/crypto/message/content/regular-content.ts";
+import {launch} from "@/coroutines/launch.ts";
 
-export function createSendMessageUsecase({ socket, getMessageKey, coder, events, localNonce, nickname }: {
+export function createSendMessageUsecase({ socket, getMessageKey, coder, events, localNonce, nickname, sanitizeContent }: {
   socket: SeedSocket;
   getMessageKey: GetMessageKeyUsecase;
   coder: MessageCoder;
   events: EventBus;
   localNonce: LocalNonceUsecase;
   nickname: GetNicknameUsecase;
+  sanitizeContent: SanitizeContentUsecase;
 }): SendMessageUsecase {
 
   let nonce = 0;
@@ -36,8 +40,17 @@ export function createSendMessageUsecase({ socket, getMessageKey, coder, events,
     }
   });
 
-  return async ({ text, chatId }) => {
+  return ({ text, chatId }) => launch(async () => {
     events.emit({ type: "reset_text" });
+
+    let content: RegularContent | undefined = {
+      type: "regular",
+        title: nickname(),
+        text: text
+    }
+
+    content = sanitizeContent(content);
+    if (!content) return;
 
     const message: Message = {
       nonce: {
@@ -46,11 +59,7 @@ export function createSendMessageUsecase({ socket, getMessageKey, coder, events,
       isAuthor: true,
       isSending: true,
       isFailure: false,
-      content: {
-        type: "regular",
-        title: nickname(),
-        text: text
-      }
+      content: content
     };
 
     events.emit({
@@ -97,8 +106,7 @@ export function createSendMessageUsecase({ socket, getMessageKey, coder, events,
             nonce: { server: nonce },
           }
         });
-
-        return true;
+        return;
       }
 
       ttl--;
@@ -108,8 +116,8 @@ export function createSendMessageUsecase({ socket, getMessageKey, coder, events,
           type: "failure",
           nonce: message.nonce,
         });
-        return false;
+        return;
       }
     }
-  }
+  })
 }

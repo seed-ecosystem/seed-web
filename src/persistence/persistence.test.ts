@@ -14,6 +14,7 @@ describe('persistence checks', () => {
       chat: { chatId: chatId },
       nonce: 0,
       content: {
+        type: "regular",
         text: "Hello world!",
         title: "Alex Sokol!",
       }
@@ -49,6 +50,7 @@ describe('persistence checks', () => {
         chat: chat,
         nonce: nonce,
         content: {
+          type: "regular",
           text: "Hello world!",
           title: "Alex Sokol!",
         }
@@ -72,6 +74,7 @@ describe('persistence checks', () => {
         chat: { chatId: chatId },
         nonce: nonce,
         content: {
+          type: "regular",
           text: "Hello world!",
           title: "Alex Sokol!",
         }
