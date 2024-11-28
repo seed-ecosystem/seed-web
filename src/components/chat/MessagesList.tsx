@@ -15,11 +15,17 @@ export function MessagesList(
 ) {
   return <>
     <div className="flex flex-col-reverse flex-grow h-0 w-full overflow-y-scroll no-scrollbar" id="chatMessageListScroll">
+
       <ChatMessageList
         dataLength={messages.length}
         next={next}
         hasMore={hasMore}
-        loader={<h4>Loading...</h4>}
+        loader={
+          <>
+            <div className="w-full flex justify-center"><LoadingSpinner/></div>
+            <div className="h-8"/>
+          </>
+        }
         style={{display: 'flex', flexDirection: 'column-reverse'}}
       >
         {messages.map((message) => {
@@ -45,8 +51,8 @@ export function MessagesList(
             {message.isFailure && <CircleX/>}
           </ChatBubble>
         })}
-        <div className="h-8"/>
       </ChatMessageList>
+
     </div>
   </>;
 }

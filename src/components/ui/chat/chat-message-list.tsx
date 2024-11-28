@@ -13,9 +13,7 @@ const ChatMessageList = React.forwardRef<InfiniteScroll, ChatMessageListProps>(
       ref={ref}
       inverse={true}
       endMessage={
-        <p style={{ textAlign: 'center' }}>
-          <b>Yay! You have seen it all</b>
-        </p>
+        <div className="h-8"/>
       }
       className={cn(
         "flex flex-col w-full h-full p-4 gap-6",
