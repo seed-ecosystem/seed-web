@@ -10,7 +10,7 @@ export function createLoadMoreUsecase(
   }
 ): LoadMoreUsecase {
   let nonce: number | null = null;
-  const pageSize = 10;
+  const pageSize = 100;
 
   return () => {
     launch(async () => {
