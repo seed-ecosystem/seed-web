@@ -5,7 +5,6 @@ import * as React from "react";
 import {Label} from "@/components/ui/label.tsx";
 import {LoadingSpinner} from "@/components/ui/loading-spinner.tsx";
 import {CircleX} from "lucide-react";
-import {MessageInput} from "@/components/chat/MessageInput.tsx";
 
 export function MessagesList(
   {messages, hasMore, next}: {
@@ -15,7 +14,7 @@ export function MessagesList(
   }
 ) {
   return <>
-    <div className="flex flex-col-reverse flex-grow h-0 w-full overflow-y-scroll no-scrollbar">
+    <div className="flex flex-col-reverse flex-grow h-0 w-full overflow-y-scroll no-scrollbar" id="chatMessageListScroll">
       <ChatMessageList
         dataLength={messages.length}
         next={next}

@@ -9,6 +9,7 @@ const ChatMessageList = React.forwardRef<InfiniteScroll, ChatMessageListProps>(
   ({ className, children, ...props }, ref) => (
     // https://tanstack.com/virtual/latest
     <InfiniteScroll
+      scrollableTarget="chatMessageListScroll"
       ref={ref}
       inverse={true}
       endMessage={
