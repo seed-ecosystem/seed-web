@@ -23,6 +23,7 @@ export function MessagesList(
         style={{display: 'flex', flexDirection: 'column-reverse'}}>
         {messages.map((message) => {
           const variant = message.isAuthor ? 'sent' : 'received';
+          if (message.content.type != "regular") return;
 
           const key = "server" in message.nonce
             ? `server:${message.nonce.server}`

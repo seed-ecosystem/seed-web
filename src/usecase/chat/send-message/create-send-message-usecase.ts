@@ -13,6 +13,7 @@ import {GetNicknameUsecase} from "@/usecase/chat/nickname/get-nickname-usecase.t
 import {SanitizeContentUsecase} from "@/usecase/chat/sanitize-content-usecase/sanitize-content-usecase.ts";
 import {RegularContent} from "@/crypto/message/content/regular-content.ts";
 import {launch} from "@/coroutines/launch.ts";
+import {MessageContent} from "@/crypto/message/content/message-content.ts";
 
 export function createSendMessageUsecase({ socket, getMessageKey, coder, events, localNonce, nickname, sanitizeContent }: {
   socket: SeedSocket;
@@ -43,7 +44,7 @@ export function createSendMessageUsecase({ socket, getMessageKey, coder, events,
   return ({ text, chatId }) => launch(async () => {
     events.emit({ type: "reset_text" });
 
-    let content: RegularContent | undefined = {
+    let content: MessageContent | undefined = {
       type: "regular",
         title: nickname(),
         text: text

@@ -7,6 +7,7 @@ import {GetMessageKeyUsecase} from "@/usecase/chat/get-message-key-usecase/get-m
 import typia from "typia";
 import {MessageContent} from "@/crypto/message/content/message-content.ts";
 import {SanitizeContentUsecase} from "@/usecase/chat/sanitize-content-usecase/sanitize-content-usecase.ts";
+import {Message} from "@/usecase/chat/message/message.ts";
 
 export function createGetHistoryUsecase(
   { socket, coder, chat, getMessageKey, sanitizeContent }: {
@@ -27,7 +28,7 @@ export function createGetHistoryUsecase(
 
     const response: GetHistoryResponse = await socket.execute(request);
 
-    const result = [];
+    const result: (Message & { nonce: { server: number } })[] = [];
 
     for (let message of (response.messages ?? [])) {
       const key = await getMessageKey(message.nonce);
@@ -41,17 +42,30 @@ export function createGetHistoryUsecase(
       });
 
       content = sanitizeContent(content);
-      if (!content) continue;
 
-      result.push({
-        nonce: {
-          server: message.nonce
-        },
-        isAuthor: false, // todo: later differentiate by nickname
-        isSending: false,
-        isFailure: false,
-        content: content
-      });
+      if (content) {
+        result.push({
+          nonce: {
+            server: message.nonce
+          },
+          isAuthor: false, // todo: later differentiate by nickname
+          isSending: false,
+          isFailure: false,
+          content: content
+        });
+      } else {
+        result.push({
+          nonce: {
+            server: message.nonce
+          },
+          isAuthor: false, // todo: later differentiate by nickname
+          isSending: false,
+          isFailure: false,
+          content: {
+            type: "unknown"
+          }
+        });
+      }
     }
 
     return result;
