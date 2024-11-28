@@ -8,5 +8,6 @@ export interface Message {
   };
   isAuthor: boolean;
   isSending: boolean; // might be true only if isAuthor is true
+  isFailure: boolean;
   content: MessageContent;
 }

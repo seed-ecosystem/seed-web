@@ -10,6 +10,10 @@ export function createSetNicknameUsecase(
   }
 ): SetNicknameUsecase {
   return (value) => {
+    if (value.length == 0) {
+      value = "Anonymous";
+    }
+
     launch(() => storage.setName(value));
 
     events.emit({

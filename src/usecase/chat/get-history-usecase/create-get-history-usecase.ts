@@ -36,13 +36,27 @@ export function createGetHistoryUsecase(
         key: key
       });
 
+      let limitedContent = content;
+
+      console.log("AYE", content);
+
+      if (content.text) {
+        const text = content.text.length > 4096 ? `${content.text.substring(0, 4096)}...` : content.text;
+        limitedContent = {
+          ...content,
+          text: text,
+        };
+        console.log("AYE", limitedContent)
+      }
+
       result.push({
         nonce: {
           server: message.nonce
         },
         isAuthor: false, // todo: later differentiate by nickname
         isSending: false,
-        content: content
+        isFailure: false,
+        content: limitedContent
       });
     }
 

@@ -18,6 +18,9 @@ export type ChatEvent = {
 } | {
   type: "nickname";
   nickname: string;
+} | {
+  type: "failure";
+  nonce: { server: number; } | { local: number; };
 };
 
 export interface EventBus {

@@ -45,7 +45,9 @@ export function createSendMessageUsecase({ socket, getMessageKey, coder, events,
       },
       isAuthor: true,
       isSending: true,
+      isFailure: false,
       content: {
+        type: "regular",
         title: nickname(),
         text: text
       }
@@ -102,6 +104,10 @@ export function createSendMessageUsecase({ socket, getMessageKey, coder, events,
       ttl--;
 
       if (ttl < 0) {
+        events.emit({
+          type: "failure",
+          nonce: message.nonce,
+        });
         return false;
       }
     }

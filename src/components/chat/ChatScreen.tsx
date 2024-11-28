@@ -40,6 +40,14 @@ export function ChatScreen(
             )
           );
           break;
+        case "failure":
+          setMessages((messages) =>
+            messages.map((message) =>
+              message.nonce == event.nonce
+                ? {...message, isFailure: true, isSending: false} : message
+            )
+          );
+          break;
       }
     });
 
@@ -48,13 +56,9 @@ export function ChatScreen(
 
   return (
     <>
-      <div className="h-screen w-screen overflow-hidden flex flex-col">
-        <ChatHeader
-          text={nickname}
-          setText={setNickname} />
-
+      <div className="h-svh w-screen overflow-hidden flex flex-col">
         <div className="w-full flex-grow flex justify-center">
-          <div className="h-full flex-grow max-w-3xl flex flex-col">
+          <div className="h-full flex-grow max-w-full md:max-w-3xl flex flex-col">
             {
               (messages.length == 0 && !hasMore)
                 ? EmptyMessages()
@@ -67,9 +71,15 @@ export function ChatScreen(
             <MessageInput
               text={text}
               setText={setText}
-              onClick={() => sendMessage({ text, ...chat })}/>
+              onClick={() => sendMessage({ text, ...chat })}
+            />
           </div>
         </div>
+
+        <ChatHeader
+          text={nickname}
+          setText={setNickname} />
+
       </div>
     </>
   )
