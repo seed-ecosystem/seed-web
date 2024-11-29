@@ -18,8 +18,6 @@ export async function createAppDependencies(): Promise<AppDependencies> {
   const persistence = await createPersistence();
   const socket = createServerSocket("https://meetacy.app/seed-go");
 
-  await socket.open();
-
   if (await persistence.key.last({ chat }) == null) {
     await persistence.key.push({
       chat: chat,

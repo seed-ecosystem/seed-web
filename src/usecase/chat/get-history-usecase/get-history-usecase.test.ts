@@ -21,7 +21,6 @@ describe('get messages checks', () => {
     console.log("Test Chat: ", chat, '\n');
 
     const socket = createServerSocket("https://meetacy.app/seed-go");
-    await socket.open();
 
     const persistence = await createPersistence();
     const events = createChatEventBus();
@@ -64,7 +63,7 @@ describe('get messages checks', () => {
       sanitizeContent
     })
 
-    await sendMessage({
+    sendMessage({
       ...chat,
       text: "Hello world!"
     });

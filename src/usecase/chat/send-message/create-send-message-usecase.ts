@@ -42,6 +42,8 @@ export function createSendMessageUsecase({
   });
 
   return ({ text, chatId }) => launch(async () => {
+    if (text.length == 0) return;
+
     events.emit({ type: "reset_text" });
 
     let content: MessageContent | undefined = {

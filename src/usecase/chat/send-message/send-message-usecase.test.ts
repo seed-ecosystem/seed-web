@@ -18,7 +18,6 @@ describe('send message checks', () => {
   it('check usecase', async () => {
 
     const socket = createServerSocket("https://meetacy.app/seed-go");
-    await socket.open();
 
     const persistence = await createPersistence();
     const chatId = await randomAESKey();

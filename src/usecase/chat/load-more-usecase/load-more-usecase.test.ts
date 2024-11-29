@@ -21,7 +21,6 @@ describe('load more checks', () => {
     console.log("Test Chat: ", chat, '\n');
 
     const socket = createServerSocket("https://meetacy.app/seed-go");
-    await socket.open();
 
     console.log("Socket opened\n");
 
