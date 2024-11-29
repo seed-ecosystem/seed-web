@@ -1,2 +1,4 @@
 
-export type SocketEventUnknown = any;
+export interface SocketEventUnknown {
+  type: string;
+}

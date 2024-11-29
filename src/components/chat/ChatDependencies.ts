@@ -18,6 +18,8 @@ import {createSanitizeContentUsecase} from "@/usecase/chat/sanitize-content-usec
 import {
   createMessagesSnapshotUsecase
 } from "@/usecase/chat/messages-snapshot-usecase/create-messages-snapshot-usecase.ts";
+import {createDecodeMessagesUsecase} from "@/usecase/chat/decode-messages-usecase/decode-message-usecase.ts";
+import {handleSocketEventsUsecase} from "@/usecase/chat/socket-event-usecase/handle-socket-events-usecase.ts";
 
 export interface ChatDependencies {
   chat: Chat;
@@ -45,8 +47,20 @@ export function createChatDependencies(
     events, messagesSnapshot, storage: persistence.nickname
   })
 
+  const getNickname = createGetNicknameUsecase({
+    events,
+    messagesSnapshot,
+    storage: persistence.nickname
+  });
+
   const getMessageKey = createGetMessageKeyUsecase({ keyStorage: key, coder, chat });
-  const getHistory = createGetHistoryUsecase({ socket, coder, chat, getMessageKey, sanitizeContent, getNickname: nickname });
+
+  const decodeMessage = createDecodeMessagesUsecase({
+    getMessageKey, coder,
+    sanitizeContent, getNickname
+  });
+
+  const getHistory = createGetHistoryUsecase({ socket, chat, decodeMessage });
   const loadMore = createLoadMoreUsecase({ getHistory, events });
 
   const localNonce = createLocalNonceUsecase();
@@ -62,11 +76,8 @@ export function createChatDependencies(
     storage: persistence.nickname
   });
 
-  const getNickname = createGetNicknameUsecase({
-    events,
-    messagesSnapshot,
-    storage: persistence.nickname
-  });
+  const socketEventUsecase = handleSocketEventsUsecase({decodeMessage, events, socket, messagesSnapshot});
+  socketEventUsecase();
 
   return {
     events, loadMore, sendMessage,

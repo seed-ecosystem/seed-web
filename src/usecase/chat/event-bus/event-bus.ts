@@ -1,5 +1,6 @@
-import {Message} from "@/usecase/chat/message/message.ts";
+
 import {Flow} from "@/coroutines/flow.ts";
+import {Message} from "@/usecase/chat/message/message.ts";
 
 export type ChatEvent = {
   type: "history";

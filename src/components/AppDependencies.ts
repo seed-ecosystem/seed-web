@@ -3,6 +3,7 @@ import {createServerSocket} from "@/api/create-server-socket.ts";
 import {Persistence} from "@/persistence/persistence.ts";
 import {createPersistence} from "@/persistence/create-persistence.ts";
 import {ChatDependencies, createChatDependencies} from "@/components/chat/ChatDependencies.ts";
+import {SubscribeRequest} from "@/api/request/subscribe-request.ts";
 
 export interface AppDependencies {
   socket: SeedSocket;
@@ -17,6 +18,8 @@ export async function createAppDependencies(): Promise<AppDependencies> {
 
   const persistence = await createPersistence();
   const socket = createServerSocket("https://meetacy.app/seed-go");
+
+  socket.bind({ type: "subscribe", chatId: [chat.chatId] } as SubscribeRequest);
 
   if (await persistence.key.last({ chat }) == null) {
     await persistence.key.push({

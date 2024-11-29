@@ -1,1 +1,3 @@
-export interface SocketRequest<T> {}
+export interface SocketRequest<T> {
+  type: string;
+}
