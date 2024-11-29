@@ -29,7 +29,7 @@ export function createServerSocket(url: string): SeedSocket {
     };
 
     ws.onclose = (e) => {
-      console.error("<< ws: onerror", e);
+      console.error("<< ws: onclose", e);
       setTimeout(setupWebsocket, 1_000);
     };
 
