@@ -21,6 +21,7 @@ export async function createAppDependencies(): Promise<AppDependencies> {
 
   const lastNonce = await persistence.message.lastMessageNonce(chat);
 
+  // todo: remove bind and make init instead
   socket.bind({ type: "subscribe", chatId: chat.chatId, nonce: lastNonce ?? 0 } as SubscribeRequest);
 
   if (await persistence.message.lastMessage(chat) == null) {

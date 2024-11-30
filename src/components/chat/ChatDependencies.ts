@@ -68,7 +68,7 @@ export function createChatDependencies(
   });
 
   const sendTextMessage = createSendTextMessageUsecase({
-    nickname, sendMessage
+    nickname, sendMessage, events
   });
 
   const setNickname = createSetNicknameUsecase({
