@@ -5,21 +5,22 @@ import {EmptyMessages} from "@/components/chat/EmptyMessages.tsx";
 import {MessageInput} from "@/components/chat/MessageInput.tsx";
 import {useEffect, useState} from "react";
 import {ChatDependencies} from "@/components/chat/ChatDependencies.ts";
+import {LoadingSpinner} from "@/components/ui/loading-spinner.tsx";
 
 export function ChatScreen(
-  {chat, events, loadMore, sendMessage, setNickname, getNickname}: ChatDependencies
+  {events, sendMessage, setNickname, getNickname}: ChatDependencies
 ) {
   const [messages, setMessages] = useState<Message[]>([]);
 
-  const [hasMore, setHasMore] = useState(true);
+  const [loaded, setLoaded] = useState(false);
   const [text, setText] = useState("");
   const [nickname, setNicknameState] = useState(getNickname());
 
   useEffect(() => {
     const subscription = events.flow.collect((event) => {
       switch (event.type) {
-        case "has_no_more":
-          setHasMore(false);
+        case "loaded":
+          setLoaded(true);
           break;
         case "messages_snapshot":
           setMessages(event.messages);
@@ -42,18 +43,17 @@ export function ChatScreen(
         <div className="w-full flex-grow flex justify-center">
           <div className="h-full flex-grow max-w-full md:max-w-3xl flex flex-col">
             {
-              (messages.length == 0 && !hasMore)
-                ? EmptyMessages()
-                : <MessagesList
-                    messages={messages}
-                    hasMore={hasMore}
-                    next={loadMore} />
+              loaded
+                ? messages.length == 0
+                  ? EmptyMessages()
+                  : <MessagesList messages={messages}/>
+                : LoadingMessages()
             }
 
             <MessageInput
               text={text}
               setText={setText}
-              onClick={() => sendMessage({ text, ...chat })}
+              onClick={() => sendMessage({ text })}
             />
           </div>
         </div>
@@ -65,4 +65,10 @@ export function ChatScreen(
       </div>
     </>
   )
+}
+
+function LoadingMessages() {
+  return <>
+    <div className="w-full h-full flex justify-center items-center"><LoadingSpinner/></div>
+  </>;
 }

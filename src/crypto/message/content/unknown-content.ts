@@ -1,1 +1,3 @@
-export type UnknownContent = { type: "unknown" };
+export interface UnknownContent {
+  type: "unknown";
+}

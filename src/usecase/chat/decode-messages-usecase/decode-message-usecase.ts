@@ -7,7 +7,7 @@ import {Message as ApiMessage} from "@/api/message/message.ts";
 import {Message} from "@/usecase/chat/message/message.ts";
 
 export interface DecodeMessageUsecase {
-  (message: ApiMessage): Promise<Message & { nonce: { server: number } }>;
+  (message: ApiMessage): Promise<Message & { nonce: { server: number }, key: string }>;
 }
 
 export function createDecodeMessagesUsecase(
@@ -38,6 +38,7 @@ export function createDecodeMessagesUsecase(
       },
       isSending: false,
       isFailure: false,
+      key: key
     };
 
     if (content?.type == "regular") {
@@ -46,12 +47,14 @@ export function createDecodeMessagesUsecase(
       return {
         content: content,
         isAuthor: nickname == content.title,
+        display: true,
         ...common
       };
     } else {
       return {
         isAuthor: false,
         content: { type: "unknown" },
+        display: false,
         ...common
       };
     }

@@ -1,23 +1,17 @@
 import {GetMessageKeyUsecase} from "@/usecase/chat/get-message-key-usecase/get-message-key-usecase.ts";
 import {Chat} from "@/persistence/chat/chat.ts";
-import {KeyStorage} from "@/persistence/key/key-storage.ts";
 import {MessageCoder} from "@/crypto/message-coder.ts";
+import {MessageStorage} from "@/persistence/message/message-storage.ts";
 
 export function createGetMessageKeyUsecase(
-  { keyStorage, coder, chat }: {
-    keyStorage: KeyStorage;
+  { messageStorage, coder, chat }: {
+    messageStorage: MessageStorage;
     coder: MessageCoder;
     chat: Chat
   },
 ): GetMessageKeyUsecase {
   return async (nonce) => {
-    const cached = await keyStorage.get({ chat, nonce });
-
-    if (cached) {
-      return cached;
-    }
-
-    const last = await keyStorage.last({ chat });
+    const last = await messageStorage.lastMessage(chat);
 
     if (!last) {
       throw new Error("Cannot get message key for chat that is not created");
@@ -42,10 +36,6 @@ export function createGetMessageKeyUsecase(
         key: key,
         nonce: keyNonce,
       });
-    }
-
-    for (const message of messages) {
-      await keyStorage.push(message);
     }
 
     return key;

@@ -1,3 +1,9 @@
-import {SocketEventNew} from "@/api/event/socket-event-new.ts";
+import {Message} from "@/api/message/message.ts";
 
-export type SocketEvent = SocketEventNew;
+export type SocketEvent = {
+  type: "new";
+  message: Message;
+} | {
+  type: "wait";
+  chatId: string;
+};

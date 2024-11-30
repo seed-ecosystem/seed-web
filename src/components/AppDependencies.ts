@@ -19,13 +19,18 @@ export async function createAppDependencies(): Promise<AppDependencies> {
   const persistence = await createPersistence();
   const socket = createServerSocket("https://meetacy.app/seed-go");
 
-  socket.bind({ type: "subscribe", chatId: [chat.chatId] } as SubscribeRequest);
+  const lastNonce = await persistence.message.lastMessageNonce(chat);
 
-  if (await persistence.key.last({ chat }) == null) {
-    await persistence.key.push({
-      chat: chat,
+  socket.bind({ type: "subscribe", chatId: chat.chatId, nonce: lastNonce ?? 0 } as SubscribeRequest);
+
+  if (await persistence.message.lastMessage(chat) == null) {
+    await persistence.message.add({
+      ...chat,
       key: key,
-      nonce: 0
+      nonce: 0,
+      content: {
+        type: "deferred"
+      }
     });
   }
 
@@ -34,9 +39,7 @@ export async function createAppDependencies(): Promise<AppDependencies> {
     socket: socket,
     persistence: persistence,
     createChat() {
-      const result = createChatDependencies(this, chat);
-      result.loadMore();
-      return result;
+      return createChatDependencies(this, chat);
     }
   };
 

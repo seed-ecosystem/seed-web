@@ -15,43 +15,48 @@ export function createMessageStorage(db: IDBPDatabase): MessageStorage {
       const cursor = await db.transaction("message")
         .objectStore("message")
         .index("chatId")
-        .openCursor(IDBKeyRange.only(chat.chatId), "next");
+        .openCursor(IDBKeyRange.only(chat.chatId), "prev");
 
-      if (cursor === null) {
-        return;
-      }
+      if (!cursor) return;
 
       return cursor.value;
     },
 
-    async add(message: Message): Promise<void> {
-      await (await db).transaction("message", "readwrite")
-        .objectStore("message")
-        .add({
-          chatId: message.chat.chatId,
-          ...message
-        });
-    },
-
-    async list(chat: Chat, fromId: number, amount: number): Promise<Message[]> {
+    async lastMessageNonce(chat: Chat): Promise<number> {
       const cursor = await db.transaction("message")
         .objectStore("message")
         .index("chatId")
-        .openCursor(IDBKeyRange.only(chat.chatId));
+        .openCursor(IDBKeyRange.only(chat.chatId), "prev");
+
+      if (cursor === null) {
+        return 0;
+      }
+
+      const message: Message = cursor.value;
+
+      return message.content.type == "deferred"
+        ? message.nonce
+        : message.nonce + 1;
+    },
+
+    async add(message: Message): Promise<void> {
+      await db.transaction("message", "readwrite")
+        .objectStore("message")
+        .put/**/(message);
+    },
+
+    async list(chat: Chat): Promise<Message[]> {
+      const cursor = await db.transaction("message")
+        .objectStore("message")
+        .index("chatId")
+        .openCursor(IDBKeyRange.only(chat.chatId), "prev");
 
       if (!cursor) return [];
 
-      const result = [];
-      const first = fromId ? await cursor.advance(fromId) : cursor;
-      if (!first) return [];
-
-      for await (const next of cursor) {
-        if (amount <= 0) return result;
-        delete next.value.chatId
-        result.push(next.value);
-        amount--
+      const result: Message[] = [];
+      for await (const message of cursor) {
+        result.push(message.value);
       }
-
       return result;
     }
   };

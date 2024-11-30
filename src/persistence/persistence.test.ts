@@ -7,11 +7,13 @@ import {createMessageCoder} from "@/crypto/create-message-coder.ts";
 describe('persistence checks', () => {
   it('check can add messages', async () => {
     const storage = await createPersistence();
+    const key = await randomAESKey();
 
     const chatId = await randomAESKey();
 
     const message: Message = {
-      chat: { chatId: chatId },
+      key,
+      chatId: chatId,
       nonce: 0,
       content: {
         type: "regular",
@@ -22,32 +24,33 @@ describe('persistence checks', () => {
 
     await storage.message.add(message);
 
-    const result = await storage.message.list({ chatId: chatId }, 0, 1);
+    const result = await storage.message.list({ chatId: chatId });
 
     expect(result[0]).toStrictEqual(message);
   });
 
   it('check last message', async () => {
     const storage = await createPersistence();
-    const coder = createMessageCoder();
+    const key = await randomAESKey();
 
     const chat = { chatId: await randomAESKey() };
 
-    expect(await storage.message.lastMessage(chat)).toStrictEqual(undefined);
+    expect(await storage.message.lastMessageNonce(chat)).toStrictEqual(undefined);
 
     async function getMessage(): Promise<Message> {
-      const message = await storage.message.lastMessage(chat);
+      const message = await storage.message.lastMessageNonce(chat);
 
       let nonce
 
       if (message == null) {
         nonce = 0
       } else {
-        nonce = message.nonce + 1;
+        nonce = message + 1;
       }
 
       return {
-        chat: chat,
+        ...chat,
+        key,
         nonce: nonce,
         content: {
           type: "regular",
@@ -60,7 +63,7 @@ describe('persistence checks', () => {
     await storage.message.add(await getMessage());
     await storage.message.add(await getMessage());
 
-    expect((await storage.message.lastMessage(chat))!.nonce).toBe(2);
+    expect((await storage.message.lastMessageNonce(chat))!).toBe(2);
   });
 
   it('check pagination messages', async () => {
@@ -71,8 +74,7 @@ describe('persistence checks', () => {
 
     function getMessage(nonce: number): Message {
       return {
-        chat: { chatId: chatId },
-        nonce: nonce,
+        chatId, key, nonce,
         content: {
           type: "regular",
           text: "Hello world!",
@@ -93,7 +95,7 @@ describe('persistence checks', () => {
       await storage.message.add(message);
     }
 
-    const result = await storage.message.list({ chatId: chatId }, 10, 20);
+    const result = await storage.message.list({ chatId: chatId });
 
     expect(result).toStrictEqual(expected)
   });

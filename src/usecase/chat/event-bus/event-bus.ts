@@ -9,11 +9,11 @@ export type ChatEvent = {
   type: "new";
   message: Message;
 } | {
+  type: "loaded";
+} | {
   type: "edit";
   nonce: { server: number; } | { local: number; };
   message: Message;
-} | {
-  type: "has_no_more";
 } | {
   type: "reset_text";
 } | {

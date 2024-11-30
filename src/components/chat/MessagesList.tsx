@@ -7,19 +7,15 @@ import {LoadingSpinner} from "@/components/ui/loading-spinner.tsx";
 import {CircleX} from "lucide-react";
 
 export function MessagesList(
-  {messages, hasMore, next}: {
-    messages: Message[];
-    hasMore: boolean;
-    next(): void;
-  }
+  {messages}: { messages: Message[]; }
 ) {
   return <>
     <div className="flex flex-col-reverse flex-grow h-0 w-full overflow-y-scroll no-scrollbar" id="chatMessageListScroll">
 
       <ChatMessageList
         dataLength={messages.length}
-        next={next}
-        hasMore={hasMore}
+        next={() => {}}
+        hasMore={false}
         style={{display: 'flex', flexDirection: 'column-reverse'}}>
         {messages.map((message) => {
           const variant = message.isAuthor ? 'sent' : 'received';

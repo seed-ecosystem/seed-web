@@ -44,22 +44,24 @@ export async function decryptAes256(
     iv: string;
     key: string;
   }
-): Promise<{ string: string }> {
+): Promise<{ string: string } | undefined> {
   const { encrypted, iv, key } = options;
   const importedKey = await importCryptoKey(key, aesOptions, "decrypt");
 
-  const decrypted = await crypto.decrypt(
-    {
-      iv: base64ToArrayBuffer(iv),
-      ...aesOptions
-    },
-    importedKey,
-    base64ToArrayBuffer(encrypted)
-  )
+  try {
+    const decrypted = await crypto.decrypt(
+      {
+        iv: base64ToArrayBuffer(iv),
+        ...aesOptions
+      },
+      importedKey,
+      base64ToArrayBuffer(encrypted)
+    )
 
-  return {
-    string: arrayBufferToString(decrypted)
-  }
+    return {
+      string: arrayBufferToString(decrypted)
+    }
+  } catch (error) {}
 }
 
 

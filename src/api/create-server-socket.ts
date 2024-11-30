@@ -77,6 +77,7 @@ export function createServerSocket(url: string): SeedSocket {
       }
 
       if (event.type == "event") {
+        console.log("<< ws: event", event);
         events.emit(event.event);
       }
     };
