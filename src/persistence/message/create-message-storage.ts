@@ -15,7 +15,7 @@ export function createMessageStorage(db: IDBPDatabase): MessageStorage {
       const cursor = await db.transaction("message")
         .objectStore("message")
         .index("chatId")
-        .openCursor(IDBKeyRange.only(chat.chatId), "prev");
+        .openCursor(IDBKeyRange.only(chat.chatId));
 
       if (!cursor) return;
 

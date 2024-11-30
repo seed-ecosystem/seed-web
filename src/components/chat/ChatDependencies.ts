@@ -22,6 +22,8 @@ import {handleSocketEventsUsecase} from "@/usecase/chat/socket-event-usecase/han
 import {createSendMessageUsecase} from "@/usecase/chat/send-message/send-message-usecase.ts";
 import {messagesHistoryUsecase} from "@/usecase/chat/messages-history-usecase/messages-history-usecase.ts";
 import {OptionPredicator} from "typia/lib/programmers/helpers/OptionPredicator";
+import {useCallback} from "react";
+import {saveMessageUsecase} from "@/usecase/chat/save-message-usecase/save-messaga-usecase.ts";
 
 export interface ChatDependencies {
   chat: Chat;
@@ -83,10 +85,17 @@ export function createChatDependencies(
   });
   socketEventUsecase();
 
-  const messageHistoryUsecase = messagesHistoryUsecase({
+  const messagesHistory = messagesHistoryUsecase({
     chat, events, getNickname, messagesStorage: persistence.message
   });
-  messageHistoryUsecase();
+  messagesHistory();
+
+  const saveMessage = saveMessageUsecase({
+    events: events,
+    getMessageKey: getMessageKey,
+    messageStorage: persistence.message
+  });
+  saveMessage();
 
   return {
     events, sendMessage: sendTextMessage,

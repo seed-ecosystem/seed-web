@@ -23,18 +23,21 @@ export function handleSocketEventsUsecase(
       if (event.type == "new") {
         const message = await decodeMessage(event.message);
 
+        events.emit({
+          type: "save",
+          chat: event.message,
+          message: {
+            ...message,
+            nonce: { server: event.message.nonce }
+          }
+        });
+
         // skip doubling of self-messages
         for (const current of messagesSnapshot()) {
           if ("server" in current.nonce && current.nonce.server == message.nonce.server) {
             return;
           }
         }
-        await messagesStorage.add({
-          ...message,
-          chatId: event.message.chatId,
-          nonce: event.message.nonce,
-          key: message.key
-        });
 
         events.emit({
           type: "new",

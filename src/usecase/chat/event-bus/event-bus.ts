@@ -1,8 +1,13 @@
 
 import {Flow} from "@/coroutines/flow.ts";
 import {Message} from "@/usecase/chat/message/message.ts";
+import {Chat} from "@/persistence/chat/chat.ts";
 
 export type ChatEvent = {
+  type: "save";
+  chat: Chat;
+  message: Message & { nonce: { server: number } };
+} | {
   type: "history";
   message: Message;
 } | {

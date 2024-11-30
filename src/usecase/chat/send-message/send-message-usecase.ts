@@ -99,15 +99,18 @@ export function createSendMessageUsecase(
       const response: SendMessageResponse = await socket.execute(request);
 
       if (response.status) {
+        const event: Message & { nonce: { server: number } } = {
+          ...message,
+          isSending: false,
+          nonce: { server: nonce },
+        };
+
         events.emit({
           type: "edit",
           nonce: message.nonce,
-          message: {
-            ...message,
-            isSending: false,
-            nonce: { server: nonce },
-          }
+          message: event
         });
+
         return;
       }
 
