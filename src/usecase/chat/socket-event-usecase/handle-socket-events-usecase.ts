@@ -1,9 +1,9 @@
-import {EventBus} from "@/usecase/chat/event-bus/event-bus.ts";
-import {SeedSocket} from "@/api/seed-socket.ts";
+import {EventBus} from "@/modules/chat/logic/event-bus.ts";
+import {SeedSocket} from "@/modules/socket/seed-socket.ts";
 import {DecodeMessageUsecase} from "@/usecase/chat/decode-messages-usecase/decode-message-usecase.ts";
-import {launch} from "@/coroutines/launch.ts";
+import {launch} from "@/modules/coroutines/launch.ts";
 import {MessagesSnapshotUsecase} from "@/usecase/chat/messages-snapshot-usecase/messages-snapshot-usecase.ts";
-import {MessageStorage} from "@/persistence/message/message-storage.ts";
+import {MessageStorage} from "@/modules/chat/persistence/message-storage.ts";
 
 export interface HandleSocketEventsUsecase {
   (): void;

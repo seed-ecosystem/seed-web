@@ -1,5 +1,5 @@
 import {SendTextMessageUsecase} from "@/usecase/chat/send-message/send-text-message-usecase.ts";
-import {Chat} from "@/persistence/chat/chat.ts";
+import {Chat} from "@/deprecated-persistence/chat/chat.ts";
 import {GetNicknameUsecase} from "@/usecase/chat/nickname/get-nickname-usecase.ts";
 import {SendMessageUsecase} from "@/usecase/chat/send-message/send-message-usecase.ts";
 

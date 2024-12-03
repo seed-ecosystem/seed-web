@@ -1,7 +1,7 @@
-import {EventBus} from "@/usecase/chat/event-bus/event-bus.ts";
-import {MessageStorage} from "@/persistence/message/message-storage.ts";
+import {EventBus} from "@/modules/chat/logic/event-bus.ts";
+import {MessageStorage} from "@/modules/chat/persistence/message-storage.ts";
 import {GetMessageKeyUsecase} from "@/usecase/chat/get-message-key-usecase/get-message-key-usecase.ts";
-import {launch} from "@/coroutines/launch.ts";
+import {launch} from "@/modules/coroutines/launch.ts";
 
 export interface SaveMessageUsecase {
   (): void;

@@ -1,5 +1,5 @@
 import {AppDependencies} from "@/components/AppDependencies.ts";
-import {ChatScreen} from "@/components/chat/ChatScreen.tsx";
+import {ChatContent} from "@/modules/chat/components/chat-content.tsx";
 import {ChatDependencies} from "@/components/chat/ChatDependencies.ts";
 
 export function App(
@@ -10,7 +10,7 @@ export function App(
 ) {
   return (
     <>
-      <ChatScreen {...chat}/>
+      <ChatContent {...chat}/>
     </>
   )
 }

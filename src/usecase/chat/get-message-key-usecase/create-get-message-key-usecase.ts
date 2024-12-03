@@ -1,7 +1,7 @@
 import {GetMessageKeyUsecase} from "@/usecase/chat/get-message-key-usecase/get-message-key-usecase.ts";
-import {Chat} from "@/persistence/chat/chat.ts";
-import {MessageCoder} from "@/crypto/message-coder.ts";
-import {MessageStorage} from "@/persistence/message/message-storage.ts";
+import {Chat} from "@/deprecated-persistence/chat/chat.ts";
+import {MessageCoder} from "@/modules/crypto/message-coder.ts";
+import {MessageStorage} from "@/modules/chat/persistence/message-storage.ts";
 
 export function createGetMessageKeyUsecase(
   { messageStorage, coder, chat }: {
@@ -14,11 +14,11 @@ export function createGetMessageKeyUsecase(
     const last = await messageStorage.lastMessage(chat);
 
     if (!last) {
-      throw new Error("Cannot get message key for chat that is not created");
+      throw new Error("Cannot get message-content key for chat that is not created");
     }
 
     // If cached nonce is AFTER target nonce and IT IS NOT CACHED
-    // we cannot go back with keys. Usually this means that message
+    // we cannot go back with keys. Usually this means that message-content
     // was sent before user has "joined" the chat
     if (last.nonce > nonce) {
       return;

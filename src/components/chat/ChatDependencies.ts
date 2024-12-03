@@ -1,9 +1,9 @@
 import {createChatEventBus} from "@/usecase/chat/event-bus/create-chat-event-bus.ts";
 import {AppDependencies} from "@/components/AppDependencies.ts";
-import {createMessageCoder} from "@/crypto/create-message-coder.ts";
+import {createMessageCoder} from "@/modules/crypto/logic/create-message-coder.ts";
 import {createGetMessageKeyUsecase} from "@/usecase/chat/get-message-key-usecase/create-get-message-key-usecase.ts";
-import {Chat} from "@/persistence/chat/chat.ts";
-import {EventBus} from "@/usecase/chat/event-bus/event-bus.ts";
+import {Chat} from "@/deprecated-persistence/chat/chat.ts";
+import {EventBus} from "@/modules/chat/logic/event-bus.ts";
 import {
   createSendTextMessageUsecase,
   SendTextMessageUsecase

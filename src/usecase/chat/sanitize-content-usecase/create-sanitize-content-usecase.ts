@@ -1,6 +1,6 @@
 import {SanitizeContentUsecase} from "@/usecase/chat/sanitize-content-usecase/sanitize-content-usecase.ts";
 import typia from "typia";
-import {MessageContent} from "@/crypto/message/content/message-content.ts";
+import {MessageContent} from "@/modules/crypto/message-content/message-content.ts";
 
 export function createSanitizeContentUsecase(): SanitizeContentUsecase {
   return (content) => {

@@ -1,9 +1,9 @@
-import {SeedSocket} from "@/api/seed-socket.ts";
-import {createServerSocket} from "@/api/create-server-socket.ts";
-import {Persistence} from "@/persistence/persistence.ts";
-import {createPersistence} from "@/persistence/create-persistence.ts";
+import {SeedSocket} from "@/modules/socket/seed-socket.ts";
+import {createServerSocket} from "@/modules/socket/create-server-socket.ts";
+import {Persistence} from "@/modules/umbrella/persistence/persistence.ts";
+import {createPersistence} from "@/deprecated-persistence/create-deprecated-persistence.ts";
 import {ChatDependencies, createChatDependencies} from "@/components/chat/ChatDependencies.ts";
-import {SubscribeRequest} from "@/api/request/subscribe-request.ts";
+import {SubscribeRequest} from "@/modules/socket/request/subscribe-request.ts";
 
 export interface AppDependencies {
   socket: SeedSocket;

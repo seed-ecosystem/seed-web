@@ -1,7 +1,7 @@
-import {Chat} from "@/persistence/chat/chat.ts";
-import {EventBus} from "@/usecase/chat/event-bus/event-bus.ts";
-import {MessageStorage} from "@/persistence/message/message-storage.ts";
-import {launch} from "@/coroutines/launch.ts";
+import {Chat} from "@/deprecated-persistence/chat/chat.ts";
+import {EventBus} from "@/modules/chat/logic/event-bus.ts";
+import {MessageStorage} from "@/modules/chat/persistence/message-storage.ts";
+import {launch} from "@/modules/coroutines/launch.ts";
 import {GetNicknameUsecase} from "@/usecase/chat/nickname/get-nickname-usecase.ts";
 
 export interface MessagesHistoryUsecase {

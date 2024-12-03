@@ -1,5 +1,5 @@
 import {MessagesSnapshotUsecase} from "@/usecase/chat/messages-snapshot-usecase/messages-snapshot-usecase.ts";
-import {EventBus} from "@/usecase/chat/event-bus/event-bus.ts";
+import {EventBus} from "@/modules/chat/logic/event-bus.ts";
 import {Message} from "@/usecase/chat/message/message.ts";
 
 export function createMessagesSnapshotUsecase(

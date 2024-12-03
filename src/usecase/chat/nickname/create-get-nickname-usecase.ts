@@ -1,7 +1,7 @@
 import {GetNicknameUsecase} from "@/usecase/chat/nickname/get-nickname-usecase.ts";
-import {EventBus} from "@/usecase/chat/event-bus/event-bus.ts";
-import {NicknameStorage} from "@/persistence/nickname/nickname-storage.ts";
-import {launch} from "@/coroutines/launch.ts";
+import {EventBus} from "@/modules/chat/logic/event-bus.ts";
+import {NicknameStorage} from "@/modules/chat/persistence/nickname-storage.ts";
+import {launch} from "@/modules/coroutines/launch.ts";
 import {MessagesSnapshotUsecase} from "@/usecase/chat/messages-snapshot-usecase/messages-snapshot-usecase.ts";
 
 export function createGetNicknameUsecase(

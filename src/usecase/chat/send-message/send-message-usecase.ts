@@ -1,15 +1,15 @@
-import {SeedSocket} from "@/api/seed-socket.ts";
+import {SeedSocket} from "@/modules/socket/seed-socket.ts";
 import {GetMessageKeyUsecase} from "@/usecase/chat/get-message-key-usecase/get-message-key-usecase.ts";
-import {MessageCoder} from "@/crypto/message-coder.ts";
-import {EventBus} from "@/usecase/chat/event-bus/event-bus.ts";
+import {MessageCoder} from "@/modules/crypto/message-coder.ts";
+import {EventBus} from "@/modules/chat/logic/event-bus.ts";
 import {LocalNonceUsecase} from "@/usecase/chat/nonce/local-nonce-usecase.ts";
 import {SanitizeContentUsecase} from "@/usecase/chat/sanitize-content-usecase/sanitize-content-usecase.ts";
-import {launch} from "@/coroutines/launch.ts";
-import {MessageContent} from "@/crypto/message/content/message-content.ts";
+import {launch} from "@/modules/coroutines/launch.ts";
+import {MessageContent} from "@/modules/crypto/message-content/message-content.ts";
 import {Message} from "@/usecase/chat/message/message.ts";
-import {Message as ApiMessage} from "@/api/message/message.ts";
-import {SendMessageRequest, SendMessageResponse} from "@/api/request/send-message-request.ts";
-import {Chat} from "@/persistence/chat/chat.ts";
+import {Message as ApiMessage} from "@/modules/socket/message/message.ts";
+import {SendMessageRequest, SendMessageResponse} from "@/modules/socket/request/send-message-request.ts";
+import {Chat} from "@/deprecated-persistence/chat/chat.ts";
 
 export interface SendMessageUsecase {
   (
@@ -76,7 +76,7 @@ export function createSendMessageUsecase(
     // in status field
     while (true) {
       const key = await getMessageKey(nonce);
-      if (!key) throw new Error("Can't get message key");
+      if (!key) throw new Error("Can't get message-content key");
 
       const {content, contentIV, signature} = await coder.encode({
         key: key,

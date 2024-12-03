@@ -1,6 +1,6 @@
 import {GetNicknameUsecase} from "@/usecase/chat/nickname/get-nickname-usecase.ts";
 import {SendMessageUsecase} from "@/usecase/chat/send-message/send-message-usecase.ts";
-import {EventBus} from "@/usecase/chat/event-bus/event-bus.ts";
+import {EventBus} from "@/modules/chat/logic/event-bus.ts";
 
 export interface SendTextMessageUsecase {
   (

@@ -1,7 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
-import {ChatScreen} from "@/components/chat/ChatScreen.tsx";
+import {ChatContent} from "@/modules/chat/components/chat-content.tsx";
 import {createAppDependencies} from "@/components/AppDependencies.ts";
 import {App} from "@/components/App.tsx";
 
