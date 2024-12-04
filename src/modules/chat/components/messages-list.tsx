@@ -18,8 +18,9 @@ export function MessagesList(
         hasMore={false}
         style={{display: 'flex', flexDirection: 'column-reverse'}}>
         {messages.map((message) => {
-          const variant = message.author ? 'sent' : 'received';
           if (message.content.type != "regular") return;
+
+          const variant = message.content.author ? 'sent' : 'received';
 
           const key = `${message.localNonce}`;
 

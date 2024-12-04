@@ -1,7 +1,9 @@
-import {flow, Flow, Subscription} from "@/modules/coroutines/flow.ts";
 import {Message} from "@/modules/chat/logic/message.ts";
 import {SeedSocket} from "@/modules/socket/seed-socket.ts";
 import {DecodeMessageUsecase} from "@/modules/chat/logic/decode-message-usecase.ts";
+import {launch} from "@/modules/coroutines/launch.ts";
+import {Cancellation, Channel, collectAsChannel, createChannel} from "@/modules/coroutines/channel.ts";
+import {MutableRefObject, RefObject} from "react";
 
 export type ChatEvent = {
   type: "new";
@@ -11,7 +13,7 @@ export type ChatEvent = {
 }
 
 export interface ChatEventsUsecase {
-  (): Flow<ChatEvent>
+  (options: {nicknameRef: RefObject<string>, localNonceRef: MutableRefObject<number>}): Channel<ChatEvent>
 }
 
 export function createChatEventsUsecase(
@@ -20,26 +22,38 @@ export function createChatEventsUsecase(
     decodeMessage: DecodeMessageUsecase;
   }
 ): ChatEventsUsecase {
-  return () => flow(collector => {
-    socket.events.collect(event => {
-      const accumulated: Message[] = [];
-      const loaded = false;
+  return ({nicknameRef, localNonceRef}) => {
+    const chatEvents = createChannel<ChatEvent>();
+    const socketEvents = collectAsChannel(socket.events);
 
-      switch (event.type) {
-        case "new":
-          const decoded = decodeMessage(event.message);
-          if (loaded) {
-            collector.emit({ type: "new", messages: [decoded] });
-          } else {
-            accumulated.push(decoded);
-          }
-          break;
-        case "wait":
-          collector.emit({ type: "new", messages: accumulated });
-          accumulated.splice(0, accumulated.length);
-          collector.emit({ type: "wait" });
-          break;
+    const accumulated: Message[] = [];
+    let loaded = false;
+
+    launch(async () => {
+      for await (const event of socketEvents) {
+        if (!chatEvents.isActive) break;
+
+        switch (event.type) {
+          case "new":
+            const decoded = await decodeMessage({message: event.message, nicknameRef, localNonceRef});
+            if (!decoded) throw new Error("Cannot decode message, so can't continue work");
+            if (loaded) {
+              chatEvents.send({type: "new", messages: [decoded]});
+            } else {
+              accumulated.unshift(decoded);
+            }
+            break;
+          case "wait":
+            chatEvents.send({type: "new", messages: [...accumulated]});
+            accumulated.splice(0, accumulated.length);
+            chatEvents.send({type: "wait"});
+            loaded = true;
+            break;
+        }
       }
+      socketEvents.close();
     });
-  });
+
+    return chatEvents;
+  };
 }

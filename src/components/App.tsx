@@ -1,16 +1,14 @@
-import {AppDependencies} from "@/components/AppDependencies.ts";
-import {ChatContent} from "@/modules/chat/components/chat-content.tsx";
-import {ChatDependencies} from "@/components/chat/ChatDependencies.ts";
+import {ChatLogic} from "@/modules/chat/logic/chat-logic.ts";
+import {ChatScreen} from "@/modules/chat/components/chat-screen.tsx";
 
 export function App(
-  {app, chat}: {
-    app: AppDependencies,
-    chat: ChatDependencies
+  {chat}: {
+    chat: ChatLogic
   }
 ) {
   return (
     <>
-      <ChatContent {...chat}/>
+      <ChatScreen {...chat}/>
     </>
   )
 }

@@ -10,4 +10,6 @@ export type MessageContent = {
   author: boolean;
   title: string;
   text: string;
-}
+} | {
+  type: "unknown";
+};

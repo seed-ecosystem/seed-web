@@ -1,4 +1,5 @@
-import {Flow, flowCollector, FlowCollector, Subscription} from "@/modules/coroutines/flow.ts";
+import {Flow, flowCollector, FlowCollector} from "@/modules/coroutines/flow.ts";
+import {Cancellation} from "@/modules/coroutines/channel.ts";
 
 export interface SharedFlow<T> extends Flow<T> {}
 
@@ -10,7 +11,7 @@ export function mutableSharedFlow<T>(): MutableSharedFlow<T> {
   const subscriptions: FlowCollector<T>[] = [];
 
   return {
-    collect(collector): Subscription {
+    collect(collector): Cancellation {
       if (!("emit" in collector)) {
         collector = flowCollector(collector);
       }

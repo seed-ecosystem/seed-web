@@ -1,3 +1,6 @@
+import {Cancellation} from "@/modules/coroutines/channel.ts";
+import {useEffect} from "react";
+
 export interface FlowCollector<T> {
   emit(event: T): void;
   cancel(): void;
@@ -14,12 +17,12 @@ export function flowCollector<T>(
 }
 
 export interface Flow<T> {
-  collect(collector: FlowCollector<T>): Subscription
-  collect(block: (event: T) => void): Subscription
+  collect(collector: FlowCollector<T>): Cancellation
+  collect(block: (event: T) => void): Cancellation
 }
 
 export function flow<T>(
-  block: (collector: FlowCollector<T>) => Subscription | void
+  block: (collector: FlowCollector<T>) => Cancellation | void
 ): Flow<T> {
   return {
     collect: (collector) => {
@@ -38,8 +41,4 @@ export function flow<T>(
       };
     }
   }
-}
-
-export interface Subscription {
-  cancel(): void;
 }
