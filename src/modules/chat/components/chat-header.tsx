@@ -18,7 +18,7 @@ export function ChatHeader({text, loaded, setText}: {
             ? <motion.div className="absolute left-0 right-0 m-auto" key="nickname" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
               <NicknameInput text={text} setText={setText}/>
             </motion.div>
-            : <motion.div className="absolute left-0 right-0" key="loader" exit={{y: -100, opacity: 0}}>
+            : <motion.div className="absolute left-0 right-0" key="loader" exit={{y: -10, opacity: 0}}>
               <Connecting/>
             </motion.div>
           }
