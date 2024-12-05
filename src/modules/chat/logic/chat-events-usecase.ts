@@ -13,7 +13,11 @@ export type ChatEvent = {
 }
 
 export interface ChatEventsUsecase {
-  (options: {nicknameRef: RefObject<string>, localNonceRef: MutableRefObject<number>}): Channel<ChatEvent>
+  (options: {
+    nicknameRef: RefObject<string>;
+    localNonceRef: MutableRefObject<number>;
+    serverNonceRef: MutableRefObject<number>;
+  }): Channel<ChatEvent>
 }
 
 export function createChatEventsUsecase(
@@ -22,7 +26,7 @@ export function createChatEventsUsecase(
     decodeMessage: DecodeMessageUsecase;
   }
 ): ChatEventsUsecase {
-  return ({nicknameRef, localNonceRef}) => {
+  return ({nicknameRef, localNonceRef, serverNonceRef}) => {
     const chatEvents = createChannel<ChatEvent>();
     const socketEvents = collectAsChannel(socket.events);
 
@@ -31,12 +35,17 @@ export function createChatEventsUsecase(
 
     launch(async () => {
       for await (const event of socketEvents) {
-        if (!chatEvents.isActive) break;
+        if (!chatEvents.isActive) {
+          socketEvents.close();
+          break;
+        }
 
         switch (event.type) {
           case "new":
             const decoded = await decodeMessage({message: event.message, nicknameRef, localNonceRef});
             if (!decoded) throw new Error("Cannot decode message, so can't continue work");
+            if (event.message.nonce <= serverNonceRef.current!) break;
+            serverNonceRef.current = event.message.nonce;
             if (loaded) {
               chatEvents.send({type: "new", messages: [decoded]});
             } else {

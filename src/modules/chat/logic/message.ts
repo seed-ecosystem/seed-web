@@ -1,5 +1,6 @@
 export interface Message {
   localNonce: number;
+  serverNonce: number | null;
   content: MessageContent;
   loading: boolean;
   failure: boolean;

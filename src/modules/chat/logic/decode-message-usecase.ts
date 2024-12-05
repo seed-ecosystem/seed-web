@@ -77,6 +77,7 @@ export function createDecodeMessageUsecase(
 
         resolve({
           localNonce: nonce,
+          serverNonce: message.nonce,
           content: content,
           loading: false,
           failure: false

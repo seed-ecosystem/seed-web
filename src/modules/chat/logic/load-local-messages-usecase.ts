@@ -8,7 +8,8 @@ import {IncrementLocalNonceUsecase} from "@/modules/chat/logic/increment-local-n
 export interface LoadLocalMessagesUsecase {
   (options: {
     nicknameRef: RefObject<string>,
-    localNonceRef: MutableRefObject<number>
+    localNonceRef: MutableRefObject<number>;
+    serverNonceRef: MutableRefObject<number>;
   }): Channel<Message[]>
 }
 
@@ -19,7 +20,7 @@ export function createLoadLocalMessagesUsecase(
     chatId: string,
   }
 ): LoadLocalMessagesUsecase {
-  return ({nicknameRef, localNonceRef}) => {
+  return ({nicknameRef, localNonceRef, serverNonceRef}) => {
     const channel = createChannel<Message[]>();
     launch(async () => {
       const persistenceMessages = await messageStorage.list({chatId})
@@ -28,8 +29,11 @@ export function createLoadLocalMessagesUsecase(
       for (const message of persistenceMessages) {
         if (message.content.type == "deferred") continue;
 
+        serverNonceRef.current = message.nonce > serverNonceRef.current! ? message.nonce : serverNonceRef.current;
+
         let common = {
           localNonce: incrementLocalNonce({localNonceRef}),
+          serverNonce: message.nonce,
           loading: false,
           failure: false
         }

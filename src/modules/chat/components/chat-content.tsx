@@ -2,7 +2,6 @@ import {ChatHeader} from "@/modules/chat/components/chat-header.tsx";
 import {MessagesList} from "@/modules/chat/components/messages-list.tsx";
 import {EmptyMessages} from "@/modules/chat/components/empty-messages.tsx";
 import {MessageInput} from "@/modules/chat/components/message-input.tsx";
-import {LoadingSpinner} from "@/modules/core/components/loading-spinner.tsx";
 import {Message} from "@/modules/chat/logic/message.ts";
 
 export function ChatContent(
@@ -23,11 +22,9 @@ export function ChatContent(
         <div className="w-full flex-grow flex justify-center">
           <div className="h-full flex-grow max-w-full md:max-w-3xl flex flex-col">
             {
-              loaded
-                ? messages.length == 0
-                  ? EmptyMessages()
-                  : <MessagesList messages={messages}/>
-                : LoadingMessages()
+              loaded && messages.length == 0
+                ? EmptyMessages()
+                : <MessagesList messages={messages} />
             }
 
             <MessageInput
@@ -40,15 +37,10 @@ export function ChatContent(
 
         <ChatHeader
           text={nickname}
-          setText={setNickname} />
+          setText={setNickname}
+          loaded={loaded}/>
 
       </div>
     </>
   )
-}
-
-function LoadingMessages() {
-  return <>
-    <div className="w-full h-full flex justify-center items-center"><LoadingSpinner/></div>
-  </>;
 }

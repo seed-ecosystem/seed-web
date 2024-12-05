@@ -1,18 +1,20 @@
-import {Flow} from "@/modules/coroutines/flow.ts";
 import {Message, MessageContent} from "@/modules/chat/logic/message.ts";
-import {Channel} from "@/modules/coroutines/channel.ts";
+import {Message as ApiMessage} from "@/modules/socket/message/message.ts";
 import {SeedSocket} from "@/modules/socket/seed-socket.ts";
-import {MessageStorage} from "@/modules/chat/persistence/message-storage.ts";
 import {MessageCoder} from "@/modules/crypto/message-coder.ts";
+import {IncrementLocalNonceUsecase} from "@/modules/chat/logic/increment-local-nonce-usecase.ts";
+import {SanitizeContentUsecase} from "@/modules/chat/logic/sanitize-content-usecase.ts";
+import {MutableRefObject} from "react";
+import {launch} from "@/modules/coroutines/launch.ts";
+import {NextMessageUsecase} from "@/modules/chat/logic/next-message-usecase.ts";
+import {SendMessageRequest, SendMessageResponse} from "@/modules/socket/request/send-message-request.ts";
+import {Channel, createChannel} from "@/modules/coroutines/channel.ts";
 
 export type SendMessageEvent = {
-  type: "sent";
+  type: "sending";
   message: Message;
 } | {
-  type: "delivered";
-  message: Message;
-} | {
-  type: "failed";
+  type: "update";
   message: Message;
 }
 
@@ -20,102 +22,102 @@ export interface SendMessageUsecase {
   (
     options: {
       content: MessageContent;
+      localNonceRef: MutableRefObject<number>;
+      serverNonceRef: MutableRefObject<number>;
     }
-  ): void;
+  ): Channel<SendMessageEvent>;
 }
 
 export function createSendMessageUsecase(
   {
-    socket, getMessageKey, coder, events,
-    localNonce, sanitizeContent, chat
+    socket, messageCoder,
+    incrementLocalNonce, nextMessage,
+    sanitizeContent, chatId
   }: {
     socket: SeedSocket;
-    getMessageKey: MessageStorage;
-    coder: MessageCoder;
-    localNonce: LocalNonceUsecase;
+    messageCoder: MessageCoder;
+    incrementLocalNonce: IncrementLocalNonceUsecase;
+    nextMessage: NextMessageUsecase;
     sanitizeContent: SanitizeContentUsecase;
-    chat: Chat;
+    chatId: string;
   }
 ): SendMessageUsecase {
+  return ({content, localNonceRef, serverNonceRef}) => {
+    const channel = createChannel<SendMessageEvent>();
 
-  return (options) => launch(async () => {
-    const content = sanitizeContent(options.content);
-    if (!content) return;
+    launch(async () => {
+      content = sanitizeContent(content);
 
-    const message: Message = {
-      nonce: {
-        local: localNonce.incrementAndGet()
-      },
-      isAuthor: true,
-      isSending: true,
-      isFailure: false,
-      content: content
-    };
+      const message: Message = {
+        localNonce: incrementLocalNonce({localNonceRef}),
+        serverNonce: null,
+        loading: true,
+        failure: false,
+        content: content
+      };
 
-    events.emit({
-      type: "new",
-      message: message
-    });
-
-    let ttl = 20;
-
-    // We can generate the same nonce simultaneously with some other user,
-    // and that's why we need to repeat our request everytime server returned 'false'
-    // in status field
-    while (true) {
-      const key = await getMessageKey(nonce);
-      if (!key) throw new Error("Can't get message-content key");
-
-      const {content, contentIV, signature} = await coder.encode({
-        key: key,
-        content: message.content,
+      channel.send({
+        type: "sending",
+        message: message,
       });
 
-      const encodedMessage: ApiMessage = {
-        ...chat,
-        content: content,
-        contentIV: contentIV,
-        nonce: nonce,
-        signature: signature,
-      };
+      let ttl = 20;
 
-      const request: SendMessageRequest = {
-        type: "send",
-        message: encodedMessage,
-      };
+      // We can generate the same nonce simultaneously with some other user,
+      // and that's why we need to repeat our request everytime server returned 'false'
+      // in status field
+      while (channel.isActive) {
+        const {nonce, key} = await nextMessage();
 
-      const response: SendMessageResponse = await socket.execute(request);
+        const {content, contentIV, signature} = await messageCoder.encode({
+          key: key,
+          content: message.content,
+        });
 
-      if (response.status) {
-        const event: Message & { nonce: { server: number } } = {
-          ...message,
-          isSending: false,
-          nonce: { server: nonce },
+        const encodedMessage: ApiMessage = {
+          chatId, content,
+          contentIV, nonce,
+          signature,
         };
 
-        events.emit({
-          type: "edit",
-          nonce: message.nonce,
-          message: event
-        });
+        const request: SendMessageRequest = {
+          type: "send",
+          message: encodedMessage,
+        };
 
-        return;
+        const response: SendMessageResponse = await socket.execute(request);
+
+        if (response.status) {
+          serverNonceRef.current = nonce;
+
+          channel.send({
+            type: "update",
+            message: {
+              ...message,
+              serverNonce: nonce,
+              loading: false,
+            }
+          });
+
+          return;
+        }
+
+        ttl--;
+
+        if (ttl < 0) {
+          channel.send({
+            type: "update",
+            message: {
+              ...message,
+              failure: true,
+              loading: false,
+            }
+          });
+          return;
+        }
       }
+    });
 
-      ttl--;
-
-      if (ttl < 0) {
-        events.emit({
-          type: "edit",
-          nonce: message.nonce,
-          message: {
-            ...message,
-            isFailure: true,
-            isSending: false,
-          }
-        });
-        return;
-      }
-    }
-  })
+    return channel;
+  };
 }

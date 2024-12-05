@@ -7,7 +7,9 @@ import {CircleX} from "lucide-react";
 import {Message} from "@/modules/chat/logic/message.ts";
 
 export function MessagesList(
-  {messages}: { messages: Message[]; }
+  {messages}: {
+    messages: Message[];
+  }
 ) {
   return <>
     <div className="flex flex-col-reverse flex-grow h-0 w-full overflow-y-scroll no-scrollbar" id="chatMessageListScroll">
@@ -32,7 +34,7 @@ export function MessagesList(
 
           return <ChatBubble variant={variant} key={key}>
             <ChatBubbleAvatar fallback={avatar}/>
-            <ChatBubbleMessage variant={variant}>
+            <ChatBubbleMessage style={{ wordWrap: "break-word" }} variant={variant}>
               <Label htmlFor="text">{message.content.title}</Label>
               <p id="text">{message.content.text}</p>
             </ChatBubbleMessage>
