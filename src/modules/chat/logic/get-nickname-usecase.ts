@@ -13,11 +13,7 @@ export function createGetNicknameUsecase(
   return () => {
     const channel = createChannel<string>();
     nicknameStorage.getName().then(name => {
-      if (name && name.length > 0) {
-        channel.send(name);
-      } else {
-        channel.send("Anonymous");
-      }
+      channel.send(name ?? "");
     });
     return channel;
   };

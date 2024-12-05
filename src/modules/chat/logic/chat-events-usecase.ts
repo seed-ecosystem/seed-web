@@ -10,6 +10,8 @@ export type ChatEvent = {
   messages: Message[];
 } | {
   type: "wait";
+} | {
+  type: "close";
 }
 
 export interface ChatEventsUsecase {
@@ -43,8 +45,10 @@ export function createChatEventsUsecase(
         switch (event.type) {
           case "new":
             const decoded = await decodeMessage({message: event.message, nicknameRef, localNonceRef});
-            if (!decoded) throw new Error("Cannot decode message, so can't continue work");
             if (event.message.nonce <= serverNonceRef.current!) break;
+            if (!decoded) {
+              throw new Error("Cannot decode message, so can't continue work " + event.message.nonce + " " + serverNonceRef.current);
+            }
             serverNonceRef.current = event.message.nonce;
             if (loaded) {
               chatEvents.send({type: "new", messages: [decoded]});

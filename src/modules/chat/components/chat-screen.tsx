@@ -1,5 +1,5 @@
 import {ChatLogic} from "@/modules/chat/logic/chat-logic.ts";
-import {useRef, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import {ChatContent} from "@/modules/chat/components/chat-content.tsx";
 import {Message} from "@/modules/chat/logic/message.ts";
 import {useEach} from "@/modules/coroutines/channel.ts";
@@ -27,7 +27,11 @@ export function ChatScreen(
 
   const [nickname, setNickname] = useState("");
   const nicknameRef = useRef(nickname);
-  nicknameRef.current = nickname;
+
+  useEffect(() => {
+    nicknameRef.current = nickname.trim().length == 0 ? "Anonymous" : nickname;
+  }, [nickname]);
+
 
   useEach(getNickname, async nickname => setNickname(nickname));
 
@@ -38,6 +42,9 @@ export function ChatScreen(
         break;
       case "wait":
         setLoaded(true);
+        break;
+      case "close":
+        setLoaded(false);
         break;
     }
   });
@@ -56,7 +63,7 @@ export function ChatScreen(
     nickname: nickname,
     setNickname(text) {
       setNickname(text);
-      setMessages(messages => changeNickname(text, messages));
+      setMessages(messages => changeNickname(nicknameRef.current, messages));
     },
     sendMessage() {
       setText("");
