@@ -40,7 +40,6 @@ export function ChatScreen(
   useEach(() => chatEvents({nicknameRef, localNonceRef, serverNonceRef}), async event => {
     switch (event.type) {
       case "new":
-        console.log("PENIS", event.messages);
         setMessages(messages => [...event.messages, ...messages]);
         break;
       case "wait":
