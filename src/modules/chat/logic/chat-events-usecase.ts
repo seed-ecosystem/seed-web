@@ -62,6 +62,9 @@ export function createChatEventsUsecase(
             chatEvents.send({type: "wait"});
             loaded = true;
             break;
+          case "close":
+            chatEvents.send({type: "close"});
+            break;
         }
       }
       socketEvents.close();

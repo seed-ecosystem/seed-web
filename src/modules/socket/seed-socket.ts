@@ -54,6 +54,12 @@ export function createServerSocket(url: string): SeedSocket {
 
   let ws: WebSocket;
 
+  const onclose = (e: Event | null) => {
+    console.log("<< ws: onclose", e);
+    events.emit({type: "close"});
+    setTimeout(setupWebsocket, 1_000);
+  };
+
   function setupWebsocket() {
     ws = new WebSocket(url);
 
@@ -80,10 +86,7 @@ export function createServerSocket(url: string): SeedSocket {
       }
     };
 
-    ws.onclose = (e) => {
-      console.error("<< ws: onclose", e);
-      setTimeout(setupWebsocket, 1_000);
-    };
+    ws.onclose = onclose;
 
     ws.onmessage = (message) => {
       const event = JSON.parse(message.data);
@@ -103,6 +106,12 @@ export function createServerSocket(url: string): SeedSocket {
       }
     };
   }
+
+  window.addEventListener("offline", () => {
+    ws.onclose = () => {};
+    ws.close();
+    onclose(null);
+  });
 
   setupWebsocket();
 

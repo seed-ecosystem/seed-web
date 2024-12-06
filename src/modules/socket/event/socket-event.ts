@@ -6,4 +6,6 @@ export type SocketEvent = {
 } | {
   type: "wait";
   chatId: string;
+} | {
+  type: "close";
 };

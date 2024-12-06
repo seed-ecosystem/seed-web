@@ -1,10 +1,8 @@
 import {ChatLogic} from "@/modules/chat/logic/chat-logic.ts";
-import {useEffect, useRef, useState} from "react";
+import {useRef, useState} from "react";
 import {ChatContent} from "@/modules/chat/components/chat-content.tsx";
 import {Message} from "@/modules/chat/logic/message.ts";
 import {useEach} from "@/modules/coroutines/channel.ts";
-import {Simulate} from "react-dom/test-utils";
-import loadedData = Simulate.loadedData;
 
 export function ChatScreen(
   {changeNickname, getNickname, sendTextMessage, chatEvents, loadLocalMessages}: ChatLogic
@@ -27,13 +25,13 @@ export function ChatScreen(
   const [loaded, setLoaded] = useState(false);
   const [text, setText] = useState("");
 
-  const [nickname, setNickname] = useState("");
+  const [nickname, setNicknameState] = useState("");
   const nicknameRef = useRef(nickname);
 
-  useEffect(() => {
-    nicknameRef.current = nickname.trim().length == 0 ? "Anonymous" : nickname;
-  }, [nickname]);
-
+  function setNickname(value: string) {
+    setNicknameState(value);
+    nicknameRef.current = value.trim().length == 0 ? "Anonymous" : value.trim();
+  }
 
   useEach(getNickname, async nickname => setNickname(nickname));
 
