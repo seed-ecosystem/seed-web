@@ -12,8 +12,8 @@ export function createSanitizeContentUsecase(): SanitizeContentUsecase {
 
       return {
         ...content,
-        text: text,
-        title: title,
+        text: text.trim(),
+        title: title.trim(),
       };
     }
 

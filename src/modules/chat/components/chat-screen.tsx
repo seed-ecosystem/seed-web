@@ -3,6 +3,8 @@ import {useEffect, useRef, useState} from "react";
 import {ChatContent} from "@/modules/chat/components/chat-content.tsx";
 import {Message} from "@/modules/chat/logic/message.ts";
 import {useEach} from "@/modules/coroutines/channel.ts";
+import {Simulate} from "react-dom/test-utils";
+import loadedData = Simulate.loadedData;
 
 export function ChatScreen(
   {changeNickname, getNickname, sendTextMessage, chatEvents, loadLocalMessages}: ChatLogic
@@ -38,6 +40,7 @@ export function ChatScreen(
   useEach(() => chatEvents({nicknameRef, localNonceRef, serverNonceRef}), async event => {
     switch (event.type) {
       case "new":
+        console.log("PENIS", event.messages);
         setMessages(messages => [...event.messages, ...messages]);
         break;
       case "wait":

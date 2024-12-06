@@ -107,8 +107,9 @@ const ChatBubbleMessage = React.forwardRef<
     <div
       className={cn(
         chatBubbleMessageVariants({ variant, layout, className }),
-        "overflow-hidden text-ellipsis",
+        "overflow-hidden text-ellipsis whitespace-pre-wrap",
       )}
+      style={{ wordWrap: "break-word" }}
       ref={ref}
       {...props}
     >

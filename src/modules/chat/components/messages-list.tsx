@@ -34,7 +34,7 @@ export function MessagesList(
 
           return <ChatBubble variant={variant} key={key}>
             <ChatBubbleAvatar fallback={avatar}/>
-            <ChatBubbleMessage style={{ wordWrap: "break-word" }} variant={variant}>
+            <ChatBubbleMessage variant={variant}>
               <Label htmlFor="text">{message.content.title}</Label>
               <p id="text">{message.content.text}</p>
             </ChatBubbleMessage>
