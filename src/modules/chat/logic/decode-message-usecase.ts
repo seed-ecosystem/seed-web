@@ -37,15 +37,20 @@ export function createDecodeMessageUsecase(
     for await (const {message, nicknameRef, localNonceRef, resolve, reject} of channel) {
       try {
         const lastMessage = await messageStorage.lastMessage({chatId});
-        const {nonce: expectedNonce, key: messageKey} = await nextMessage();
+        let {nonce: expectedNonce, key: messageKey} = await nextMessage();
 
         if (!lastMessage) {
           resolve(undefined);
           continue;
         }
-        if (expectedNonce != message.nonce) {
+        if (expectedNonce > message.nonce) {
           resolve(undefined);
           continue;
+        }
+
+        while (expectedNonce != message.nonce) {
+          messageKey = await messageCoder.deriveNextKey(messageKey);
+          expectedNonce++;
         }
 
         let decoded = await messageCoder.decode({...message, key: messageKey});

@@ -8,7 +8,7 @@ import {SocketMessage} from "@/modules/socket/event/socket-message.ts";
 
 export interface SeedSocket {
   events: Flow<SocketEvent>
-  
+
   /**
    * This request is executed once after the invocation and
    * then will re invoke it every time you reconnect.
@@ -23,7 +23,7 @@ export interface SeedSocket {
    * or throws an exception otherwise.
    */
   unbind(request: SocketRequest<unknown>): void;
-  
+
   execute<T>(request: SocketRequest<T>): Promise<T>;
 }
 
@@ -31,6 +31,9 @@ interface QueuedRequest<T = unknown> {
   request: SocketRequest<T>
   resolve: (data: T) => void;
 }
+
+const PING_TIMEOUT = 15_000;
+const RECONNECT_TIMEOUT = 15_000;
 
 export function createServerSocket(url: string): SeedSocket {
   const boundRequests: SocketRequest<unknown>[] = [];
@@ -53,11 +56,14 @@ export function createServerSocket(url: string): SeedSocket {
   }
 
   let ws: WebSocket;
+  let intervalId: number | undefined;
 
   const onclose = (e: Event | null) => {
+    clearInterval(intervalId);
+    intervalId = undefined;
     console.log("<< ws: onclose", e);
     events.emit({type: "close"});
-    setTimeout(setupWebsocket, 1_000);
+    setTimeout(setupWebsocket, RECONNECT_TIMEOUT);
   };
 
   function setupWebsocket() {
@@ -65,6 +71,18 @@ export function createServerSocket(url: string): SeedSocket {
 
     ws.onopen = () => {
       console.log("<< ws: onopen");
+
+      intervalId = window.setInterval(
+        () => {
+          console.log("<< ws: ping");
+          queuedRequests.push({
+            request: { type: "ping" },
+            resolve(data: unknown): void {}
+          });
+          ws.send(JSON.stringify({type: "ping"}));
+        },
+        PING_TIMEOUT
+      );
 
       // Cleanup queued bound requests
 

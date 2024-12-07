@@ -47,7 +47,8 @@ export function createChatEventsUsecase(
             const decoded = await decodeMessage({message: event.message, nicknameRef, localNonceRef});
             if (event.message.nonce <= serverNonceRef.current!) break;
             if (!decoded) {
-              throw new Error("Cannot decode message, so can't continue work " + event.message.nonce + " " + serverNonceRef.current);
+              console.error("Cannot decode message, so can't continue work " + event.message.nonce + " " + serverNonceRef.current, '\n', event);
+              break;
             }
             serverNonceRef.current = event.message.nonce;
             if (loaded) {
