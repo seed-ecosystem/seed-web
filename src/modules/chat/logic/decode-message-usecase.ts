@@ -88,7 +88,6 @@ export function createDecodeMessageUsecase(
           failure: false
         });
       } catch (error) {
-        console.log("ERR", error);
         reject(error);
       }
     }
