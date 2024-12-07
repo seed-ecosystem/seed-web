@@ -33,7 +33,7 @@ interface QueuedRequest<T = unknown> {
 }
 
 const PING_TIMEOUT = 15_000;
-const RECONNECT_TIMEOUT = 15_000;
+const RECONNECT_TIMEOUT = 1_000;
 
 export function createServerSocket(url: string): SeedSocket {
   const boundRequests: SocketRequest<unknown>[] = [];
@@ -64,6 +64,13 @@ export function createServerSocket(url: string): SeedSocket {
     console.log("<< ws: onclose", e);
     events.emit({type: "close"});
     setTimeout(setupWebsocket, RECONNECT_TIMEOUT);
+  };
+
+  window.onpageshow = () => {
+    if (ws.readyState == WebSocket.CONNECTING) {
+      console.log("<< ws: reconnecting");
+      ws.close();
+    }
   };
 
   function setupWebsocket() {
