@@ -26,8 +26,18 @@ export function MessagesList(
 
           const key = `${message.localNonce}`;
 
-          const titleWords: string[] = message.content.title.split(" ");
+          const alphanumeric = message.content.title.replace(/[^\p{L}\d\s]/gu, '')
+
+          const titleWords: string[] = [];
+
+          if (alphanumeric.trim().length == 0) {
+            titleWords.push(...message.content.title);
+          } else {
+            titleWords.push(...alphanumeric.split(" "));
+          }
+
           const avatar = titleWords
+            .slice(0, 3)
             .filter((word) => word.length > 0)
             .map((word) => word[0].toUpperCase())
             .join("");
