@@ -65,6 +65,7 @@ export function createChatEventsUsecase(
             break;
           case "close":
             chatEvents.send({type: "close"});
+            loaded = false;
             break;
         }
       }

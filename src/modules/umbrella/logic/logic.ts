@@ -9,6 +9,7 @@ import {createNextMessageUsecase} from "@/modules/chat/logic/next-message-usecas
 export interface Logic {
   socket: SeedSocket;
   persistence: Persistence;
+
   createChat(): ChatLogic
 }
 
@@ -32,12 +33,13 @@ export async function createLogic(): Promise<Logic> {
 
   const nextMessage = createNextMessageUsecase({messageStorage: persistence.message, messageCoder, chatId});
 
-  // todo: remove bind and make init instead
   socket.bind({
     type: "subscribe",
-    chatId,
-    ...await nextMessage()
-  } as SubscribeRequest);
+    async prepare(){
+      const {nonce} = await nextMessage();
+      return {chatId, nonce} as SubscribeRequest;
+    }
+  });
 
   const incrementLocalNonce = createIncrementLocalNonceUsecase();
 

@@ -5,6 +5,7 @@ import {mutableSharedFlow, MutableSharedFlow} from "@/modules/coroutines/shared-
 import {launch} from "@/modules/coroutines/launch.ts";
 import typia from "typia";
 import {SocketMessage} from "@/modules/socket/event/socket-message.ts";
+import {BindRequest} from "@/modules/socket/request/bind-request.ts";
 
 export interface SeedSocket {
   events: Flow<SocketEvent>
@@ -12,10 +13,9 @@ export interface SeedSocket {
   /**
    * This request is executed once after the invocation and
    * then will re invoke it every time you reconnect.
-   * Unless you call [stop].
+   * Unless you call [unbind].
    */
-  // todo: make bind a lambda
-  bind(request: SocketRequest<unknown>): void;
+  bind(block: BindRequest): void;
 
   /**
    * Removes [request] from queue that is being run on
@@ -28,7 +28,8 @@ export interface SeedSocket {
 }
 
 interface QueuedRequest<T = unknown> {
-  request: SocketRequest<T>
+  request: SocketRequest<T>;
+  relaunch: boolean;
   resolve: (data: T) => void;
 }
 
@@ -36,14 +37,15 @@ const PING_TIMEOUT = 15_000;
 const RECONNECT_TIMEOUT = 1_000;
 
 export function createServerSocket(url: string): SeedSocket {
-  const boundRequests: SocketRequest<unknown>[] = [];
+  const boundRequests: BindRequest[] = [];
   let queuedRequests: QueuedRequest[] = [];
   const events: MutableSharedFlow<SocketEvent> = mutableSharedFlow();
 
-  function execute<T>(request: SocketRequest<T>) {
+  function execute<T>({request, relaunch}: {request: SocketRequest<T>, relaunch: boolean}) {
     return new Promise<T>((resolve) => {
       queuedRequests.push({
-        request: request,
+        request,
+        relaunch,
         resolve(data: unknown): void {
           resolve(data as T);
         }
@@ -66,13 +68,6 @@ export function createServerSocket(url: string): SeedSocket {
     setTimeout(setupWebsocket, RECONNECT_TIMEOUT);
   };
 
-  window.onpageshow = () => {
-    if (ws.readyState == WebSocket.CONNECTING) {
-      console.log("<< ws: reconnecting");
-      ws.close();
-    }
-  };
-
   function setupWebsocket() {
     ws = new WebSocket(url);
 
@@ -84,7 +79,8 @@ export function createServerSocket(url: string): SeedSocket {
           console.log("<< ws: ping");
           queuedRequests.push({
             request: { type: "ping" },
-            resolve(data: unknown): void {}
+            relaunch: false,
+            resolve(): void {}
           });
           ws.send(JSON.stringify({type: "ping"}));
         },
@@ -93,9 +89,7 @@ export function createServerSocket(url: string): SeedSocket {
 
       // Cleanup queued bound requests
 
-      queuedRequests = queuedRequests.filter(
-        ({request}) => !boundRequests.includes(request)
-      );
+      queuedRequests = queuedRequests.filter(({relaunch}) => relaunch);
 
       for (const {request} of queuedRequests) {
         try {
@@ -107,7 +101,13 @@ export function createServerSocket(url: string): SeedSocket {
       }
 
       for (const request of boundRequests) {
-        launch(() => execute(request));
+        launch(async () => {
+          const prepared = {
+            ...await request.prepare(),
+            type: request.type
+          };
+          await execute({request: prepared, relaunch: false});
+        });
       }
     };
 
@@ -138,24 +138,38 @@ export function createServerSocket(url: string): SeedSocket {
     onclose(null);
   });
 
+  window.onpageshow = () => {
+    if (ws.readyState == WebSocket.CONNECTING) {
+      console.log("<< ws: reconnecting");
+      ws.close();
+    }
+  };
+
   setupWebsocket();
 
   return {
     events: events,
 
-    bind(request: SocketRequest<unknown>) {
-      console.log(">> ws: bind", request);
+    bind(request: BindRequest) {
       boundRequests.push(request);
       launch(async () => {
-        await this.execute(request);
+        const prepared = {
+          ...await request.prepare(),
+          type: request.type
+        }
+        console.log(">> ws: bind", prepared);
+        await execute({request: prepared, relaunch: false});
       });
     },
 
-    unbind(request: SocketRequest<unknown>) {
-      console.log(">> ws: unbind", request);
-      boundRequests.splice(boundRequests.indexOf(request), 1);
+    unbind({type}: {type: string}) {
+      console.log(">> ws: unbind", type);
+      const index = boundRequests.findIndex(request => request.type == type)
+      boundRequests.splice(index, 1);
     },
 
-    execute
+    execute(request) {
+      return execute({request, relaunch: true});
+    }
   }
 }
