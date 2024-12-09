@@ -25,16 +25,18 @@ export interface ChatLogic {
 
 export function createChatLogic(
   {
-    nickname: nicknameStorage,
-    message: messageStorage,
-    socket, messageCoder, chatId, incrementLocalNonce,
-  }: Persistence & {
+    persistence, socket, messageCoder,
+    chatId, incrementLocalNonce,
+  }: {
+    persistence: Persistence;
     socket: SeedSocket;
     messageCoder: MessageCoder;
     chatId: string;
     incrementLocalNonce: IncrementLocalNonceUsecase;
   },
 ): ChatLogic {
+  const {message: messageStorage, nickname: nicknameStorage} = persistence;
+
   const nextMessage = createNextMessageUsecase({messageStorage, messageCoder, chatId});
   const sanitizeContent = createSanitizeContentUsecase();
 

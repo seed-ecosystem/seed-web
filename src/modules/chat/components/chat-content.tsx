@@ -2,23 +2,14 @@ import {ChatHeader} from "@/modules/chat/components/chat-header.tsx";
 import {MessagesList} from "@/modules/chat/components/messages-list.tsx";
 import {EmptyMessages} from "@/modules/chat/components/empty-messages.tsx";
 import {MessageInput} from "@/modules/chat/components/message-input.tsx";
-import {Message} from "@/modules/chat/logic/message.ts";
+import {ChatProps} from "@/modules/chat/components/chat-props.ts";
 
 export function ChatContent(
-  {loaded, messages, text, setText, nickname, setNickname, sendMessage}: {
-    loaded: boolean;
-    messages: Message[];
-    text: string;
-    setText: (value: string) => void;
-    nickname: string;
-    setNickname: (value: string) => void;
-    sendMessage: () => void;
-  }
+  {loaded, messages, text, setText, nickname, setNickname, sendMessage}: ChatProps
 ) {
-
   return (
     <>
-      <div className="h-svh w-screen overflow-hidden flex flex-col">
+      <div className="h-full w-screen overflow-hidden flex flex-col">
         <div className="w-full flex-grow flex justify-center">
           <div className="h-full flex-grow max-w-full md:max-w-3xl flex flex-col">
             {
