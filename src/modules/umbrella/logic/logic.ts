@@ -5,7 +5,7 @@ import {SubscribeRequest} from "@/modules/socket/request/subscribe-request.ts";
 import {createMessageCoder} from "@/modules/crypto/message-coder.ts";
 import {createIncrementLocalNonceUsecase} from "@/modules/chat/logic/increment-local-nonce-usecase.ts";
 import {createNextMessageUsecase} from "@/modules/chat/logic/next-message-usecase.ts";
-import {ChatListLogic, createChatListLogic} from "@/modules/chat-list/logic/chat-list-logic.ts";
+import {MainLogic, createMainLogic} from "@/modules/main/logic/main-logic.ts";
 import {OptionPredicator} from "typia/lib/programmers/helpers/OptionPredicator";
 import undefined = OptionPredicator.undefined;
 
@@ -13,7 +13,7 @@ export interface Logic {
   socket: SeedSocket;
   persistence: Persistence;
 
-  createChatList(): ChatListLogic;
+  createChatList(): MainLogic;
 }
 
 export async function createLogic(): Promise<Logic> {
@@ -50,8 +50,8 @@ export async function createLogic(): Promise<Logic> {
   const app: Logic = {
     socket: socket,
     persistence: persistence,
-    createChatList(): ChatListLogic {
-      return createChatListLogic({persistence, socket, messageCoder, chatId, incrementLocalNonce});
+    createChatList(): MainLogic {
+      return createMainLogic({persistence, socket, messageCoder, chatId, incrementLocalNonce});
     }
   };
 

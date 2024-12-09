@@ -10,7 +10,7 @@ export function ChatHeader({text, loaded, setText}: {
   setText: (text: string) => void;
 }) {
   return (
-    <div className="flex fixed h-14 w-full border-b border-border/40 bg-background/95 items-center px-4">
+    <div className="flex absolute h-14 w-full border-b border-border/40 bg-background/95 items-center px-4">
       <h1 className="text-2xl font-medium">Seed</h1>
       <div className="flex h-full justify-center items-center flex-1 mx-4 relative">
         <AnimatePresence>

@@ -9,9 +9,9 @@ export function ChatContent(
 ) {
   return (
     <>
-      <div className="h-full w-screen overflow-hidden flex flex-col">
+      <div className="h-full w-full overflow-hidden flex flex-col relative">
         <div className="w-full flex-grow flex justify-center">
-          <div className="h-full flex-grow max-w-full md:max-w-3xl flex flex-col">
+          <div className="h-full flex-grow max-w-full lg:max-w-3xl flex flex-col">
             {
               loaded && messages.length == 0
                 ? EmptyMessages()
