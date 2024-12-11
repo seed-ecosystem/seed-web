@@ -5,6 +5,7 @@ import {Label} from "@/modules/core/components/label.tsx";
 import {LoadingSpinner} from "@/modules/core/components/loading-spinner.tsx";
 import {CircleX} from "lucide-react";
 import {Message} from "@/modules/chat/logic/message.ts";
+import {convertTitleToAvatar} from "@/convert-title-to-avatar.ts";
 
 export function MessagesList(
   {messages}: {
@@ -26,24 +27,8 @@ export function MessagesList(
 
           const key = `${message.localNonce}`;
 
-          const alphanumeric = message.content.title.replace(/[^\p{L}\d\s]/gu, '')
-
-          const titleWords: string[] = [];
-
-          if (alphanumeric.trim().length == 0) {
-            titleWords.push(...message.content.title);
-          } else {
-            titleWords.push(...alphanumeric.split(" "));
-          }
-
-          const avatar = titleWords
-            .slice(0, 3)
-            .filter((word) => word.length > 0)
-            .map((word) => word[0].toUpperCase())
-            .join("");
-
           return <ChatBubble variant={variant} key={key}>
-            <ChatBubbleAvatar fallback={avatar}/>
+            <ChatBubbleAvatar fallback={convertTitleToAvatar(message.content.title)}/>
             <ChatBubbleMessage variant={variant}>
               <Label htmlFor="text">{message.content.title}</Label>
               <p id="text">{message.content.text}</p>

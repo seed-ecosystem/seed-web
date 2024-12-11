@@ -20,7 +20,7 @@ export function createMainLogic(
   }
 ): MainLogic {
   return {
-    chatListLogic: createChatListLogic(),
+    chatListLogic: createChatListLogic({persistence}),
     createChat(): ChatLogic {
       return createChatLogic({
         persistence, socket, messageCoder, chatId, incrementLocalNonce

@@ -55,6 +55,7 @@ export function createLoadLocalMessagesUsecase(
       }
 
       channel.send(result);
+      channel.close();
     });
     return channel;
   };

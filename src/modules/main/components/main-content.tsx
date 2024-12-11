@@ -1,22 +1,33 @@
 import {MediaHiddenMD, MediaVisibleMD} from "@/modules/responsive/media-query.tsx";
-import {ChatContent} from "@/modules/chat/components/chat-content.tsx";
-import {MainProps} from "@/modules/main/components/main-props.ts";
-import {ChatListContent} from "@/modules/chat-list/components/chat-list-content.tsx";
+import {ReactElement} from "react";
 
-export function MainContent({chatProps, chatListProps}: MainProps) {
+export interface MainProps {
+  ChatListScreen: () => ReactElement;
+  ChatScreen?: () => ReactElement;
+}
+
+export function MainContent({ChatListScreen, ChatScreen}: MainProps) {
   return <div className="h-svh">
 
     <MediaHiddenMD>
-      {chatProps ? <ChatContent {...chatProps} /> : (<ChatListContent {...chatListProps} />)}
+      {ChatScreen ? <ChatScreen /> : (<ChatListScreen />)}
     </MediaHiddenMD>
 
     <MediaVisibleMD>
       <div className="h-svh flex">
-        <ChatListContent {...chatListProps} />
-        <div className="flex-grow min-w-0 relative">
-          {chatProps ? <ChatContent {...chatProps} /> : <></>}
+        <ChatListScreen />
+        <div className="flex-1 min-w-0 relative">
+          {ChatScreen ? <ChatScreen /> : NoChatsContent()}
         </div>
       </div>
     </MediaVisibleMD>
   </div>;
+}
+
+function NoChatsContent() {
+  return <>
+    <div className="w-full h-full flex justify-center items-center">
+      <h1 className="text-xl text-muted-foreground">Select a Chat</h1>
+    </div>
+  </>;
 }

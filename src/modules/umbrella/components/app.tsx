@@ -1,11 +1,9 @@
 import {Logic} from "@/modules/umbrella/logic/logic.ts";
 import {useMemo} from "react";
-import {useMainProps} from "@/modules/main/components/main-props.ts";
-import {MainContent} from "@/modules/main/components/main-content.tsx";
+import {MainScreen} from "@/modules/main/components/main-screen.ts";
 
 export function App({logic}: {logic: Logic}) {
-  const chatListLogic = useMemo(() => logic.createChatList(), [logic]);
-  const mainProps = useMainProps(chatListLogic);
+  const mainLogic = useMemo(() => logic.createMainLogic(), [logic]);
 
-  return <MainContent {...mainProps} />;
+  return <MainScreen {...mainLogic} />;
 }

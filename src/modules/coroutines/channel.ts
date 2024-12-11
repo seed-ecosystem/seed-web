@@ -32,6 +32,20 @@ interface Receive<T> {
   resolve: (value: T | null) => void;
 }
 
+export function launchChannel<T>(
+  block: (channel: Channel<T>) => Promise<void>,
+  autoClose: boolean = true,
+): Channel<T> {
+  const channel = createChannel<T>();
+  launch(async () => {
+    await block(channel);
+    if (autoClose) {
+      channel.close();
+    }
+  });
+  return channel;
+}
+
 export function createChannel<T>(): Channel<T> {
   const send: Send<T>[] = [];
   const receive: Receive<T>[] = [];
@@ -92,6 +106,7 @@ export function createChannel<T>(): Channel<T> {
     },
 
     close(): void {
+      if (closed) return;
       closed = true;
       for (const element of receive) {
         element.resolve(null);

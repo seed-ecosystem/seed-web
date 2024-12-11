@@ -7,13 +7,12 @@ import {createIncrementLocalNonceUsecase} from "@/modules/chat/logic/increment-l
 import {createNextMessageUsecase} from "@/modules/chat/logic/next-message-usecase.ts";
 import {MainLogic, createMainLogic} from "@/modules/main/logic/main-logic.ts";
 import {OptionPredicator} from "typia/lib/programmers/helpers/OptionPredicator";
-import undefined = OptionPredicator.undefined;
 
 export interface Logic {
   socket: SeedSocket;
   persistence: Persistence;
 
-  createChatList(): MainLogic;
+  createMainLogic(): MainLogic;
 }
 
 export async function createLogic(): Promise<Logic> {
@@ -34,6 +33,14 @@ export async function createLogic(): Promise<Logic> {
     });
   }
 
+  if ((await persistence.chat.list()).length == 0) {
+    await persistence.chat.add({
+      id: chatId,
+      key: key,
+      title: "Beta Chat"
+    });
+  }
+
   const nextMessage = createNextMessageUsecase({messageStorage: persistence.message, messageCoder, chatId});
 
   socket.bind({
@@ -50,7 +57,7 @@ export async function createLogic(): Promise<Logic> {
   const app: Logic = {
     socket: socket,
     persistence: persistence,
-    createChatList(): MainLogic {
+    createMainLogic(): MainLogic {
       return createMainLogic({persistence, socket, messageCoder, chatId, incrementLocalNonce});
     }
   };

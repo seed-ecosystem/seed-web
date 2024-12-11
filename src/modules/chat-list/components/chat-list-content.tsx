@@ -1,10 +1,15 @@
-import {ChatListProps} from "@/modules/chat-list/components/chat-list-props.ts";
 import {MoreHorizontal, SquarePen} from "lucide-react";
 import {Link} from "wouter";
 import {cn} from "@/lib/utils.ts";
 import {buttonVariants} from "@/modules/core/components/button.tsx";
-import {Avatar, AvatarImage} from "@/modules/core/components/avatar.tsx";
-import {RegularContent} from "@/modules/crypto/message-content/regular-content.ts";
+import {Avatar, AvatarFallback, AvatarImage} from "@/modules/core/components/avatar.tsx";
+import {convertTitleToAvatar} from "@/convert-title-to-avatar.ts";
+import {Chat} from "@/modules/chat-list/logic/chat.ts";
+
+export interface ChatListProps {
+  chats: Chat[];
+  onClick?: () => void;
+}
 
 export function ChatListContent({chats}: ChatListProps) {
   return (
@@ -14,7 +19,7 @@ export function ChatListContent({chats}: ChatListProps) {
       <div className="flex justify-between p-2 items-center">
         <div className="flex gap-2 items-center text-2xl">
           <p className="font-medium">Chats</p>
-          <span className="text-zinc-300">({chats.length})</span>
+          <span className="text-muted-foreground">({chats.length})</span>
         </div>
 
         <div>
@@ -39,34 +44,24 @@ export function ChatListContent({chats}: ChatListProps) {
           </Link>
         </div>
       </div>
-      <nav className="grid gap-1 px-2 group-[[data-collapsed=true]]:justify-center group-[[data-collapsed=true]]:px-2">
-        {chats.map((chat, index) =>
+
+      <nav className="grid justify-between gap-1 px-2">
+        {chats.map((chat) =>
           <Link
-            key={index}
-            href="#"
-            className={cn(
-              buttonVariants({ variant: chat.variant, size: "lg" }),
-              chat.variant === "secondary" &&
-              "dark:bg-muted dark:text-white dark:hover:bg-muted dark:hover:text-white shrink",
-              "justify-start gap-4",
-            )}
+            key={chat.id}
+            href={`/chat/${encodeURIComponent(chat.id)}`}
+            className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0"
           >
             <Avatar className="flex justify-center items-center">
-              <AvatarImage
-                src={chat.avatar}
-                alt={chat.avatar}
-                width={6}
-                height={6}
-                className="w-10 h-10 "
-              />
+              <AvatarFallback className="text-muted-foreground">{convertTitleToAvatar(chat.title)}</AvatarFallback>
             </Avatar>
             <div className="flex flex-col max-w-28">
-              <span>{chat.name}</span>
+              <span>{chat.title}</span>
               {chat.lastMessage && (
-                <span className="text-zinc-300 text-xs truncate ">
-                  {(chat.lastMessage.content as RegularContent)?.title?.split(" ")[0]}
+                <span className="text-muted-foreground text-xs truncate ">
+                  {chat.lastMessage.title.split(" ")[0]}
                   :{" "}
-                  {(chat.lastMessage.content as RegularContent)?.text}
+                  {chat.lastMessage.text}
                 </span>
               )}
             </div>
@@ -75,8 +70,4 @@ export function ChatListContent({chats}: ChatListProps) {
       </nav>
     </div>
   );
-}
-
-function NoChatSelected() {
-  return <></>;
 }
