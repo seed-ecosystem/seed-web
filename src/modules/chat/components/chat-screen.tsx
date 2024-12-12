@@ -1,7 +1,7 @@
 import {ChatLogic} from "@/modules/chat/logic/chat-logic.ts";
 import {useRef, useState} from "react";
 import {Message} from "@/modules/chat/logic/message.ts";
-import {useEach} from "@/modules/coroutines/channel.ts";
+import {useEach} from "@/modules/coroutines/channel/channel.ts";
 import {ChatContent} from "@/modules/chat/components/chat-content.tsx";
 
 export function ChatScreen({changeNickname, getNickname, sendTextMessage, chatEvents, loadLocalMessages}: ChatLogic) {

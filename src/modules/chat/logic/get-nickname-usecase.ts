@@ -1,5 +1,5 @@
 import {NicknameStorage} from "@/modules/chat/persistence/nickname-storage.ts";
-import {Channel, createChannel} from "@/modules/coroutines/channel.ts";
+import {Channel, createChannel} from "@/modules/coroutines/channel/channel.ts";
 
 export interface GetNicknameUsecase {
   (): Channel<string>;

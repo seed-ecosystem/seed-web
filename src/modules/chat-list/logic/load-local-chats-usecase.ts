@@ -1,7 +1,8 @@
 import {ChatStorage} from "@/modules/chat-list/persistence/chat-storage.ts";
 import {Chat} from "@/modules/chat-list/logic/chat.ts";
-import {Channel, launchChannel} from "@/modules/coroutines/channel.ts";
+import {Channel} from "@/modules/coroutines/channel/channel.ts";
 import {MessageStorage} from "@/modules/chat/persistence/message-storage.ts";
+import {launchChannel} from "@/modules/coroutines/channel/launch.ts";
 
 export interface LoadLocalChatsUsecase {
   (): Channel<Chat[]>;

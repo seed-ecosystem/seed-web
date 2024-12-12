@@ -1,4 +1,4 @@
-import {Cancellation, Channel, createChannel} from "@/modules/coroutines/channel.ts";
+import {Cancellation, Channel, createChannel} from "@/modules/coroutines/channel/channel.ts";
 import {Message} from "@/modules/chat/logic/message.ts";
 import {launch} from "@/modules/coroutines/launch.ts";
 import {MessageStorage} from "@/modules/chat/persistence/message-storage.ts";

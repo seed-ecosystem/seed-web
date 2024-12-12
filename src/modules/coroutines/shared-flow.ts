@@ -1,5 +1,5 @@
 import {Flow, flowCollector, FlowCollector} from "@/modules/coroutines/flow.ts";
-import {Cancellation} from "@/modules/coroutines/channel.ts";
+import {Cancellation} from "@/modules/coroutines/channel/channel.ts";
 
 export interface SharedFlow<T> extends Flow<T> {}
 

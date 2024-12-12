@@ -8,7 +8,8 @@ import {MutableRefObject} from "react";
 import {launch} from "@/modules/coroutines/launch.ts";
 import {NextMessageUsecase} from "@/modules/chat/logic/next-message-usecase.ts";
 import {SendMessageRequest, SendMessageResponse} from "@/modules/socket/request/send-message-request.ts";
-import {Channel, createChannel} from "@/modules/coroutines/channel.ts";
+import {Channel} from "@/modules/coroutines/channel/channel.ts";
+import {createChannel} from "@/modules/coroutines/channel/create.ts";
 
 export type SendMessageEvent = {
   type: "sending";

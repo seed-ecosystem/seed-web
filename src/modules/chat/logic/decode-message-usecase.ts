@@ -3,11 +3,11 @@ import {Message, MessageContent} from "@/modules/chat/logic/message.ts";
 import {MessageStorage} from "@/modules/chat/persistence/message-storage.ts";
 import {MessageCoder} from "@/modules/crypto/message-coder.ts";
 import {IncrementLocalNonceUsecase} from "@/modules/chat/logic/increment-local-nonce-usecase.ts";
-import {createChannel} from "@/modules/coroutines/channel.ts";
 import {launch} from "@/modules/coroutines/launch.ts";
 import {MutableRefObject, RefObject} from "react";
 import {SanitizeContentUsecase} from "@/modules/chat/logic/sanitize-content-usecase.ts";
 import {NextMessageUsecase} from "@/modules/chat/logic/next-message-usecase.ts";
+import {createChannel} from "@/modules/coroutines/channel/create.ts";
 
 export interface DecodeMessageUsecase {
   (options: {message: ApiMessage, nicknameRef: RefObject<string>, localNonceRef: MutableRefObject<number>}): Promise<Message | undefined>

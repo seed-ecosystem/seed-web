@@ -2,8 +2,9 @@ import {Message} from "@/modules/chat/logic/message.ts";
 import {SeedSocket} from "@/modules/socket/seed-socket.ts";
 import {DecodeMessageUsecase} from "@/modules/chat/logic/decode-message-usecase.ts";
 import {launch} from "@/modules/coroutines/launch.ts";
-import {Cancellation, Channel, collectAsChannel, createChannel} from "@/modules/coroutines/channel.ts";
+import {Cancellation, Channel, collectAsChannel} from "@/modules/coroutines/channel/channel.ts";
 import {MutableRefObject, RefObject} from "react";
+import {createChannel} from "@/modules/coroutines/channel/create.ts";
 
 export type ChatEvent = {
   type: "new";

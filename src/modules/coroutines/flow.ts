@@ -1,4 +1,4 @@
-import {Cancellation} from "@/modules/coroutines/channel.ts";
+import {Cancellation} from "@/modules/coroutines/channel/channel.ts";
 import {useEffect} from "react";
 
 export interface FlowCollector<T> {
