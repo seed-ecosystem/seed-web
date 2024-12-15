@@ -1,9 +1,10 @@
-import {Cancellation, Channel, createChannel} from "@/modules/coroutines/channel.ts";
+import {Channel} from "@/modules/coroutines/channel/channel.ts";
 import {Message} from "@/modules/chat/logic/message.ts";
 import {launch} from "@/modules/coroutines/launch.ts";
 import {MessageStorage} from "@/modules/chat/persistence/message-storage.ts";
 import {MutableRefObject, Ref, RefObject} from "react";
 import {IncrementLocalNonceUsecase} from "@/modules/chat/logic/increment-local-nonce-usecase.ts";
+import {createChannel} from "@/modules/coroutines/channel/create.ts";
 
 export interface LoadLocalMessagesUsecase {
   (options: {
@@ -55,6 +56,7 @@ export function createLoadLocalMessagesUsecase(
       }
 
       channel.send(result);
+      channel.close();
     });
     return channel;
   };

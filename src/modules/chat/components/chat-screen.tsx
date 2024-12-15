@@ -1,11 +1,15 @@
 import {ChatLogic} from "@/modules/chat/logic/chat-logic.ts";
-import {useContext, useRef, useState} from "react";
-import {ChatContent} from "@/modules/chat/components/chat-content.tsx";
+import {useRef, useState} from "react";
 import {Message} from "@/modules/chat/logic/message.ts";
-import {useEach} from "@/modules/coroutines/channel.ts";
+import {useEach} from "@/modules/coroutines/channel/channel.ts";
+import {ChatContent} from "@/modules/chat/components/chat-content.tsx";
 
 export function ChatScreen(
-  {changeNickname, getNickname, sendTextMessage, chatEvents, loadLocalMessages}: ChatLogic
+  {
+    changeNickname, getNickname,
+    sendTextMessage, chatEvents,
+    loadLocalMessages, getWaiting, getLoading
+  }: ChatLogic
 ) {
   const localNonceRef = useRef(0);
   const serverNonceRef = useRef(0);
@@ -19,10 +23,12 @@ export function ChatScreen(
       messages.map(message => message.localNonce == modifiedMessage.localNonce
         ? modifiedMessage
         : message
-    ));
+      )
+    );
   }
 
-  const [loaded, setLoaded] = useState(false);
+  const [loading, setLoading] = useState(getLoading());
+  const [waiting, setWaiting] = useState(getWaiting());
   const [text, setText] = useState("");
 
   const [nickname, setNicknameState] = useState("");
@@ -40,11 +46,15 @@ export function ChatScreen(
       case "new":
         setMessages(messages => [...event.messages, ...messages]);
         break;
+      case "open":
+        setLoading(false);
+        break;
       case "wait":
-        setLoaded(true);
+        setWaiting(true);
         break;
       case "close":
-        setLoaded(false);
+        setWaiting(false);
+        setLoading(true);
         break;
     }
   });
@@ -54,7 +64,8 @@ export function ChatScreen(
   });
 
   return ChatContent({
-    loaded: loaded,
+    loading: loading,
+    waiting: waiting,
     messages: messages,
     text: text,
     setText(text) {
@@ -78,5 +89,5 @@ export function ChatScreen(
         }
       });
     }
-  })
+  });
 }

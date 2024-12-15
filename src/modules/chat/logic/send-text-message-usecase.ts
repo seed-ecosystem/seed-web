@@ -1,6 +1,7 @@
 import {SendMessageEvent, SendMessageUsecase} from "@/modules/chat/logic/send-message-usecase.ts";
-import {Channel, createChannel} from "@/modules/coroutines/channel.ts";
+import {Channel} from "@/modules/coroutines/channel/channel.ts";
 import {MutableRefObject, RefObject} from "react";
+import {createChannel} from "@/modules/coroutines/channel/create.ts";
 
 export interface SendTextMessageUsecase {
   (options: {

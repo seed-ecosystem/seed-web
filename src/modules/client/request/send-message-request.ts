@@ -1,5 +1,5 @@
 import {SocketRequest} from "@/modules/socket/request/socket-request.ts";
-import {Message} from "@/modules/socket/message/message.ts";
+import {Message} from "@/modules/client/message.ts";
 
 export interface SendMessageRequest extends SocketRequest<SendMessageResponse> {
   type: "send";

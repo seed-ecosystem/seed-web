@@ -1,6 +1,6 @@
 import {SocketRequest} from "@/modules/socket/request/socket-request.ts";
 import {Flow} from "@/modules/coroutines/flow.ts";
-import {SocketEvent} from "@/modules/socket/event/socket-event.ts";
+import {ClientEvent} from "@/modules/client/event/client-event.ts";
 import {mutableSharedFlow, MutableSharedFlow} from "@/modules/coroutines/shared-flow.ts";
 import {launch} from "@/modules/coroutines/launch.ts";
 import typia from "typia";
@@ -8,7 +8,7 @@ import {SocketMessage} from "@/modules/socket/event/socket-message.ts";
 import {BindRequest} from "@/modules/socket/request/bind-request.ts";
 
 export interface SeedSocket {
-  events: Flow<SocketEvent>
+  events: Flow<ClientEvent>
 
   /**
    * This request is executed once after the invocation and
@@ -39,7 +39,7 @@ const RECONNECT_TIMEOUT = 1_000;
 export function createServerSocket(url: string): SeedSocket {
   const boundRequests: BindRequest[] = [];
   let queuedRequests: QueuedRequest[] = [];
-  const events: MutableSharedFlow<SocketEvent> = mutableSharedFlow();
+  const events: MutableSharedFlow<ClientEvent> = mutableSharedFlow();
 
   function execute<T>({request, relaunch}: {request: SocketRequest<T>, relaunch: boolean}) {
     return new Promise<T>((resolve) => {
@@ -73,6 +73,7 @@ export function createServerSocket(url: string): SeedSocket {
 
     ws.onopen = () => {
       console.log("<< ws: onopen");
+      events.emit({type: "open"});
 
       intervalId = window.setInterval(
         () => {
