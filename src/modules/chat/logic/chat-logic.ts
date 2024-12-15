@@ -14,10 +14,15 @@ import {
 import {createNextMessageUsecase} from "@/modules/chat/logic/next-message-usecase.ts";
 import {createSanitizeContentUsecase} from "@/modules/chat/logic/sanitize-content-usecase.ts";
 import {createSendTextMessageUsecase, SendTextMessageUsecase} from "@/modules/chat/logic/send-text-message-usecase.ts";
+import {createGetWaitingUsecase, GetWaitingUsecase} from "@/modules/chat/logic/get-waiting-usecase.ts";
+import {SeedClient} from "@/modules/client/seed-client.ts";
+import {createGetLoadingUsecase, GetLoadingUsecase} from "@/modules/chat/logic/get-loading-usecase.ts";
 
 export interface ChatLogic {
   changeNickname: ChangeNicknameUsecase;
   getNickname: GetNicknameUsecase;
+  getWaiting: GetWaitingUsecase;
+  getLoading: GetLoadingUsecase;
   sendTextMessage: SendTextMessageUsecase;
   chatEvents: ChatEventsUsecase;
   loadLocalMessages: LoadLocalMessagesUsecase;
@@ -25,10 +30,11 @@ export interface ChatLogic {
 
 export function createChatLogic(
   {
-    persistence, socket, messageCoder,
-    chatId, incrementLocalNonce,
+    persistence, socket, client,
+    messageCoder, chatId, incrementLocalNonce,
   }: {
     persistence: Persistence;
+    client: SeedClient;
     socket: SeedSocket;
     messageCoder: MessageCoder;
     chatId: string;
@@ -53,8 +59,10 @@ export function createChatLogic(
 
   return {
     changeNickname: createChangeNicknameUsecase({nicknameStorage}),
-    chatEvents: createChatEventsUsecase({decodeMessage, socket}),
+    chatEvents: createChatEventsUsecase({decodeMessage, socket, chatId}),
     getNickname: createGetNicknameUsecase({nicknameStorage}),
+    getWaiting: createGetWaitingUsecase({client, chatId}),
+    getLoading: createGetLoadingUsecase({client}),
     loadLocalMessages: createLoadLocalMessagesUsecase({messageStorage, chatId, incrementLocalNonce}),
     sendTextMessage: createSendTextMessageUsecase({sendMessage}),
   }

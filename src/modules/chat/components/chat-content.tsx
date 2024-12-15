@@ -5,7 +5,8 @@ import {MessageInput} from "@/modules/chat/components/message-input.tsx";
 import {Message} from "@/modules/chat/logic/message.ts";
 
 export interface ChatProps {
-  loaded: boolean;
+  loading: boolean;
+  waiting: boolean;
   messages: Message[];
   text: string;
   setText: (value: string) => void;
@@ -14,14 +15,14 @@ export interface ChatProps {
   sendMessage: () => void;
 }
 
-export function ChatContent({loaded, messages, text, setText, nickname, setNickname, sendMessage}: ChatProps) {
+export function ChatContent({loading, waiting, messages, text, setText, nickname, setNickname, sendMessage}: ChatProps) {
   return (
     <>
       <div className="h-full w-full overflow-hidden flex flex-col relative">
         <div className="w-full flex-grow flex justify-center">
           <div className="h-full flex-grow max-w-full lg:max-w-3xl flex flex-col">
             {
-              loaded && messages.length == 0
+              !loading && messages.length == 0
                 ? EmptyMessages()
                 : <MessagesList messages={messages} />
             }
@@ -37,7 +38,8 @@ export function ChatContent({loaded, messages, text, setText, nickname, setNickn
         <ChatHeader
           text={nickname}
           setText={setNickname}
-          loaded={loaded}/>
+          loading={loading}
+          waiting={waiting}/>
 
       </div>
     </>

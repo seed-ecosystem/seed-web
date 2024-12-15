@@ -6,11 +6,11 @@ import {ChatScreen} from "@/modules/chat/components/chat-screen.tsx";
 import {ChatListScreen} from "@/modules/chat-list/components/chat-list-screen.tsx";
 
 export function MainScreen({createChat, chatListLogic}: MainLogic) {
-  const [showChat] = useRoute("/chat/bHKhl2cuQ01pDXSRaqq%2FOMJeDFJVNIY5YuQB2w7ve%2Bc%3D");
+  const [_, chatParams] = useRoute("/chat/:chatId");
 
   const chatLogic = useMemo(
-    () => showChat ? createChat() : null,
-    [showChat]
+    () => chatParams ? createChat({chatId: decodeURIComponent(chatParams.chatId)}) : null,
+    [chatParams]
   );
 
   return MainContent({

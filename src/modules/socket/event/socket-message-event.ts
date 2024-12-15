@@ -1,6 +1,6 @@
-import {SocketEvent} from "@/modules/socket/event/socket-event.ts";
+import {ClientEvent} from "@/modules/client/event/client-event.ts";
 
 export interface SocketMessageEvent {
   type: "event",
-  event: SocketEvent;
+  event: ClientEvent;
 }

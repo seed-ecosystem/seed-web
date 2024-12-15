@@ -1,5 +1,5 @@
 import {Message, MessageContent} from "@/modules/chat/logic/message.ts";
-import {Message as ApiMessage} from "@/modules/socket/message/message.ts";
+import {Message as ApiMessage} from "@/modules/client/message.ts";
 import {SeedSocket} from "@/modules/socket/seed-socket.ts";
 import {MessageCoder} from "@/modules/crypto/message-coder.ts";
 import {IncrementLocalNonceUsecase} from "@/modules/chat/logic/increment-local-nonce-usecase.ts";
@@ -7,7 +7,7 @@ import {SanitizeContentUsecase} from "@/modules/chat/logic/sanitize-content-usec
 import {MutableRefObject} from "react";
 import {launch} from "@/modules/coroutines/launch.ts";
 import {NextMessageUsecase} from "@/modules/chat/logic/next-message-usecase.ts";
-import {SendMessageRequest, SendMessageResponse} from "@/modules/socket/request/send-message-request.ts";
+import {SendMessageRequest, SendMessageResponse} from "@/modules/client/request/send-message-request.ts";
 import {Channel} from "@/modules/coroutines/channel/channel.ts";
 import {createChannel} from "@/modules/coroutines/channel/create.ts";
 

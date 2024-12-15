@@ -55,10 +55,10 @@ export function ChatListContent({chats}: ChatListProps) {
             <Avatar className="flex justify-center items-center">
               <AvatarFallback className="text-muted-foreground">{convertTitleToAvatar(chat.title)}</AvatarFallback>
             </Avatar>
-            <div className="flex flex-col max-w-28">
+            <div className="flex flex-col max-w-28 flex-1">
               <span>{chat.title}</span>
               {chat.lastMessage && (
-                <span className="text-muted-foreground text-xs truncate ">
+                <span className="text-muted-foreground text-xs truncate me-2">
                   {chat.lastMessage.title.split(" ")[0]}
                   :{" "}
                   {chat.lastMessage.text}

@@ -1,4 +1,4 @@
-import {Message as ApiMessage} from "@/modules/socket/message/message.ts";
+import {Message as ApiMessage} from "@/modules/client/message.ts";
 import {Message, MessageContent} from "@/modules/chat/logic/message.ts";
 import {MessageStorage} from "@/modules/chat/persistence/message-storage.ts";
 import {MessageCoder} from "@/modules/crypto/message-coder.ts";

@@ -4,26 +4,28 @@ import {SeedSocket} from "@/modules/socket/seed-socket.ts";
 import {MessageCoder} from "@/modules/crypto/message-coder.ts";
 import {IncrementLocalNonceUsecase} from "@/modules/chat/logic/increment-local-nonce-usecase.ts";
 import {ChatListLogic, createChatListLogic} from "@/modules/chat-list/logic/chat-list-logic.ts";
+import {SeedClient} from "@/modules/client/seed-client.ts";
 
 export interface MainLogic {
   chatListLogic: ChatListLogic;
-  createChat(): ChatLogic
+  createChat(options: {chatId: string}): ChatLogic
 }
 
 export function createMainLogic(
-  {persistence, socket, messageCoder, chatId, incrementLocalNonce}: {
+  {persistence, socket, client, messageCoder, incrementLocalNonce}: {
     persistence: Persistence;
     socket: SeedSocket;
+    client: SeedClient;
     messageCoder: MessageCoder;
-    chatId: string;
     incrementLocalNonce: IncrementLocalNonceUsecase;
   }
 ): MainLogic {
   return {
     chatListLogic: createChatListLogic({persistence}),
-    createChat(): ChatLogic {
+    createChat({chatId}): ChatLogic {
       return createChatLogic({
-        persistence, socket, messageCoder, chatId, incrementLocalNonce
+        persistence, socket, messageCoder,
+        chatId, incrementLocalNonce, client
       });
     }
   }

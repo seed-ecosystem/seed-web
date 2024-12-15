@@ -2,7 +2,7 @@ import {Message} from "@/modules/chat/logic/message.ts";
 import {SeedSocket} from "@/modules/socket/seed-socket.ts";
 import {DecodeMessageUsecase} from "@/modules/chat/logic/decode-message-usecase.ts";
 import {launch} from "@/modules/coroutines/launch.ts";
-import {Cancellation, Channel, collectAsChannel} from "@/modules/coroutines/channel/channel.ts";
+import {Channel, collectAsChannel} from "@/modules/coroutines/channel/channel.ts";
 import {MutableRefObject, RefObject} from "react";
 import {createChannel} from "@/modules/coroutines/channel/create.ts";
 
@@ -13,6 +13,8 @@ export type ChatEvent = {
   type: "wait";
 } | {
   type: "close";
+} | {
+  type: "open";
 }
 
 export interface ChatEventsUsecase {
@@ -24,9 +26,10 @@ export interface ChatEventsUsecase {
 }
 
 export function createChatEventsUsecase(
-  {socket, decodeMessage}: {
+  {socket, decodeMessage, chatId}: {
     socket: SeedSocket;
     decodeMessage: DecodeMessageUsecase;
+    chatId: string;
   }
 ): ChatEventsUsecase {
   return ({nicknameRef, localNonceRef, serverNonceRef}) => {
@@ -59,10 +62,14 @@ export function createChatEventsUsecase(
             }
             break;
           case "wait":
+            if (event.chatId != chatId) break;
             chatEvents.send({type: "new", messages: [...accumulated]});
             accumulated.splice(0, accumulated.length);
             chatEvents.send({type: "wait"});
             loaded = true;
+            break;
+          case "open":
+            chatEvents.send({type: "open"});
             break;
           case "close":
             chatEvents.send({type: "close"});

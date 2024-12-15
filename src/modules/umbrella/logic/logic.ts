@@ -1,12 +1,10 @@
-import {ChatLogic, createChatLogic} from "@/modules/chat/logic/chat-logic.ts";
 import {createPersistence, Persistence} from "@/modules/umbrella/persistence/persistence.ts";
 import {createServerSocket, SeedSocket} from "@/modules/socket/seed-socket.ts";
-import {SubscribeRequest} from "@/modules/socket/request/subscribe-request.ts";
 import {createMessageCoder} from "@/modules/crypto/message-coder.ts";
 import {createIncrementLocalNonceUsecase} from "@/modules/chat/logic/increment-local-nonce-usecase.ts";
 import {createNextMessageUsecase} from "@/modules/chat/logic/next-message-usecase.ts";
-import {MainLogic, createMainLogic} from "@/modules/main/logic/main-logic.ts";
-import {OptionPredicator} from "typia/lib/programmers/helpers/OptionPredicator";
+import {createMainLogic, MainLogic} from "@/modules/main/logic/main-logic.ts";
+import {createSeedClient} from "@/modules/client/seed-client.ts";
 
 export interface Logic {
   socket: SeedSocket;
@@ -16,51 +14,51 @@ export interface Logic {
 }
 
 export async function createLogic(): Promise<Logic> {
-  const chatId = "bHKhl2cuQ01pDXSRaqq/OMJeDFJVNIY5YuQB2w7ve+c=";
-  const key = "/uwFt2yxHi59l26H9V8VTN3Kq+FtRewuWNfz1TNVcnM=";
-
   const messageCoder = createMessageCoder();
   const persistence = await createPersistence();
   const socket = createServerSocket("https://meetacy.app/seed-go");
 
-  if (await persistence.message.lastMessage({chatId}) == null) {
+  await addBetaChat({persistence});
+
+  const client = createSeedClient({
+    socket,
+    chatStorage: persistence.chat,
+    createNextMessage: (chatId) => createNextMessageUsecase({
+      chatId, messageCoder, messageStorage: persistence.message
+    })
+  });
+
+  const incrementLocalNonce = createIncrementLocalNonceUsecase();
+
+  return {
+    socket: socket,
+    persistence: persistence,
+    createMainLogic(): MainLogic {
+      return createMainLogic({persistence, socket, messageCoder, incrementLocalNonce, client});
+    }
+  };
+}
+
+async function addBetaChat(
+  {persistence}: {
+    persistence: Persistence;
+  }
+) {
+  const chatId = "bHKhl2cuQ01pDXSRaqq/OMJeDFJVNIY5YuQB2w7ve+c=";
+
+  if ((await persistence.chat.list()).length == 0) {
+    await persistence.chat.add({
+      id: chatId,
+      title: "Beta Chat"
+    });
+
     await persistence.message.add({
-      chatId, key,
+      chatId,
+      key: "/uwFt2yxHi59l26H9V8VTN3Kq+FtRewuWNfz1TNVcnM=",
       nonce: 0,
       content: {
         type: "deferred"
       }
     });
   }
-
-  if ((await persistence.chat.list()).length == 0) {
-    await persistence.chat.add({
-      id: chatId,
-      key: key,
-      title: "Beta Chat"
-    });
-  }
-
-  const nextMessage = createNextMessageUsecase({messageStorage: persistence.message, messageCoder, chatId});
-
-  socket.bind({
-    type: "subscribe",
-    async prepare(){
-      const {nonce} = await nextMessage();
-      return {chatId, nonce} as SubscribeRequest;
-    }
-  });
-
-  const incrementLocalNonce = createIncrementLocalNonceUsecase();
-
-  // noinspection UnnecessaryLocalVariableJS
-  const app: Logic = {
-    socket: socket,
-    persistence: persistence,
-    createMainLogic(): MainLogic {
-      return createMainLogic({persistence, socket, messageCoder, chatId, incrementLocalNonce});
-    }
-  };
-
-  return app;
 }
