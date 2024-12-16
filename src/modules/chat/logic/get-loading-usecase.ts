@@ -1,4 +1,4 @@
-import {SeedClient} from "@/modules/client/seed-client.ts";
+import {SeedClient} from "@/sdk/client/seed-client.ts";
 
 export interface GetLoadingUsecase {
   (): boolean;

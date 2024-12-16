@@ -1,5 +1,5 @@
 import {Message} from "@/modules/chat/logic/message.ts";
-import {SeedSocket} from "@/modules/socket/seed-socket.ts";
+import {SeedSocket} from "@/sdk/socket/seed-socket.ts";
 import {DecodeMessageUsecase} from "@/modules/chat/logic/decode-message-usecase.ts";
 import {launch} from "@/modules/coroutines/launch.ts";
 import {Channel, collectAsChannel} from "@/modules/coroutines/channel/channel.ts";

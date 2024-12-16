@@ -1,4 +1,4 @@
-export interface Message {
+export interface EncryptedMessage {
   chatId: string;
   nonce: number;
   signature: string;

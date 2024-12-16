@@ -1,10 +1,10 @@
 import {createPersistence, Persistence} from "@/modules/umbrella/persistence/persistence.ts";
-import {createServerSocket, SeedSocket} from "@/modules/socket/seed-socket.ts";
+import {createServerSocket, SeedSocket} from "@/sdk/socket/seed-socket.ts";
 import {createMessageCoder} from "@/modules/crypto/message-coder.ts";
 import {createIncrementLocalNonceUsecase} from "@/modules/chat/logic/increment-local-nonce-usecase.ts";
 import {createNextMessageUsecase} from "@/modules/chat/logic/next-message-usecase.ts";
 import {createMainLogic, MainLogic} from "@/modules/main/logic/main-logic.ts";
-import {createSeedClient} from "@/modules/client/seed-client.ts";
+import {createSeedClient} from "@/sdk/client/seed-client.ts";
 
 export interface Logic {
   socket: SeedSocket;

@@ -1,14 +1,14 @@
-import {SocketRequest} from "@/modules/socket/request/socket-request.ts";
-import {Flow} from "@/modules/coroutines/flow.ts";
-import {ClientEvent} from "@/modules/client/event/client-event.ts";
-import {mutableSharedFlow, MutableSharedFlow} from "@/modules/coroutines/shared-flow.ts";
+import {SocketRequest} from "@/sdk/socket/socket-request.ts";
 import {launch} from "@/modules/coroutines/launch.ts";
 import typia from "typia";
-import {SocketMessage} from "@/modules/socket/event/socket-message.ts";
-import {BindRequest} from "@/modules/socket/request/bind-request.ts";
+import {BindRequest} from "@/sdk/socket/bind-request.ts";
+import {SocketMessage} from "@/sdk/socket/socket-message.ts";
+import {SocketEvent} from "@/sdk/socket/socket-event.ts";
+import {createObservable, Observable} from "@/observable/observable.ts";
 
 export interface SeedSocket {
-  events: Flow<ClientEvent>
+  localEvents: Observable<SocketEvent>
+  remoteEvents: Observable<unknown>
 
   /**
    * This request is executed once after the invocation and
@@ -39,7 +39,8 @@ const RECONNECT_TIMEOUT = 1_000;
 export function createServerSocket(url: string): SeedSocket {
   const boundRequests: BindRequest[] = [];
   let queuedRequests: QueuedRequest[] = [];
-  const events: MutableSharedFlow<ClientEvent> = mutableSharedFlow();
+  const localEvents: Observable<SocketEvent> = createObservable();
+  const removeEvents: Observable<unknown> = createObservable();
 
   function execute<T>({request, relaunch}: {request: SocketRequest<T>, relaunch: boolean}) {
     return new Promise<T>((resolve) => {
@@ -64,7 +65,7 @@ export function createServerSocket(url: string): SeedSocket {
     clearInterval(intervalId);
     intervalId = undefined;
     console.log("<< ws: onclose", e);
-    events.emit({type: "close"});
+    localEvents.emit({type: "close"});
     setTimeout(setupWebsocket, RECONNECT_TIMEOUT);
   };
 
@@ -73,7 +74,7 @@ export function createServerSocket(url: string): SeedSocket {
 
     ws.onopen = () => {
       console.log("<< ws: onopen");
-      events.emit({type: "open"});
+      localEvents.emit({type: "open"});
 
       intervalId = window.setInterval(
         () => {
@@ -127,8 +128,8 @@ export function createServerSocket(url: string): SeedSocket {
       }
 
       if (event.type == "event") {
-        console.log("<< ws: event", event);
-        events.emit(event.event);
+        console.log("<< ws: message", event);
+        removeEvents.emit(event.event);
       }
     };
   }
@@ -149,7 +150,8 @@ export function createServerSocket(url: string): SeedSocket {
   setupWebsocket();
 
   return {
-    events: events,
+    localEvents: localEvents,
+    remoteEvents: removeEvents,
 
     bind(request: BindRequest) {
       boundRequests.push(request);

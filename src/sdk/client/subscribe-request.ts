@@ -1,4 +1,4 @@
-import {SocketRequest} from "@/modules/socket/request/socket-request.ts";
+import {SocketRequest} from "@/sdk/socket/socket-request.ts";
 
 export interface SubscribeRequest extends SocketRequest<SubscribeResponse> {
   type: "subscribe";

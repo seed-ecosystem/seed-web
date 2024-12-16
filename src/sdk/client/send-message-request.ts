@@ -1,9 +1,9 @@
-import {SocketRequest} from "@/modules/socket/request/socket-request.ts";
-import {Message} from "@/modules/client/message.ts";
+import {SocketRequest} from "@/sdk/socket/socket-request.ts";
+import {EncryptedMessage} from "@/sdk/client/encrypted-message.ts";
 
 export interface SendMessageRequest extends SocketRequest<SendMessageResponse> {
   type: "send";
-  message: Message;
+  message: EncryptedMessage;
 }
 
 export interface SendMessageResponse {

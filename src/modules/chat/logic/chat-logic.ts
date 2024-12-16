@@ -3,7 +3,7 @@ import {createSendMessageUsecase} from "@/modules/chat/logic/send-message-usecas
 import {ChatEventsUsecase, createChatEventsUsecase} from "@/modules/chat/logic/chat-events-usecase.ts";
 import {Persistence} from "@/modules/umbrella/persistence/persistence.ts";
 import {createDecodeMessageUsecase} from "@/modules/chat/logic/decode-message-usecase.ts";
-import {SeedSocket} from "@/modules/socket/seed-socket.ts";
+import {SeedSocket} from "@/sdk/socket/seed-socket.ts";
 import {MessageCoder} from "@/modules/crypto/message-coder.ts";
 import {IncrementLocalNonceUsecase} from "@/modules/chat/logic/increment-local-nonce-usecase.ts";
 import {createGetNicknameUsecase, GetNicknameUsecase} from "@/modules/chat/logic/get-nickname-usecase.ts";
@@ -15,7 +15,7 @@ import {createNextMessageUsecase} from "@/modules/chat/logic/next-message-usecas
 import {createSanitizeContentUsecase} from "@/modules/chat/logic/sanitize-content-usecase.ts";
 import {createSendTextMessageUsecase, SendTextMessageUsecase} from "@/modules/chat/logic/send-text-message-usecase.ts";
 import {createGetWaitingUsecase, GetWaitingUsecase} from "@/modules/chat/logic/get-waiting-usecase.ts";
-import {SeedClient} from "@/modules/client/seed-client.ts";
+import {SeedClient} from "@/sdk/client/seed-client.ts";
 import {createGetLoadingUsecase, GetLoadingUsecase} from "@/modules/chat/logic/get-loading-usecase.ts";
 
 export interface ChatLogic {

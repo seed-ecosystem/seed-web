@@ -3,7 +3,7 @@ import {
   arrayBufferToString,
   base64ToArrayBuffer,
   stringToArrayBuffer
-} from "@/modules/crypto/string-to-base64.ts";
+} from "@/sdk/crypto/string-to-base64.ts";
 
 export const crypto = window.crypto.subtle;
 

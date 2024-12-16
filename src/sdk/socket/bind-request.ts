@@ -1,4 +1,4 @@
-import {SocketRequest} from "@/modules/socket/request/socket-request.ts";
+import {SocketRequest} from "@/sdk/socket/socket-request.ts";
 
 export interface BindRequest {
   type: string;
