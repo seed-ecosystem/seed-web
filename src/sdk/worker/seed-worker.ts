@@ -89,6 +89,10 @@ export function createSeedWorker(
   };
 }
 
+type CachedKey = {
+
+}
+
 async function decryptNewEvent(
   persistence: KeyPersistence,
   event: ClientEvent & { type: "new" }

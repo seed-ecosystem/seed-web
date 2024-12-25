@@ -72,9 +72,17 @@ type CreateSeedWorkerOptions = {
   persistence: SeedPersistence;
 };
 
+type CachedKey = {
+  chatId: string;
+  nonce: number;
+  key: string;
+}
+
 function createSeedWorker({client, persistence}: CreateSeedWorkerOptions): SeedWorker {
   const message = persistence.message;
   const chat = persistence.chat;
+
+  const keys: Record<string, CachedKey | undefined> = {};
 
   const keyPersistence: KeyPersistence = {
     async getInitialKey({chatId}): Promise<IndexedKey> {
@@ -86,11 +94,17 @@ function createSeedWorker({client, persistence}: CreateSeedWorkerOptions): SeedW
     },
 
     async getKeyAt({chatId, nonce}): Promise<string | undefined> {
+      if (chatId in keys && keys[chatId]!.nonce < nonce) {
+        return undefined;
+      }
       const data = await message.get({chatId, nonce});
       return data?.key;
     },
 
     async getLastKey({chatId}): Promise<IndexedKey | undefined> {
+      if (chatId in keys) {
+        return keys[chatId];
+      }
       const data = await message.lastMessage({chatId});
       if (!data) return;
       return {
@@ -100,5 +114,16 @@ function createSeedWorker({client, persistence}: CreateSeedWorkerOptions): SeedW
     }
   };
 
-  return seedWorker({client, persistence: keyPersistence});
+  const worker = seedWorker({client, persistence: keyPersistence});
+
+  worker.events.subscribe(event => {
+    if (event.type != "new") return;
+    keys[event.message.chatId] = {
+      chatId: event.message.chatId,
+      key: event.message.key,
+      nonce: event.message.nonce
+    };
+  });
+
+  return worker;
 }
