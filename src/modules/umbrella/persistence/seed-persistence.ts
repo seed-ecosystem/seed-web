@@ -31,11 +31,6 @@ export async function createPersistence(): Promise<SeedPersistence> {
     }
   });
 
-  if (db.version == 3) {
-    await db.clear("chat");
-    await db.clear("message");
-  }
-
   return {
     message: createMessageStorage(db),
     nickname: createNicknameStorage(db),
