@@ -1,5 +1,4 @@
 export interface ChatMessage {
-  key: string;
   nonce: number;
   chatId: string;
   content: MessageContent

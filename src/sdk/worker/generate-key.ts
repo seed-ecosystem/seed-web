@@ -43,12 +43,15 @@ export async function generateKeyAt({chatId, nonce, persistence}: GenerateKeyAtO
   let {nonce: lastNonce, key: lastKey} = await generateNewKey({ chatId, persistence });
 
   if (lastNonce > nonce) {
-    throw new Error("Cannot generate key backwards: from " + nonce + " to " + lastNonce);
+    throw new Error("Cannot generate key backwards: from " + lastNonce + " to " + nonce);
   }
+
+  await persistence.addKey({chatId, key: { key: lastKey, nonce: lastNonce }});
 
   while (lastNonce < nonce) {
     lastKey = await deriveNextKey({ key: lastKey });
     lastNonce++;
+    await persistence.addKey({chatId, key: { key: lastKey, nonce: lastNonce }});
   }
 
   return lastKey;

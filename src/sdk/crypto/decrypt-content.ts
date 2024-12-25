@@ -15,7 +15,9 @@ export async function decryptContent({content, contentIV, signature, key}: Decry
     key: key,
   });
 
-  if (!decryptedJSON) return;
+  if (!decryptedJSON) {
+    return;
+  }
 
   // Check that message-content is signed
   const verify = await verifyHmacSha256({
@@ -24,7 +26,9 @@ export async function decryptContent({content, contentIV, signature, key}: Decry
     signature: signature
   });
 
-  if (!verify) return;
+  if (!verify) {
+    return;
+  }
 
   return JSON.parse(decryptedJSON.string);
 }
