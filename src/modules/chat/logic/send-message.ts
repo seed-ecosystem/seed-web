@@ -27,6 +27,7 @@ export function sendMessage(
   }: SendMessageOptions
 ) {
   setText("");
+  if (text.trim().length == 0) return;
 
   const content: MessageContent = {
     author: true,
