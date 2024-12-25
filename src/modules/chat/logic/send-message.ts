@@ -51,7 +51,7 @@ export function sendMessage(
   setMessages([message, ...getMessages()]);
 
   worker.sendMessage({ chatId, content }).then(serverNonce => {
-    if (serverNonce) {
+    if (serverNonce != null) {
       editMessage({
         ...message,
         serverNonce: serverNonce,
