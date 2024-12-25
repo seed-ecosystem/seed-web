@@ -1,9 +1,12 @@
 import {ChatMessage} from "@/modules/chat/persistence/chat-message.ts";
 import {IDBPDatabase} from "idb";
+import {RandomRanger} from "typia/lib/programmers/helpers/RandomRanger";
+import number = RandomRanger.number;
 
 export interface MessageStorage {
-  lastMessage({chatId}: {chatId: string}): Promise<ChatMessage | undefined>
+  lastMessage(options: {chatId: string}): Promise<ChatMessage | undefined>
   add(message: ChatMessage): Promise<void>;
+  get(options: {chatId: string, nonce: number}): Promise<ChatMessage | undefined>;
   list({chatId}: {chatId: string}): Promise<ChatMessage[]>;
 }
 
@@ -30,6 +33,12 @@ export function createMessageStorage(db: IDBPDatabase): MessageStorage {
       await db.transaction("message", "readwrite")
         .objectStore("message")
         .put(message);
+    },
+
+    async get({ chatId, nonce }): Promise<ChatMessage | undefined> {
+      return await db.transaction("message", "readwrite")
+        .store
+        .get(IDBKeyRange.only([nonce, chatId]));
     },
 
     async list({chatId}): Promise<ChatMessage[]> {

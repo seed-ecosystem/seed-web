@@ -11,15 +11,18 @@ import {
 import {openDB} from "idb";
 import {ChatStorage, createChatObjectStore, createChatStorage} from "@/modules/chat-list/persistence/chat-storage.ts";
 
-export interface Persistence {
+export interface SeedPersistence {
   message: MessageStorage;
   nickname: NicknameStorage;
   chat: ChatStorage;
 }
 
-export async function createPersistence(): Promise<Persistence> {
-  const db = await openDB("persistence", 3, {
+export async function createPersistence(): Promise<SeedPersistence> {
+  const db = await openDB("persistence", 4, {
     upgrade(db, version) {
+      if (version == 3) {
+        db.deleteObjectStore("message");
+      }
       if (version == 0) {
         createNicknameObjectStore(db);
         createMessageObjectStore(db);

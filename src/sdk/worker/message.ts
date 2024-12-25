@@ -1,4 +1,6 @@
 export interface Message {
+  key: string;
+  chatId: string;
   nonce: number;
   content: MessageContent;
 }

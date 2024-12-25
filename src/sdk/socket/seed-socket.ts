@@ -1,28 +1,20 @@
 import {SocketRequest} from "@/sdk/socket/socket-request.ts";
-import {launch} from "@/modules/coroutines/launch.ts";
 import typia from "typia";
-import {BindRequest} from "@/sdk/socket/bind-request.ts";
 import {SocketMessage} from "@/sdk/socket/socket-message.ts";
-import {SocketEvent} from "@/sdk/socket/socket-event.ts";
-import {createObservable, Observable} from "@/observable/observable.ts";
+import {createObservable, Observable} from "@/coroutines/observable.ts";
+
+export type SocketEvent = {
+  type: "server";
+  value: unknown;
+} | {
+  type: "connected";
+  value: boolean;
+};
 
 export interface SeedSocket {
-  localEvents: Observable<SocketEvent>
-  remoteEvents: Observable<unknown>
+  events: Observable<SocketEvent>;
 
-  /**
-   * This request is executed once after the invocation and
-   * then will re invoke it every time you reconnect.
-   * Unless you call [unbind].
-   */
-  bind(block: BindRequest): void;
-
-  /**
-   * Removes [request] from queue that is being run on
-   * every reconnect. This tries to find [request] by reference,
-   * or throws an exception otherwise.
-   */
-  unbind(request: SocketRequest<unknown>): void;
+  isConnected(): boolean;
 
   execute<T>(request: SocketRequest<T>): Promise<T>;
 }
@@ -36,11 +28,11 @@ interface QueuedRequest<T = unknown> {
 const PING_TIMEOUT = 15_000;
 const RECONNECT_TIMEOUT = 1_000;
 
-export function createServerSocket(url: string): SeedSocket {
-  const boundRequests: BindRequest[] = [];
+export function createSeedSocket(url: string): SeedSocket {
+  let isConnected = false;
+
   let queuedRequests: QueuedRequest[] = [];
-  const localEvents: Observable<SocketEvent> = createObservable();
-  const removeEvents: Observable<unknown> = createObservable();
+  const events = createObservable<SocketEvent>();
 
   function execute<T>({request, relaunch}: {request: SocketRequest<T>, relaunch: boolean}) {
     return new Promise<T>((resolve) => {
@@ -65,7 +57,8 @@ export function createServerSocket(url: string): SeedSocket {
     clearInterval(intervalId);
     intervalId = undefined;
     console.log("<< ws: onclose", e);
-    localEvents.emit({type: "close"});
+    isConnected = false;
+    events.emit({ type: "connected", value: isConnected });
     setTimeout(setupWebsocket, RECONNECT_TIMEOUT);
   };
 
@@ -74,7 +67,8 @@ export function createServerSocket(url: string): SeedSocket {
 
     ws.onopen = () => {
       console.log("<< ws: onopen");
-      localEvents.emit({type: "open"});
+      isConnected = true;
+      events.emit({ type: "connected", value: isConnected });
 
       intervalId = window.setInterval(
         () => {
@@ -89,8 +83,6 @@ export function createServerSocket(url: string): SeedSocket {
         PING_TIMEOUT
       );
 
-      // Cleanup queued bound requests
-
       queuedRequests = queuedRequests.filter(({relaunch}) => relaunch);
 
       for (const {request} of queuedRequests) {
@@ -101,35 +93,25 @@ export function createServerSocket(url: string): SeedSocket {
           console.error("<< ws: open catch", e);
         }
       }
-
-      for (const request of boundRequests) {
-        launch(async () => {
-          const prepared = {
-            ...await request.prepare(),
-            type: request.type
-          };
-          await execute({request: prepared, relaunch: false});
-        });
-      }
     };
 
     ws.onclose = onclose;
 
     ws.onmessage = (message) => {
-      const event = JSON.parse(message.data);
+      const data = JSON.parse(message.data);
 
-      if (!typia.is<SocketMessage>(event)) return;
+      if (!typia.is<SocketMessage>(data)) return;
 
-      if (event.type == "response") {
+      if (data.type == "response") {
         const request = queuedRequests.shift();
         if (!request) throw new Error("Got response without any request");
-        console.log("<< ws: response", event);
-        request.resolve(event);
+        console.log("<< ws: response", data);
+        request.resolve(data);
       }
 
-      if (event.type == "event") {
-        console.log("<< ws: message", event);
-        removeEvents.emit(event.event);
+      if (data.type == "event") {
+        console.log("<< ws: message", data);
+        events.emit({ type: "server", value: data.event });
       }
     };
   }
@@ -150,29 +132,8 @@ export function createServerSocket(url: string): SeedSocket {
   setupWebsocket();
 
   return {
-    localEvents: localEvents,
-    remoteEvents: removeEvents,
-
-    bind(request: BindRequest) {
-      boundRequests.push(request);
-      launch(async () => {
-        const prepared = {
-          ...await request.prepare(),
-          type: request.type
-        }
-        console.log(">> ws: bind", prepared);
-        await execute({request: prepared, relaunch: false});
-      });
-    },
-
-    unbind({type}: {type: string}) {
-      console.log(">> ws: unbind", type);
-      const index = boundRequests.findIndex(request => request.type == type)
-      boundRequests.splice(index, 1);
-    },
-
-    execute(request) {
-      return execute({request, relaunch: true});
-    }
+    events,
+    isConnected: () => isConnected,
+    execute: (request) => execute({request, relaunch: true})
   }
 }

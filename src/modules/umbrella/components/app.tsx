@@ -1,29 +1,32 @@
 import {Logic} from "@/modules/umbrella/logic/logic.ts";
 import {useEffect, useMemo} from "react";
 import {MainScreen} from "@/modules/main/components/main-screen.ts";
-import {useRoute} from "wouter";
-import {launch} from "@/modules/coroutines/launch.ts";
+import {useLocation, useRoute} from "wouter";
+import {useEach} from "@/modules/coroutines/channel/channel.ts";
 
 export function App({logic}: {logic: Logic}) {
   const mainLogic = useMemo(() => logic.createMainLogic(), [logic]);
 
-  const [_, importChat] = useRoute("/import/:title/:chatId/:chatKey/:nonce");
+  const [, navigate] = useLocation();
+  const [, importChat] = useRoute("/import/:title/:chatId/:chatKey/:nonce");
 
-  useEffect(() => launch(async () => {
+  useEffect(() => {
     if (!importChat) return;
-    await logic.persistence.chat.add({
+    logic.importChat({
       id: decodeURIComponent(importChat.chatId),
       title: decodeURIComponent(importChat.title),
-    })
-    await logic.persistence.message.add({
-      chatId: decodeURIComponent(importChat.chatId),
-      content: {
-        type: "deferred"
-      },
-      key: decodeURIComponent(importChat.chatKey),
-      nonce: +decodeURIComponent(importChat.nonce)
+      initialKey: decodeURIComponent(importChat.chatKey),
+      initialNonce: +decodeURIComponent(importChat.nonce)
     });
-  }), [importChat]);
+  }, [importChat]);
+
+  useEach(logic.events, async event => {
+    switch (event.type) {
+      case "open":
+        navigate(`/chat/${encodeURIComponent(event.chatId)}`)
+        break;
+    }
+  });
 
   return <MainScreen {...mainLogic} />;
 }

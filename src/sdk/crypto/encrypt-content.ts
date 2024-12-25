@@ -1,17 +1,17 @@
 import {encryptAes256, hmacSha256} from "@/sdk/crypto/subtle-crypto.ts";
 
-export interface EncodeContentOptions {
+export interface EncryptContentOptions {
   content: unknown;
   key: string;
 }
 
-export interface EncodeContentResult {
+export interface EncryptContentResult {
   contentIV: string;
   content: string;
   signature: string;
 }
 
-export async function encodeContent({ content, key }: EncodeContentOptions): Promise<EncodeContentResult> {
+export async function encryptContent({ content, key }: EncryptContentOptions): Promise<EncryptContentResult> {
   const contentString = JSON.stringify(content);
 
   const signature = await hmacSha256({

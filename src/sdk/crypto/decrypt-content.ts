@@ -1,13 +1,13 @@
 import {decryptAes256, verifyHmacSha256} from "@/sdk/crypto/subtle-crypto.ts";
 
-export interface DecodeContentOptions {
+export interface DecryptContentOptions {
   content: string;
   contentIV: string;
   signature: string;
   key: string;
 }
 
-export async function decodeContent({content, contentIV, signature, key}: DecodeContentOptions): Promise<unknown | undefined> {
+export async function decryptContent({content, contentIV, signature, key}: DecryptContentOptions): Promise<unknown> {
   // Decrypt content
   const decryptedJSON = await decryptAes256({
     encrypted: content,

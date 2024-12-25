@@ -1,9 +1,16 @@
+import {Channel} from "@/modules/coroutines/channel/channel.ts";
+import {createChannel} from "@/modules/coroutines/channel/create.ts";
+import {launch} from "@/modules/coroutines/launch.ts";
+
 export interface Observable<T = unknown> {
   // Essential methods
   subscribe(observer: Observer<T>): Cancellation;
   emit(value: T): void;
   // 'Extension' methods
+  subscribeAsChannel(): Channel<T>;
+  drop(n: number): Observable<T>;
   map<R>(block: (value: T) => R): Observable<R>;
+  mapNotNull<R>(block: (value: T) => R | undefined | null): Observable<R>;
   filter(predicate: (value: T) => boolean): Observable<T>;
 }
 
@@ -32,10 +39,31 @@ export function createObservable<T>(): Observable<T> {
         observer(value);
       }
     },
+    subscribeAsChannel(): Channel<T> {
+      const channel = createChannel<T>();
+      const cancellation = this.subscribe(event => launch(async () => {
+        if (!channel.send(event)) cancellation();
+      }));
+      return channel;
+    },
+    drop(n: number): Observable<T> {
+      const observable = createObservable<T>();
+      this.subscribe((value) => {
+        if (n <= 0) {
+          observable.emit(value);
+        } else {
+          n--;
+        }
+      })
+      return observable;
+    },
     map<R>(block: (value: T) => R): Observable<R> {
       const observable = createObservable<R>();
       this.subscribe((value) => observable.emit(block(value)));
       return observable;
+    },
+    mapNotNull<R>(block: (value: T) => R | undefined | null): Observable<R> {
+      return this.map(block).filter(value => value != null) as Observable<R>;
     },
     filter(predicate: (value: T) => boolean): Observable<T> {
       const observable = createObservable<T>();

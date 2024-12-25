@@ -19,7 +19,7 @@ export function ChatHeader({text, loading, waiting, setText}: {
             ? <motion.div className="absolute left-0 right-0" key="loader" exit={{y: -10, opacity: 0}}>
               <Connecting/>
             </motion.div>
-            : !waiting
+            : waiting
               ? <motion.div className="absolute left-0 right-0" key="loader" exit={{y: -10, opacity: 0}}>
                 <Updating/>
               </motion.div>

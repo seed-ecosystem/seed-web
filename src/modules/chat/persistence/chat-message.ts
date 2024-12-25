@@ -1,8 +1,14 @@
-import {MessageContent} from "@/modules/crypto/message-content/message-content.ts";
-
 export interface ChatMessage {
+  key: string;
   nonce: number;
   chatId: string;
-  key: string;
-  content: MessageContent | { type: "deferred" };
+  content: MessageContent
 }
+
+export type MessageContent = {
+  type: "regular";
+  title: string;
+  text: string;
+} | {
+  type: "unknown";
+};

@@ -1,63 +1,63 @@
-import {Channel} from "@/modules/coroutines/channel/channel.ts";
 import {Message} from "@/modules/chat/logic/message.ts";
+import {SeedPersistence} from "@/modules/umbrella/persistence/seed-persistence.ts";
 import {launch} from "@/modules/coroutines/launch.ts";
-import {MessageStorage} from "@/modules/chat/persistence/message-storage.ts";
-import {MutableRefObject, Ref, RefObject} from "react";
-import {IncrementLocalNonceUsecase} from "@/modules/chat/logic/increment-local-nonce-usecase.ts";
-import {createChannel} from "@/modules/coroutines/channel/create.ts";
 
-export interface LoadLocalMessagesUsecase {
-  (options: {
-    nicknameRef: RefObject<string>,
-    localNonceRef: MutableRefObject<number>;
-    serverNonceRef: MutableRefObject<number>;
-  }): Channel<Message[]>
+export type LoadLocalMessagesOptions = {
+  chatId: string;
+  serverNonce: number;
+  setServerNonce(value: number): void;
+  localNonce: number;
+  setLocalNonce(value: number): void;
+  getNickname(): string;
+  setMessages(values: Message[]): void;
+  persistence: SeedPersistence;
 }
 
-export function createLoadLocalMessagesUsecase(
-  {messageStorage, chatId, incrementLocalNonce}: {
-    incrementLocalNonce: IncrementLocalNonceUsecase;
-    messageStorage: MessageStorage,
-    chatId: string,
-  }
-): LoadLocalMessagesUsecase {
-  return ({nicknameRef, localNonceRef, serverNonceRef}) => {
-    const channel = createChannel<Message[]>();
-    launch(async () => {
-      const persistenceMessages = await messageStorage.list({chatId})
-      const result: Message[] = [];
+export function loadLocalMessages(
+  {
+    chatId,
+    serverNonce, setServerNonce,
+    localNonce, setLocalNonce,
+    getNickname, setMessages,
+    persistence
+  }: LoadLocalMessagesOptions
+) {
+  launch(async () => {
+    const persistenceMessages = await persistence.message.list({chatId})
+    const result: Message[] = [];
 
-      for (const message of persistenceMessages) {
-        if (message.content.type == "deferred") continue;
+    for (const message of persistenceMessages) {
 
-        serverNonceRef.current = message.nonce > serverNonceRef.current! ? message.nonce : serverNonceRef.current;
-
-        let common = {
-          localNonce: incrementLocalNonce({localNonceRef}),
-          serverNonce: message.nonce,
-          loading: false,
-          failure: false
-        }
-
-        if (message.content.type == "regular") {
-          result.push({
-            ...common,
-            content: {
-              ...message.content,
-              author: nicknameRef.current == message.content.title
-            }
-          });
-        } else {
-          result.push({
-            ...common,
-            content: { type: "unknown" }
-          });
-        }
+      if (message.nonce > serverNonce) {
+        setServerNonce(message.nonce);
       }
 
-      channel.send(result);
-      channel.close();
-    });
-    return channel;
-  };
+      localNonce++;
+      setLocalNonce(localNonce);
+
+      let common = {
+        localNonce: localNonce,
+        serverNonce: message.nonce,
+        loading: false,
+        failure: false
+      }
+
+      if (message.content.type == "regular") {
+        result.push({
+          ...common,
+          content: {
+            ...message.content,
+            author: getNickname() == message.content.title
+          }
+        });
+      } else {
+        result.push({
+          ...common,
+          content: { type: "unknown" }
+        });
+      }
+    }
+
+    setMessages(result);
+  });
 }
