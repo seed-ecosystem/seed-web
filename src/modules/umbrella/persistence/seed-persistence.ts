@@ -28,16 +28,13 @@ export async function createPersistence(): Promise<SeedPersistence> {
         createChatObjectStore(db);
         return;
       }
-      // Additions for intermediate versions
-      if (version >= 2) {
-        createChatObjectStore(db);
-      }
-      if (version >= 3) {
-        db.clear("message");
-        db.clear("chat");
-      }
     }
   });
+
+  if (db.version == 3) {
+    await db.clear("chat");
+    await db.clear("message");
+  }
 
   return {
     message: createMessageStorage(db),
