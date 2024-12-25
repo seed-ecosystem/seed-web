@@ -10,6 +10,7 @@ import {
 } from "@/modules/chat/persistence/nickname-storage.ts";
 import {openDB} from "idb";
 import {ChatStorage, createChatObjectStore, createChatStorage} from "@/modules/chat-list/persistence/chat-storage.ts";
+import {node} from "globals";
 
 export interface SeedPersistence {
   message: MessageStorage;
@@ -22,12 +23,17 @@ export async function createPersistence(): Promise<SeedPersistence> {
     upgrade(db, version) {
       if (version == 3) {
         db.deleteObjectStore("message");
+        db.deleteObjectStore("chat");
+        version = 0;
       }
+      // Full schema creation
       if (version == 0) {
         createNicknameObjectStore(db);
         createMessageObjectStore(db);
         createChatObjectStore(db);
+        return;
       }
+      // Additions for intermediate versions
       if (version >= 2) {
         createChatObjectStore(db);
       }
