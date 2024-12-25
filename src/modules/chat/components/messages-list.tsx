@@ -6,13 +6,14 @@ import {LoadingSpinner} from "@/modules/core/components/loading-spinner.tsx";
 import {CircleX} from "lucide-react";
 import {Message} from "@/modules/chat/logic/message.ts";
 import {convertTitleToAvatar} from "@/convert-title-to-avatar.ts";
+import {memo} from "react";
 
-export function MessagesList(
+export const MessagesList = memo((
   {messages}: {
     messages: Message[];
   }
-) {
-  return <>
+) => (
+  <>
     <div className="flex flex-col-reverse flex-grow h-0 w-full overflow-y-scroll no-scrollbar" id="chatMessageListScroll">
 
       <ChatMessageList
@@ -40,5 +41,5 @@ export function MessagesList(
       </ChatMessageList>
 
     </div>
-  </>;
-}
+  </>
+));

@@ -1,69 +1,146 @@
-import {ChangeNicknameUsecase, createChangeNicknameUsecase} from "@/modules/chat/logic/change-nickname-usecase.ts";
-import {createSendMessageUsecase} from "@/modules/chat/logic/send-message-usecase.ts";
-import {ChatEventsUsecase, createChatEventsUsecase} from "@/modules/chat/logic/chat-events-usecase.ts";
-import {Persistence} from "@/modules/umbrella/persistence/persistence.ts";
-import {createDecodeMessageUsecase} from "@/modules/chat/logic/decode-message-usecase.ts";
-import {SeedSocket} from "@/modules/socket/seed-socket.ts";
-import {MessageCoder} from "@/modules/crypto/message-coder.ts";
-import {IncrementLocalNonceUsecase} from "@/modules/chat/logic/increment-local-nonce-usecase.ts";
-import {createGetNicknameUsecase, GetNicknameUsecase} from "@/modules/chat/logic/get-nickname-usecase.ts";
-import {
-  createLoadLocalMessagesUsecase,
-  LoadLocalMessagesUsecase
-} from "@/modules/chat/logic/load-local-messages-usecase.ts";
-import {createNextMessageUsecase} from "@/modules/chat/logic/next-message-usecase.ts";
-import {createSanitizeContentUsecase} from "@/modules/chat/logic/sanitize-content-usecase.ts";
-import {createSendTextMessageUsecase, SendTextMessageUsecase} from "@/modules/chat/logic/send-text-message-usecase.ts";
-import {createGetWaitingUsecase, GetWaitingUsecase} from "@/modules/chat/logic/get-waiting-usecase.ts";
-import {SeedClient} from "@/modules/client/seed-client.ts";
-import {createGetLoadingUsecase, GetLoadingUsecase} from "@/modules/chat/logic/get-loading-usecase.ts";
+import {SeedPersistence} from "@/modules/umbrella/persistence/seed-persistence.ts";
+import {Channel} from "@/modules/coroutines/channel/channel.ts";
+import {createChannel} from "@/modules/coroutines/channel/create.ts";
+import {Message} from "@/modules/chat/logic/message.ts";
+import {loadLocalMessages} from "@/modules/chat/logic/load-local-messages-usecase.ts";
+import {loadNickname} from "@/modules/chat/logic/load-nickname.ts";
+import {onNicknameChange} from "@/modules/chat/logic/on-nickname-change.ts";
+import {Cancellation} from "@/coroutines/observable.ts";
+import {WorkerStateHandle} from "@/modules/umbrella/logic/worker-state-handle.ts";
+import {listenWorkerEvents} from "@/modules/chat/logic/listen-worker-events.ts";
+import {sendMessage} from "@/modules/chat/logic/send-message.ts";
+
+export type ChatEvent = {
+  type: "nickname";
+  value: string;
+} | {
+  type: "text";
+  value: string;
+} | {
+  type: "loading";
+  value: boolean;
+} | {
+  type: "updating";
+  value: boolean;
+} | {
+  type: "messages";
+  value: Message[];
+};
 
 export interface ChatLogic {
-  changeNickname: ChangeNicknameUsecase;
-  getNickname: GetNicknameUsecase;
-  getWaiting: GetWaitingUsecase;
-  getLoading: GetLoadingUsecase;
-  sendTextMessage: SendTextMessageUsecase;
-  chatEvents: ChatEventsUsecase;
-  loadLocalMessages: LoadLocalMessagesUsecase;
+  events: Channel<ChatEvent>
+
+  getLoading(): boolean;
+  getUpdating(): boolean;
+
+  getNickname(): string;
+  setNickname(value: string): void;
+
+  getText(): string;
+  setText(value: string): void;
+
+  getMessages(): Message[];
+
+  mount(): Cancellation;
+
+  sendMessage(): void;
 }
 
 export function createChatLogic(
   {
-    persistence, socket, client,
-    messageCoder, chatId, incrementLocalNonce,
+    persistence, worker, chatId,
   }: {
-    persistence: Persistence;
-    client: SeedClient;
-    socket: SeedSocket;
-    messageCoder: MessageCoder;
     chatId: string;
-    incrementLocalNonce: IncrementLocalNonceUsecase;
+    persistence: SeedPersistence;
+    worker: WorkerStateHandle;
   },
 ): ChatLogic {
-  const {message: messageStorage, nickname: nicknameStorage} = persistence;
+  const events: Channel<ChatEvent> = createChannel();
 
-  const nextMessage = createNextMessageUsecase({messageStorage, messageCoder, chatId});
-  const sanitizeContent = createSanitizeContentUsecase();
+  let messages: Message[] = [];
+  let localNonce = 0;
+  let serverNonce = 0;
+  let loading = !worker.isConnected();
+  let updating = !worker.isWaiting(chatId);
+  let nickname = "";
+  let text = "";
 
-  const decodeMessage = createDecodeMessageUsecase({
-    messageStorage, messageCoder,
-    chatId, incrementLocalNonce,
-    nextMessage, sanitizeContent
-  });
+  function setMessages(value: Message[]) {
+    messages = value;
+    events.send({ type: "messages", value: messages });
+  }
 
-  const sendMessage = createSendMessageUsecase({
-    socket, messageCoder, incrementLocalNonce,
-    nextMessage, sanitizeContent, chatId
+  function setLoading(value: boolean) {
+    loading = value;
+    events.send({ type: "loading", value: loading });
+  }
+
+  function setUpdating(value: boolean) {
+    updating = value;
+    events.send({ type: "updating", value: loading });
+  }
+
+  function setNickname(value?: string) {
+    onNicknameChange({
+      value,
+      setNickname: (value) => nickname = value,
+      setDisplayNickname: (value) => events.send({ type: "nickname", value: value }),
+      getMessages: () => messages, setMessages,
+      persistence
+    });
+  }
+
+  function setText(value: string) {
+    text = value;
+    events.send({ type: "text", value: text });
+  }
+
+  function editMessage(modified: Message) {
+    setMessages(
+      messages.map(message => message.localNonce == modified.localNonce
+        ? modified
+        : message
+      )
+    )
+  }
+
+  loadNickname({persistence, setNickname});
+
+  loadLocalMessages({
+    chatId,
+    getNickname: () => nickname,
+    serverNonce, setServerNonce: (value) => serverNonce = value,
+    localNonce, setLocalNonce: (value) => localNonce = value,
+    setMessages, persistence
   });
 
   return {
-    changeNickname: createChangeNicknameUsecase({nicknameStorage}),
-    chatEvents: createChatEventsUsecase({decodeMessage, socket, chatId}),
-    getNickname: createGetNicknameUsecase({nicknameStorage}),
-    getWaiting: createGetWaitingUsecase({client, chatId}),
-    getLoading: createGetLoadingUsecase({client}),
-    loadLocalMessages: createLoadLocalMessagesUsecase({messageStorage, chatId, incrementLocalNonce}),
-    sendTextMessage: createSendTextMessageUsecase({sendMessage}),
+    events,
+    getLoading: () => loading,
+    getUpdating: () => updating,
+    getMessages: () => messages,
+    getNickname: () => nickname, setNickname,
+    getText: () => text, setText,
+    mount(): Cancellation {
+      return listenWorkerEvents({
+        worker, chatId,
+        getNickname: () => nickname,
+        getMessages: () => messages, setMessages,
+        setLoading, setUpdating,
+        getLocalNonce: () => localNonce, setLocalNonce: (value) => localNonce = value,
+        getServerNonce: () => serverNonce, setServerNonce: (value) => serverNonce = value,
+      });
+    },
+    sendMessage() {
+      sendMessage({
+        chatId, text, setText, nickname,
+        getLocalNonce: () => localNonce,
+        setLocalNonce: (value) => localNonce = value,
+        getServerNonce: () => serverNonce,
+        setServerNonce: (value) => serverNonce = value,
+        getMessages: () => messages, setMessages,
+        editMessage, worker
+      });
+    }
   }
 }

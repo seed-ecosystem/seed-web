@@ -1,10 +1,7 @@
 import {ChatLogic, createChatLogic} from "@/modules/chat/logic/chat-logic.ts";
-import {Persistence} from "@/modules/umbrella/persistence/persistence.ts";
-import {SeedSocket} from "@/modules/socket/seed-socket.ts";
-import {MessageCoder} from "@/modules/crypto/message-coder.ts";
-import {IncrementLocalNonceUsecase} from "@/modules/chat/logic/increment-local-nonce-usecase.ts";
+import {SeedPersistence} from "@/modules/umbrella/persistence/seed-persistence.ts";
 import {ChatListLogic, createChatListLogic} from "@/modules/chat-list/logic/chat-list-logic.ts";
-import {SeedClient} from "@/modules/client/seed-client.ts";
+import {WorkerStateHandle} from "@/modules/umbrella/logic/worker-state-handle.ts";
 
 export interface MainLogic {
   chatListLogic: ChatListLogic;
@@ -12,21 +9,15 @@ export interface MainLogic {
 }
 
 export function createMainLogic(
-  {persistence, socket, client, messageCoder, incrementLocalNonce}: {
-    persistence: Persistence;
-    socket: SeedSocket;
-    client: SeedClient;
-    messageCoder: MessageCoder;
-    incrementLocalNonce: IncrementLocalNonceUsecase;
+  {persistence, worker}: {
+    persistence: SeedPersistence;
+    worker: WorkerStateHandle;
   }
-): MainLogic {
+ ): MainLogic {
   return {
     chatListLogic: createChatListLogic({persistence}),
     createChat({chatId}): ChatLogic {
-      return createChatLogic({
-        persistence, socket, messageCoder,
-        chatId, incrementLocalNonce, client
-      });
+      return createChatLogic({persistence, worker, chatId});
     }
   }
 }

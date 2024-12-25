@@ -28,13 +28,12 @@ export interface Cancellation {
 }
 
 export function useEach<T>(
-  channel: () => Channel<T>,
+  channel: Channel<T>,
   block: (element: T) => Promise<void>
 ) {
   useEffect(() => {
-    const created = channel();
-    created.onEach(block);
-    return created.close;
+    const subscription = channel.onEach(block);
+    return subscription.cancel;
   }, []);
 }
 

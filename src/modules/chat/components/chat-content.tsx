@@ -6,7 +6,7 @@ import {Message} from "@/modules/chat/logic/message.ts";
 
 export interface ChatProps {
   loading: boolean;
-  waiting: boolean;
+  updating: boolean;
   messages: Message[];
   text: string;
   setText: (value: string) => void;
@@ -15,14 +15,14 @@ export interface ChatProps {
   sendMessage: () => void;
 }
 
-export function ChatContent({loading, waiting, messages, text, setText, nickname, setNickname, sendMessage}: ChatProps) {
+export function ChatContent({loading, updating, messages, text, setText, nickname, setNickname, sendMessage}: ChatProps) {
   return (
     <>
       <div className="h-full w-full overflow-hidden flex flex-col relative">
         <div className="w-full flex-grow flex justify-center">
           <div className="h-full flex-grow max-w-full lg:max-w-3xl flex flex-col">
             {
-              !loading && messages.length == 0
+              !updating && messages.length == 0
                 ? EmptyMessages()
                 : <MessagesList messages={messages} />
             }
@@ -39,7 +39,7 @@ export function ChatContent({loading, waiting, messages, text, setText, nickname
           text={nickname}
           setText={setNickname}
           loading={loading}
-          waiting={waiting}/>
+          waiting={updating}/>
 
       </div>
     </>

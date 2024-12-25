@@ -1,8 +1,8 @@
-export interface ChatMessage {
+export interface Message {
   key: string;
-  nonce: number;
   chatId: string;
-  content: MessageContent
+  nonce: number;
+  content: MessageContent;
 }
 
 export type MessageContent = {
