@@ -28,6 +28,15 @@ export async function createPersistence(): Promise<SeedPersistence> {
         createChatObjectStore(db);
         return;
       }
+      if (version >= 2) {
+        createChatObjectStore(db);
+      }
+      if (version >= 3) {
+        db.deleteObjectStore("chat");
+        db.deleteObjectStore("message");
+        createChatObjectStore(db);
+        createMessageObjectStore(db);
+      }
     }
   });
 

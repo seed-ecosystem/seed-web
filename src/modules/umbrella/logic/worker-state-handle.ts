@@ -5,6 +5,7 @@ import {sanitizeContent} from "@/modules/umbrella/logic/sanitize-messages.ts";
 
 export type WorkStateHandleEvent = {
   type: "new";
+  chatId: string;
   messages: Message[];
 } | {
   type: "connected";
@@ -54,6 +55,7 @@ export function createWorkerStateHandle(
         if (waitingChatIds.includes(event.message.chatId)) {
           events.emit({
             type: "new",
+            chatId: message.chatId,
             messages: [message]
           });
         } else {
@@ -64,7 +66,7 @@ export function createWorkerStateHandle(
         break;
       case "wait":
         const messages = accumulatedMessages[event.chatId] ?? [];
-        events.emit({type: "new", messages: messages});
+        events.emit({type: "new", chatId: event.chatId, messages});
         delete accumulatedMessages[event.chatId];
         waitingChatIds.push(event.chatId);
         events.emit({type: "waiting", chatId: event.chatId, value: true});

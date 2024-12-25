@@ -28,6 +28,8 @@ export function listenWorkerEvents(
   return worker.events.subscribe(event => {
     switch (event.type) {
       case "new":
+        if (event.chatId != chatId) return;
+
         const messages: Message[] = [];
 
         for (let eventMessage of event.messages) {
