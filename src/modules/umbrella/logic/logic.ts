@@ -37,10 +37,13 @@ export async function createLogic(): Promise<Logic> {
   return {
     events,
     importChat(chat: Chat) {
-      persistence.chat.add(chat).then(() => {
-        events.send({ type: "open", chatId: chat.id });
+      persistence.chat.exists(chat.id).then(exists => {
+        if (!exists) return;
+        persistence.chat.add(chat).then(() => {
+          events.send({ type: "open", chatId: chat.id });
+        });
+        workerStateHandle.subscribe({ chatId: chat.id, nonce: chat.initialNonce });
       });
-      workerStateHandle.subscribe({ chatId: chat.id, nonce: chat.initialNonce });
     },
     createMainLogic(): MainLogic {
       return createMainLogic({persistence, worker: workerStateHandle});
