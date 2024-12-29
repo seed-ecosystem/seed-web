@@ -21,7 +21,7 @@ export interface SeedPersistence {
 }
 
 export async function createPersistence(): Promise<SeedPersistence> {
-  const db = await openDB("persistence", 5, {
+  const db = await openDB("persistence", 6, {
     async upgrade(db, version) {
       // Full schema creation
       if (version == 0) {
@@ -34,18 +34,11 @@ export async function createPersistence(): Promise<SeedPersistence> {
       if (version <= 2) {
         createChatObjectStore(db);
       }
-      if (version <= 3) {
+      if (version <= 5) {
         db.deleteObjectStore("message");
         db.deleteObjectStore("chat");
         createMessageObjectStore(db);
         createChatObjectStore(db);
-      }
-      if (version <= 4) {
-        db.deleteObjectStore("message");
-        db.deleteObjectStore("chat");
-        createMessageObjectStore(db);
-        createChatObjectStore(db);
-        createKeyObjectStore(db);
       }
     }
   });
