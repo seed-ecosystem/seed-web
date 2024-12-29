@@ -38,7 +38,7 @@ export async function createLogic(): Promise<Logic> {
     events,
     importChat(chat: Chat) {
       persistence.chat.exists(chat.id).then(exists => {
-        if (!exists) return;
+        if (exists) return;
         persistence.chat.add(chat).then(() => {
           events.send({ type: "open", chatId: chat.id });
         });
