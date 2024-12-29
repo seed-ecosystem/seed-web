@@ -53,7 +53,7 @@ export function MessageInput(
         </Button>
       </div>
       <div
-        className="hidden sm:block m-10 p-1 relative rounded-lg border bg-background focus-within:ring-1 focus-within:ring-ring">
+        className="hidden sm:block mx-10 mb-10 mt-1 p-1 relative rounded-lg border bg-background focus-within:ring-1 focus-within:ring-ring">
         <ChatInput
           ref={inputRef}
           onChange={(event) => setText(event.target.value)}
