@@ -27,14 +27,20 @@ export function MessageInput(
       document.removeEventListener("keydown", listener);
     };
   }, []);
-  const inputRef = useRef(null);
+
+  const inputRef= useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (inputRef.current!.value != text) {
+      inputRef.current!.value = text;
+    }
+  }, [text]);
 
   return <>
     <div>
       <div className="flex sm:hidden p-1">
         <ChatInput
           ref={inputRef}
-          value={text}
           onChange={(event) => setText(event.target.value)}
           placeholder="Type your message here..."
           className="flex-grow resize-none rounded-lg bg-background border-0 shadow-none focus-visible:ring--1 h-max"/>
@@ -50,7 +56,6 @@ export function MessageInput(
         className="hidden sm:block m-10 p-1 relative rounded-lg border bg-background focus-within:ring-1 focus-within:ring-ring">
         <ChatInput
           ref={inputRef}
-          value={text}
           onChange={(event) => setText(event.target.value)}
           placeholder="Type your message here..."
           className="resize-none rounded-lg bg-background border-0 p-3 shadow-none focus-visible:ring--1 h-max"/>

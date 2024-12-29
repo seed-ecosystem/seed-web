@@ -1,7 +1,6 @@
 import {SeedPersistence} from "@/modules/umbrella/persistence/seed-persistence.ts";
 import {Message} from "@/modules/chat/logic/message.ts";
 import {launch} from "@/modules/coroutines/launch.ts";
-import {message} from "typia/lib/protobuf";
 
 export type SetNicknameOptions = {
   value?: string;
@@ -20,13 +19,13 @@ export function onNicknameChange(
     persistence
   }: SetNicknameOptions
 ) {
-  const nickname = value ?? "Anonymous";
-  const displayNickname = value ?? "";
+  const nickname = !value || value.trim().length == 0 ? "Anonymous" : value;
+  const displayNickname = value?.trim() ?? "";
 
   setNickname(nickname);
   setDisplayNickname(displayNickname);
 
-  launch(async () => persistence.nickname.setName(nickname));
+  launch(async () => persistence.nickname.setName(displayNickname));
 
   const messages = getMessages().map(message => {
     if (message.content.type != "regular") return message;

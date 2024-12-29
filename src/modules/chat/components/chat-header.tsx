@@ -3,6 +3,7 @@ import {motion, AnimatePresence} from "framer-motion";
 import {LoadingSpinner} from "@/modules/core/components/loading-spinner.tsx";
 import * as React from "react";
 import {Input} from "@/modules/core/components/input.tsx";
+import {useEffect, useRef} from "react";
 
 export function ChatHeader({text, loading, waiting, setText}: {
   text: string;
@@ -40,9 +41,17 @@ function NicknameInput(
     setText: (text: string) => void;
   }
 ) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (inputRef.current!.value != text) {
+      inputRef.current!.value = text;
+    }
+  }, [text]);
+
   return <div className="w-full h-full flex justify-center items-center">
     <Input
-      value={text}
+      ref={inputRef}
       onChange={(e) => setText(e.target.value)}
       placeholder={"Anonymous"} />
   </div>;

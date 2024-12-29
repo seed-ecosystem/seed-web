@@ -1,5 +1,5 @@
 import {ChatLogic} from "@/modules/chat/logic/chat-logic.ts";
-import {useEffect, useState} from "react";
+import {useEffect, useMemo, useState} from "react";
 import {useEach} from "@/modules/coroutines/channel/channel.ts";
 import {ChatContent} from "@/modules/chat/components/chat-content.tsx";
 
@@ -46,10 +46,8 @@ export function ChatScreen(
     loading: loading,
     updating: updating,
     messages: messages,
-    text: text,
-    setText,
-    nickname,
-    setNickname,
+    text, setText,
+    nickname, setNickname,
     sendMessage
   });
 }
