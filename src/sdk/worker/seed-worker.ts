@@ -7,16 +7,19 @@ import {Message, MessageContent} from "@/sdk/worker/message.ts";
 import typia from "typia";
 import {createObservable, Observable} from "@/coroutines/observable.ts";
 import {KeyPersistence} from "@/sdk/worker/key-persistence.ts";
+import {IndexedKey} from "@/sdk/worker/indexed-key.ts";
 
 export type SeedWorkerEvent = {
   type: "new";
-  message: Message;
+  chatId: string;
+  messages: Message[];
 } | {
   type: "connected";
   value: boolean;
 } | {
-  type: "wait";
+  type: "waiting";
   chatId: string;
+  value: boolean;
 };
 
 export type SendMessageOptions = {
@@ -33,6 +36,7 @@ export interface SeedWorker {
   events: Observable<SeedWorkerEvent>;
 
   isConnected(): boolean;
+  isWaiting(chatId: string): boolean;
 
   sendMessage(options: SendMessageOptions): Promise<number | undefined>;
   subscribe(options: SubscribeOptions): Promise<void>;
@@ -47,15 +51,41 @@ export function createSeedWorker(
   }
 ): SeedWorker {
   const events = createObservable<SeedWorkerEvent>();
+  let accumulated: Record<string, (ClientEvent & { type: "new" })[]> = {};
+  let waitingChatIds: string[] = [];
 
   client.events.subscribeAsChannel().onEach(async (event) => {
     switch (event.type) {
       case "new":
-        events.emit(await decryptNewEvent(persistence, event));
+        if (waitingChatIds.includes(event.message.chatId)) {
+          const decrypted = await decryptNewEvents(persistence, event.message.chatId, [event]);
+          events.emit(decrypted);
+        } else {
+          if (!(event.message.chatId in accumulated)) {
+            accumulated[event.message.chatId] = [];
+          }
+          accumulated[event.message.chatId]!.push(event);
+        }
+        break;
+      case "wait":
+        waitingChatIds.push(event.chatId);
+        if (event.chatId in accumulated) {
+          const decrypted = await decryptNewEvents(persistence, event.chatId, accumulated[event.chatId]);
+          delete accumulated[event.chatId];
+          events.emit(decrypted);
+        }
+        events.emit({ type: "waiting", chatId: event.chatId, value: true });
         break;
       case "connected":
-      case "wait":
+        if (!event.value) {
+          for (const chatId of waitingChatIds) {
+            events.emit({type: "waiting", chatId, value: false});
+          }
+          accumulated = {};
+          waitingChatIds = [];
+        }
         events.emit(event);
+        break;
     }
   });
 
@@ -65,10 +95,12 @@ export function createSeedWorker(
     isConnected(): boolean {
       return client.isConnected();
     },
-
+    isWaiting(chatId: string): boolean {
+      return waitingChatIds.includes(chatId);
+    },
     async sendMessage({ content, chatId }): Promise<number | undefined> {
       for (let i = 0; i < SEND_MESSAGE_ATTEMPTS; i++) {
-        const {key, nonce} = await generateNewKey({chatId, persistence});
+        const {key, nonce} = await generateNewKey({chatId, persistence, cache: []});
 
         const encrypted = await encryptContent({content, key});
 
@@ -89,22 +121,27 @@ export function createSeedWorker(
   };
 }
 
-async function decryptNewEvent(
+async function decryptNewEvents(
   persistence: KeyPersistence,
-  event: ClientEvent & { type: "new" }
+  chatId: string,
+  events: (ClientEvent & { type: "new" })[]
 ): Promise<SeedWorkerEvent> {
-  const {chatId, nonce, signature, content, contentIV} = event.message;
+  const messages: Message[] = [];
+  const cache: IndexedKey[] = [];
 
-  const key = await generateKeyAt({chatId, nonce, persistence});
-  const decrypted = await decryptContent({content, contentIV, signature, key});
+  for (const event of events) {
+    const {chatId, nonce, signature, content, contentIV} = event.message;
+    const key = await generateKeyAt({chatId, nonce, persistence, cache});
+    const decrypted = await decryptContent({content, contentIV, signature, key});
 
-  const message: Message = {
-    key, chatId, nonce,
-    content: typia.is<MessageContent>(decrypted) ? decrypted : { type: "unknown" }
+    const message: Message = {
+      key, chatId, nonce,
+      content: typia.is<MessageContent>(decrypted) ? decrypted : { type: "unknown" }
+    }
+
+    messages.push(message);
   }
 
-  return {
-    type: "new",
-    message
-  };
+  await persistence.add({ chatId, keys: cache });
+  return { type: "new", chatId, messages };
 }

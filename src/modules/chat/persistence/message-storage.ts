@@ -5,7 +5,7 @@ import number = RandomRanger.number;
 
 export interface MessageStorage {
   lastMessage(options: {chatId: string}): Promise<ChatMessage | undefined>
-  add(message: ChatMessage): Promise<void>;
+  add(message: ChatMessage[]): Promise<void>;
   get(options: {chatId: string, nonce: number}): Promise<ChatMessage | undefined>;
   list({chatId}: {chatId: string}): Promise<ChatMessage[]>;
 }
@@ -29,10 +29,12 @@ export function createMessageStorage(db: IDBPDatabase): MessageStorage {
       return cursor.value;
     },
 
-    async add(message: ChatMessage): Promise<void> {
-      await db.transaction("message", "readwrite")
-        .objectStore("message")
-        .put(message);
+    async add(messages: ChatMessage[]): Promise<void> {
+      const transaction = db.transaction("message", "readwrite");
+      await Promise.all([
+        ...messages.map(message => transaction.store.put(message)),
+        transaction.done
+      ]);
     },
 
     async get({ chatId, nonce }): Promise<ChatMessage | undefined> {

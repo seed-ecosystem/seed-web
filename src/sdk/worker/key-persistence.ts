@@ -2,7 +2,7 @@ import {IndexedKey} from "@/sdk/worker/indexed-key.ts";
 
 export type AddKeyOptions = {
   chatId: string;
-  key: IndexedKey;
+  keys: IndexedKey[];
 }
 
 export type GetKeyAt = {
@@ -19,7 +19,7 @@ export type GetInitialKeyOptions = {
 }
 
 export interface KeyPersistence {
-  addKey(options: AddKeyOptions): Promise<void>;
+  add(options: AddKeyOptions): Promise<void>;
   getKeyAt(options: GetKeyAt): Promise<string | undefined>;
   getLastKey(options: GetLastKeyOptions): Promise<IndexedKey | undefined>
   getInitialKey(options: GetInitialKeyOptions): Promise<IndexedKey>;

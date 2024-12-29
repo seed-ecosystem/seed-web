@@ -8,7 +8,7 @@ export type Key = {
 
 export interface KeyStorage {
   lastKey(options: {chatId: string}): Promise<Key | undefined>
-  add(key: Key): Promise<void>;
+  add(keys: Key[]): Promise<void>;
   get(options: {chatId: string, nonce: number}): Promise<Key | undefined>;
 }
 
@@ -30,10 +30,12 @@ export function createKeyStorage(db: IDBPDatabase): KeyStorage {
       return cursor.value;
     },
 
-    async add(key: Key): Promise<void> {
-      await db.transaction("key", "readwrite")
-        .store
-        .put(key);
+    async add(keys: Key[]): Promise<void> {
+      const transaction = db.transaction("key", "readwrite")
+      await Promise.all([
+        ...keys.map(key => transaction.store.add(key)),
+        transaction.done
+      ]);
     },
 
     async get({ chatId, nonce }): Promise<Key | undefined> {

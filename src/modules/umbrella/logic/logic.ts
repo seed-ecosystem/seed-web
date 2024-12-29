@@ -9,7 +9,6 @@ import {Chat} from "@/modules/chat-list/persistence/chat.ts";
 import {Channel} from "@/modules/coroutines/channel/channel.ts";
 import {createChannel} from "@/modules/coroutines/channel/create.ts";
 import {subscribeToChats} from "@/modules/umbrella/logic/subscribe-to-chats.ts";
-import {saveNewMessages} from "@/modules/umbrella/logic/save-new-messages.ts";
 import {createWorkerStateHandle} from "@/modules/umbrella/logic/worker-state-handle.ts";
 
 export type LogicEvent = {
@@ -29,12 +28,11 @@ export async function createLogic(): Promise<Logic> {
   const socket = createSeedSocket("https://meetacy.app/seed-go");
   const client = createSeedClient({socket});
   const worker = createSeedWorker({client, persistence});
-  const workerStateHandle = createWorkerStateHandle({worker});
+  const workerStateHandle = createWorkerStateHandle({worker, persistence});
 
   await addBetaChat({persistence});
 
   subscribeToChats({persistence, worker});
-  saveNewMessages({persistence, worker});
 
   return {
     events,
@@ -75,12 +73,14 @@ type CreateSeedWorkerOptions = {
 function createSeedWorker({client, persistence}: CreateSeedWorkerOptions): SeedWorker {
 
   const keyPersistence: KeyPersistence = {
-    async addKey({chatId, key}: AddKeyOptions): Promise<void> {
-      await persistence.key.add({
-        chatId,
-        key: key.key,
-        nonce: key.nonce,
-      })
+    async add({chatId, keys}: AddKeyOptions): Promise<void> {
+      await persistence.key.add(keys.map(key => {
+        return {
+          chatId,
+          nonce: key.nonce,
+          key: key.key
+        };
+      }))
     },
 
     async getInitialKey({chatId}): Promise<IndexedKey> {
