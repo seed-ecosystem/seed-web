@@ -6,10 +6,9 @@ import {createSeedWorker as seedWorker, SeedWorker} from "@/sdk/worker/seed-work
 import {AddKeyOptions, KeyPersistence} from "@/sdk/worker/key-persistence.ts";
 import {IndexedKey} from "@/sdk/worker/indexed-key.ts";
 import {Chat} from "@/modules/chat-list/persistence/chat.ts";
-import {Channel} from "@/modules/coroutines/channel/channel.ts";
-import {createChannel} from "@/modules/coroutines/channel/create.ts";
 import {subscribeToChats} from "@/modules/umbrella/logic/subscribe-to-chats.ts";
 import {createWorkerStateHandle} from "@/modules/umbrella/logic/worker-state-handle.ts";
+import {createObservable, Observable} from "@/coroutines/observable.ts";
 
 export type LogicEvent = {
   type: "open",
@@ -17,13 +16,13 @@ export type LogicEvent = {
 }
 
 export interface Logic {
-  events: Channel<LogicEvent>
+  events: Observable<LogicEvent>
   importChat(chat: Chat): void;
   createMainLogic(): MainLogic;
 }
 
 export async function createLogic(): Promise<Logic> {
-  const events: Channel<LogicEvent> = createChannel();
+  const events: Observable<LogicEvent> = createObservable();
   const persistence = await createPersistence();
   const socket = createSeedSocket("https://meetacy.app/seed-go");
   const client = createSeedClient({socket});
@@ -39,11 +38,11 @@ export async function createLogic(): Promise<Logic> {
     importChat(chat: Chat) {
       persistence.chat.exists(chat.id).then(exists => {
         if (exists) {
-          events.send({ type: "open", chatId: chat.id });
+          events.emit({ type: "open", chatId: chat.id });
           return;
         }
         persistence.chat.add(chat).then(() => {
-          events.send({ type: "open", chatId: chat.id });
+          events.emit({ type: "open", chatId: chat.id });
         });
         workerStateHandle.subscribe({ chatId: chat.id, nonce: chat.initialNonce });
       });

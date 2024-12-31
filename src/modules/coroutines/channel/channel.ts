@@ -27,16 +27,6 @@ export interface Cancellation {
   cancel(): void;
 }
 
-export function useEach<T>(
-  channel: Channel<T>,
-  block: (element: T) => Promise<void>
-) {
-  useEffect(() => {
-    const subscription = channel.onEach(block);
-    return subscription.cancel;
-  }, []);
-}
-
 export function collectAsChannel<T>(flow: Flow<T>): Channel<T> {
   const channel = createChannel<T>();
   let subscriptionRevoked = false;

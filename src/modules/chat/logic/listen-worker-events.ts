@@ -1,14 +1,14 @@
 import {WorkerStateHandle} from "@/modules/umbrella/logic/worker-state-handle.ts";
 import {Message} from "@/modules/chat/logic/message.ts";
 import {Cancellation} from "@/coroutines/observable.ts";
+import {NicknameStateHandle} from "@/modules/main/logic/nickname-state-handle.ts";
 
 export type ListenWorkerEventsOptions = {
   worker: WorkerStateHandle;
   chatId: string;
-  getNickname(): string;
+  nickname: NicknameStateHandle;
   getMessages(): Message[];
   setMessages(value: Message[]): void;
-  setLoading(value: boolean): void;
   setUpdating(value: boolean): void;
   getLocalNonce(): number;
   setLocalNonce(value: number): void;
@@ -18,8 +18,8 @@ export type ListenWorkerEventsOptions = {
 
 export function listenWorkerEvents(
   {
-    worker, chatId, getNickname, getMessages,
-    setMessages, setLoading,
+    worker, chatId, nickname,
+    getMessages, setMessages,
     setUpdating,
     getLocalNonce, setLocalNonce,
     getServerNonce, setServerNonce
@@ -45,7 +45,7 @@ export function listenWorkerEvents(
           if (content.type == "regular") {
             content = {
               ...content,
-              author: getNickname() == content.title
+              author: nickname.get() == content.title
             };
           }
 
@@ -64,9 +64,6 @@ export function listenWorkerEvents(
         }
 
         setMessages([...messages, ...getMessages()]);
-        break;
-      case "connected":
-        setLoading(!event.value);
         break;
       case "waiting":
         if (event.chatId != chatId) break;

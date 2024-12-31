@@ -1,24 +1,25 @@
 import {Message} from "@/modules/chat/logic/message.ts";
 import {SeedPersistence} from "@/modules/umbrella/persistence/seed-persistence.ts";
 import {launch} from "@/modules/coroutines/launch.ts";
+import {NicknameStateHandle} from "@/modules/main/logic/nickname-state-handle.ts";
 
 export type LoadLocalMessagesOptions = {
   chatId: string;
+  nickname: NicknameStateHandle;
   serverNonce: number;
   setServerNonce(value: number): void;
   localNonce: number;
   setLocalNonce(value: number): void;
-  getNickname(): string;
   setMessages(values: Message[]): void;
   persistence: SeedPersistence;
 }
 
 export function loadLocalMessages(
   {
-    chatId,
+    chatId, nickname,
     serverNonce, setServerNonce,
     localNonce, setLocalNonce,
-    getNickname, setMessages,
+    setMessages,
     persistence
   }: LoadLocalMessagesOptions
 ) {
@@ -47,7 +48,7 @@ export function loadLocalMessages(
           ...common,
           content: {
             ...message.content,
-            author: getNickname() == message.content.title
+            author: nickname.get() == message.content.title
           }
         });
       } else {

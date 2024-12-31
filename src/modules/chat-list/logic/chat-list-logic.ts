@@ -1,8 +1,12 @@
 import {SeedPersistence} from "@/modules/umbrella/persistence/seed-persistence.ts";
 import {Chat} from "@/modules/chat-list/logic/chat.ts";
-import {Channel} from "@/modules/coroutines/channel/channel.ts";
-import {createChannel} from "@/modules/coroutines/channel/create.ts";
 import {loadLocalChats} from "@/modules/chat-list/logic/load-local-chats.ts";
+import {
+  ChatListTopBarLogic,
+  createChatListTopBarLogic
+} from "@/modules/chat-list/logic/top-bar/chat-list-top-bar-logic.ts";
+import {NicknameStateHandle} from "@/modules/main/logic/nickname-state-handle.ts";
+import {createObservable, Observable} from "@/coroutines/observable.ts";
 
 export type ChatListEvent = {
   type: "chats";
@@ -10,31 +14,35 @@ export type ChatListEvent = {
 }
 
 export interface ChatListLogic {
-  events: Channel<ChatListEvent>;
+  events: Observable<ChatListEvent>;
+
+  topBar: ChatListTopBarLogic;
 
   getChats(): Chat[];
 }
 
 export function createChatListLogic(
-  {persistence}: {
+  {nickname, persistence}: {
+    nickname: NicknameStateHandle;
     persistence: SeedPersistence;
   }
 ): ChatListLogic {
-  const events = createChannel<ChatListEvent>();
+  const events = createObservable<ChatListEvent>();
 
   let chats: Chat[] = [];
 
+  const topBar = createChatListTopBarLogic({nickname});
+
   function setChats(value: Chat[]) {
     chats = value;
-    events.send({ type: "chats", value: chats });
+    events.emit({ type: "chats", value: chats });
   }
 
   loadLocalChats({persistence}).then(setChats);
 
   return {
     events,
-    getChats(): Chat[] {
-      return chats;
-    }
+    topBar,
+    getChats: () => chats,
   };
 }

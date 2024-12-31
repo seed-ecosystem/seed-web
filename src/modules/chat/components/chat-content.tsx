@@ -1,21 +1,17 @@
-import {ChatHeader} from "@/modules/chat/components/chat-header.tsx";
 import {MessagesList} from "@/modules/chat/components/messages-list.tsx";
 import {EmptyMessages} from "@/modules/chat/components/empty-messages.tsx";
 import {MessageInput} from "@/modules/chat/components/message-input.tsx";
 import {Message} from "@/modules/chat/logic/message.ts";
 
 export interface ChatProps {
-  loading: boolean;
   updating: boolean;
   messages: Message[];
   text: string;
   setText: (value: string) => void;
-  nickname: string;
-  setNickname: (value: string) => void;
   sendMessage: () => void;
 }
 
-export function ChatContent({loading, updating, messages, text, setText, nickname, setNickname, sendMessage}: ChatProps) {
+export function ChatContent({updating, messages, text, setText, sendMessage}: ChatProps) {
   return (
     <>
       <div className="h-full w-full overflow-hidden flex flex-col relative">
@@ -34,13 +30,6 @@ export function ChatContent({loading, updating, messages, text, setText, nicknam
             />
           </div>
         </div>
-
-        <ChatHeader
-          text={nickname}
-          setText={setNickname}
-          loading={loading}
-          waiting={updating}/>
-
       </div>
     </>
   )

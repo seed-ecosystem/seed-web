@@ -1,7 +1,4 @@
-import {MoreHorizontal, SquarePen} from "lucide-react";
 import {Link} from "wouter";
-import {cn} from "@/lib/utils.ts";
-import {buttonVariants} from "@/modules/core/components/button.tsx";
 import {Avatar, AvatarFallback, AvatarImage} from "@/modules/core/components/avatar.tsx";
 import {convertTitleToAvatar} from "@/convert-title-to-avatar.ts";
 import {Chat} from "@/modules/chat-list/logic/chat.ts";
@@ -14,37 +11,7 @@ export interface ChatListProps {
 export function ChatListContent({chats}: ChatListProps) {
   return (
     <div
-      className="relative group flex flex-col h-full bg-muted/10 dark:bg-muted/20 gap-4 p-2 data-[collapsed=true]:p-2 "
-    >
-      <div className="flex justify-between p-2 items-center">
-        <div className="flex gap-2 items-center text-2xl">
-          <p className="font-medium">Chats</p>
-          <span className="text-muted-foreground">({chats.length})</span>
-        </div>
-
-        <div>
-          <Link
-            href="#"
-            className={cn(
-              buttonVariants({ variant: "ghost", size: "icon" }),
-              "h-9 w-9",
-            )}
-          >
-            <MoreHorizontal size={20} />
-          </Link>
-
-          <Link
-            href="#"
-            className={cn(
-              buttonVariants({ variant: "ghost", size: "icon" }),
-              "h-9 w-9",
-            )}
-          >
-            <SquarePen size={20} />
-          </Link>
-        </div>
-      </div>
-
+      className="relative group flex flex-col h-full bg-muted/10 dark:bg-muted/20 gap-4 p-2 data-[collapsed=true]:p-2 ">
       <nav className="grid justify-between gap-1 px-2">
         {chats.map((chat) =>
           <Link

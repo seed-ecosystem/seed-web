@@ -4,9 +4,9 @@ import {sanitizeContent} from "@/modules/umbrella/logic/sanitize-messages.ts";
 
 export type SendMessageOptions = {
   chatId: string;
+  nickname: string;
   text: string;
   setText(value: string): void;
-  nickname: string;
   getLocalNonce(): number;
   setLocalNonce(value: number): void;
   getServerNonce(): number;

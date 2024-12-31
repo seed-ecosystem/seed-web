@@ -1,8 +1,8 @@
 import {Logic} from "@/modules/umbrella/logic/logic.ts";
 import {useEffect, useMemo} from "react";
-import {MainScreen} from "@/modules/main/components/main-screen.ts";
+import {MainScreen} from "@/modules/main/components/main-screen.tsx";
 import {useLocation, useRoute} from "wouter";
-import {useEach} from "@/modules/coroutines/channel/channel.ts";
+import {useEach} from "@/coroutines/observable.ts";
 
 export function App({logic}: {logic: Logic}) {
   const mainLogic = useMemo(() => logic.createMainLogic(), [logic]);
@@ -20,7 +20,7 @@ export function App({logic}: {logic: Logic}) {
     });
   }, [importChat]);
 
-  useEach(logic.events, async event => {
+  useEach(logic.events, event => {
     switch (event.type) {
       case "open":
         navigate(`/chat/${encodeURIComponent(event.chatId)}`)
