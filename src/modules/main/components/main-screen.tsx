@@ -49,6 +49,7 @@ export function MainScreen({events, getLoading, openChat, closeChat, chatListLog
 
   return MainContent({
     loading,
+    closeChat,
     ChatTopBar: chat ? () => ChatTopBar(chat.topBar) : undefined,
     ChatScreen: chat ? () => ChatScreen(chat) : undefined,
     ChatListTopBar: () => ChatListTopBar(chatListLogic.topBar),

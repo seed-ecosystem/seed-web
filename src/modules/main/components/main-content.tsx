@@ -4,15 +4,16 @@ import {TopBarContent} from "@/modules/top-bar/top-bar-content.tsx";
 
 export interface MainProps {
   loading: boolean;
+  closeChat(): void;
   ChatListTopBar: () => ReactElement;
   ChatListScreen: () => ReactElement;
   ChatTopBar?: () => ReactElement;
   ChatScreen?: () => ReactElement;
 }
 
-export function MainContent({loading, ChatListTopBar, ChatListScreen, ChatTopBar, ChatScreen}: MainProps) {
+export function MainContent({loading, closeChat, ChatListTopBar, ChatListScreen, ChatTopBar, ChatScreen}: MainProps) {
   return <div className="h-svh flex flex-col">
-    <TopBarContent loading={loading} Chat={ChatTopBar} ChatList={ChatListTopBar} />
+    <TopBarContent closeChat={closeChat} loading={loading} Chat={ChatTopBar} ChatList={ChatListTopBar} />
 
     <MediaHiddenMD>
       {ChatScreen ? <ChatScreen /> : (<ChatListScreen />)}
