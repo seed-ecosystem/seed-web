@@ -16,7 +16,10 @@ export function MainScreen({events, getLoading, createChat, chatListLogic}: Main
   const [loading, updateLoading] = useState(getLoading);
 
   useEffect(() => {
-    if (!chatParams) return;
+    if (!chatParams) {
+      updateChat(undefined);
+      return;
+    }
     let cancelled = false;
     launch(async () => {
       const chat = await createChat({chatId: decodeURIComponent(chatParams.chatId)});
