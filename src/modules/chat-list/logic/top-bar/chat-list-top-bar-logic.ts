@@ -1,6 +1,5 @@
-import {Channel} from "@/modules/coroutines/channel/channel.ts";
-import {createChannel} from "@/modules/coroutines/channel/create.ts";
 import {NicknameStateHandle} from "@/modules/main/logic/nickname-state-handle.ts";
+import {createObservable, Observable} from "@/coroutines/observable.ts";
 
 export type ChatListTopBarEvent = {
   type: "nickname";
@@ -8,7 +7,7 @@ export type ChatListTopBarEvent = {
 };
 
 export interface ChatListTopBarLogic {
-  events: Channel<ChatListTopBarEvent>;
+  events: Observable<ChatListTopBarEvent>;
 
   getNickname(): string;
   setNickname(value: string): void;
@@ -19,9 +18,9 @@ export function createChatListTopBarLogic(
     nickname: NicknameStateHandle;
   }
 ): ChatListTopBarLogic {
-  const events: Channel<ChatListTopBarEvent> = createChannel();
+  const events: Observable<ChatListTopBarEvent> = createObservable();
 
-  nickname.updates.subscribe(update => events.send({ type: "nickname", value: update }));
+  nickname.updates.subscribe(update => events.emit({ type: "nickname", value: update }));
 
   return {
     events,

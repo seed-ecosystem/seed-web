@@ -24,11 +24,11 @@ export interface Cancellation {
 }
 
 export function useEach<T>(
-  channel: Observable<T>,
+  observable: Observable<T>,
   block: (element: T) => void
 ) {
   useEffect(() => {
-    return channel.subscribe(block);
+    return observable.subscribe(block);
   }, []);
 }
 
