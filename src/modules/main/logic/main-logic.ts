@@ -9,14 +9,22 @@ import {createObservable, Observable} from "@/coroutines/observable.ts";
 export type MainEvent = {
   type: "loading";
   value: boolean;
+} | {
+  type: "chat";
+  value?: ChatLogic;
+} | {
+  type: "closeChat";
 }
 
 export interface MainLogic {
   chatListLogic: ChatListLogic;
-  createChat(options: {chatId: string}): Promise<ChatLogic>;
 
   events: Observable<MainEvent>;
   getLoading(): boolean;
+  getChat(): ChatLogic | undefined;
+
+  openChat(options: {chatId: string}): void;
+  closeChat(): void;
 }
 
 export function createMainLogic(
@@ -28,8 +36,16 @@ export function createMainLogic(
   const events: Observable<MainEvent> = createObservable();
 
   let nickname = createNicknameStateHandle({persistence});
+  let chat: ChatLogic | undefined;
+  let chatListLogic = createChatListLogic({nickname, persistence});
 
-  const chatListLogic = createChatListLogic({nickname, persistence});
+  function setChat(value?: ChatLogic) {
+    chat = value;
+    events.emit({ type: "chat", value: value });
+    if (value == undefined) {
+      events.emit({ type: "closeChat" });
+    }
+  }
 
   worker.events.subscribe(event => {
     switch (event.type) {
@@ -43,10 +59,12 @@ export function createMainLogic(
 
   return {
     chatListLogic,
-    createChat: ({chatId}) =>
-      createChatLogic({persistence, worker, chatId, nickname}),
 
     events,
-    getLoading: () => !worker.isConnected()
+    getLoading: () => !worker.isConnected(),
+    getChat: () => chat,
+
+    openChat: ({chatId}) => createChatLogic({persistence, worker, chatId, nickname}).then(setChat),
+    closeChat: () => setChat(undefined),
   }
 }

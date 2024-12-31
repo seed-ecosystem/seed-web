@@ -1,5 +1,5 @@
 import {ChatLogic} from "@/modules/chat/logic/chat-logic.ts";
-import {useEffect, useMemo, useState} from "react";
+import {useEffect, useState} from "react";
 import {ChatContent} from "@/modules/chat/components/chat-content.tsx";
 import {useEach} from "@/coroutines/observable.ts";
 

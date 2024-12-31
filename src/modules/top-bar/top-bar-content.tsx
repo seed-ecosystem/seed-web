@@ -2,6 +2,7 @@ import {ImportChat} from "@/modules/chat/components/import-chat.tsx";
 import {motion, AnimatePresence} from "framer-motion";
 import {LoadingSpinner} from "@/modules/core/components/loading-spinner.tsx";
 import {ReactElement} from "react";
+import {Link} from "wouter";
 
 export interface TopBarProps {
   loading: boolean;
@@ -12,7 +13,7 @@ export interface TopBarProps {
 export function TopBarContent({loading, Chat, ChatList}: TopBarProps) {
   return (
     <div className="flex h-14 w-full border-b border-border/40 bg-background/95 items-center px-4">
-      <h1 className="text-2xl font-medium">Seed</h1>
+      <h1 className="text-2xl font-medium"><Link to="/">Seed</Link></h1>
       <div className="flex h-full justify-center items-center flex-1 mx-4 relative">
         <AnimatePresence>
           {loading ? <Connecting/>

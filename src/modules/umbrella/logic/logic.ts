@@ -47,9 +47,7 @@ export async function createLogic(): Promise<Logic> {
         workerStateHandle.subscribe({ chatId: chat.id, nonce: chat.initialNonce });
       });
     },
-    createMainLogic(): MainLogic {
-      return createMainLogic({persistence, worker: workerStateHandle});
-    }
+    createMainLogic: () => createMainLogic({persistence, worker: workerStateHandle})
   };
 }
 

@@ -49,8 +49,10 @@ export async function createChatLogic(
     persistence: SeedPersistence;
     worker: WorkerStateHandle;
   },
-): Promise<ChatLogic> {
-  const title = (await persistence.chat.get(chatId)).title;
+): Promise<ChatLogic | undefined> {
+  const chat = await persistence.chat.get(chatId);
+  if (!chat) return;
+  const title = chat.title;
 
   const topBar = createChatTopBarLogic({worker, chatId, title});
 
