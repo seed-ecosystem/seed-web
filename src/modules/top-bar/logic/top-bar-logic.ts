@@ -23,6 +23,14 @@ export function createTopBarLogic(
 ): TopBarLogic {
   const events: Observable<TopBarEvent> = createObservable();
 
+  worker.events.subscribe(event => {
+    switch (event.type) {
+      case "connected":
+        events.emit({ type: "loading", value: !event.value });
+        break;
+    }
+  });
+
   return {
     events,
     getLoading: () => !worker.isConnected(),

@@ -54,6 +54,7 @@ export function createWorkerStateHandle(
             content: sanitizeContent(message.content)
           }
         });
+        console.log("ADD MESSAGE!", messages);
         await persistence.message.add(messages);
         events.emit({ ...event, messages });
         break;
