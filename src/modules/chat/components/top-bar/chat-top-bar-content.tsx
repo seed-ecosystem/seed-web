@@ -8,7 +8,7 @@ export interface ChatTopBarProps {
 export function ChatTopBarContent({waiting, title}: ChatTopBarProps) {
   return waiting
     ? <div className="w-full h-full flex justify-center items-center">
-      <h4 className="text-2xl font-medium">{title}</h4>
+      <h4 className="text-lg font-medium">{title}</h4>
     </div>
     : <Updating/>
 }
