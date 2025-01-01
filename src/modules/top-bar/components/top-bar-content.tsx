@@ -1,10 +1,8 @@
-import {motion, AnimatePresence} from "framer-motion";
 import {LoadingSpinner} from "@/modules/core/components/loading-spinner.tsx";
 import {ReactElement} from "react";
 import {Link} from "wouter";
-import {X} from "lucide-react";
+import {Plus, X} from "lucide-react";
 import {Button} from "@/modules/core/components/button.tsx";
-import {NewChat} from "@/modules/new-chat/component/new-chat.tsx";
 
 export interface TopBarProps {
   loading: boolean;
@@ -18,23 +16,23 @@ export function TopBarContent({loading, closeChat, Chat, ChatList}: TopBarProps)
     <div className="flex h-14 w-full border-b border-border/40 bg-background/95 items-center px-4">
       <h1 className="text-2xl font-medium"><Link to="/">Seed</Link></h1>
       <div className="flex h-full justify-center items-center flex-1 mx-4 relative">
-        <AnimatePresence>
-          {loading
-            ? <Connecting />
-            : Chat
-              ? <Chat />
-              : <ChatList />}
-          </AnimatePresence>
-            </div>
+        {loading
+          ? <Connecting />
+          : Chat
+            ? <Chat />
+            : <ChatList />}
+      </div>
       {Chat
         ? <>
-          <div className="hidden md:block"><NewChat /></div>
-          <div className="md:hidden"><CloseChat onClick={closeChat}/></div>
+          {/*<div className="hidden md:block"><CreateChat /></div>*/}
+          {/*<div className="md:hidden"><CloseChat onClick={closeChat}/></div>*/}
+          {/*TODO: Support creation of new chat from chat*/}
+          <div><CloseChat onClick={closeChat}/></div>
         </>
-        : <NewChat />
+        : <CreateChat/>
       }
     </div>
-  )
+  );
 }
 
 function Connecting() {
@@ -48,5 +46,13 @@ export type CloseChatProps = {
 }
 
 function CloseChat({onClick}: CloseChatProps) {
-  return <Button size="icon" variant="ghost" onClick={onClick}><X/></Button>
+  return <Button size="icon" variant="ghost" onClick={onClick}><X/></Button>;
+}
+
+function CreateChat() {
+  return <Link to="/create">
+    <Button size="icon" variant="ghost">
+      <Plus />
+    </Button>
+  </Link>;
 }

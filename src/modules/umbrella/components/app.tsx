@@ -1,11 +1,12 @@
 import {Logic} from "@/modules/umbrella/logic/logic.ts";
-import {useEffect, useMemo} from "react";
+import React, {useEffect, useMemo} from "react";
 import {MainScreen} from "@/modules/main/components/main-screen.tsx";
-import {useLocation, useRoute} from "wouter";
+import {Route, useLocation, useRoute} from "wouter";
 import {useEach} from "@/coroutines/observable.ts";
+import {CreateChat} from "@/modules/new-chat/component/create-chat.tsx";
 
 export function App({logic}: {logic: Logic}) {
-  const mainLogic = useMemo(() => logic.createMainLogic(), [logic]);
+  const main = useMemo(() => logic.createMain(), [logic]);
 
   const [, navigate] = useLocation();
   const [, importChat] = useRoute("/import/:title/:chatId/:chatKey/:nonce");
@@ -28,5 +29,8 @@ export function App({logic}: {logic: Logic}) {
     }
   });
 
-  return <MainScreen {...mainLogic} />;
+  return <>
+    <MainScreen {...main} />
+    <Route path="/create"><CreateChat {...main.createCreateChat()} /></Route>
+  </>;
 }

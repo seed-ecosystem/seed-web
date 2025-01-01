@@ -6,6 +6,7 @@ import {createNicknameStateHandle} from "@/modules/main/logic/nickname-state-han
 import {loadNickname} from "@/modules/main/logic/load-nickname.ts";
 import {createObservable, Observable} from "@/coroutines/observable.ts";
 import {createTopBarLogic, TopBarLogic} from "@/modules/top-bar/logic/top-bar-logic.ts";
+import {CreateChatLogic, createCreateChatLogic} from "@/modules/new-chat/logic/create-chat-logic.ts";
 
 export type MainEvent = {
   type: "chat";
@@ -17,6 +18,7 @@ export type MainEvent = {
 export interface MainLogic {
   topBar: TopBarLogic;
   chatList: ChatListLogic;
+  createCreateChat(): CreateChatLogic;
 
   events: Observable<MainEvent>;
   getChat(): ChatLogic | undefined;
@@ -51,6 +53,8 @@ export function createMainLogic(
   return {
     topBar,
     chatList,
+
+    createCreateChat: () => createCreateChatLogic({persistence, worker}),
 
     events,
     getChat: () => chat,
