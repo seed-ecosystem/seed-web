@@ -1,10 +1,10 @@
-import {ImportChat} from "@/modules/top-bar/components/import-chat.tsx";
 import {motion, AnimatePresence} from "framer-motion";
 import {LoadingSpinner} from "@/modules/core/components/loading-spinner.tsx";
 import {ReactElement} from "react";
 import {Link} from "wouter";
 import {X} from "lucide-react";
 import {Button} from "@/modules/core/components/button.tsx";
+import {NewChat} from "@/modules/new-chat/component/new-chat.tsx";
 
 export interface TopBarProps {
   loading: boolean;
@@ -19,27 +19,28 @@ export function TopBarContent({loading, closeChat, Chat, ChatList}: TopBarProps)
       <h1 className="text-2xl font-medium"><Link to="/">Seed</Link></h1>
       <div className="flex h-full justify-center items-center flex-1 mx-4 relative">
         <AnimatePresence>
-          {loading ? <Connecting/>
-            : Chat ? <Chat />
+          {loading
+            ? <Connecting />
+            : Chat
+              ? <Chat />
               : <ChatList />}
-        </AnimatePresence>
-      </div>
+          </AnimatePresence>
+            </div>
       {Chat
         ? <>
-          <div className="hidden md:block"><ImportChat/></div>
+          <div className="hidden md:block"><NewChat /></div>
           <div className="md:hidden"><CloseChat onClick={closeChat}/></div>
         </>
-        : <ImportChat/>
+        : <NewChat />
       }
     </div>
   )
 }
 
 function Connecting() {
-  return <motion.div className="absolute left-0 right-0" key="loader" exit={{y: -10, opacity: 0}}>
-    <div className="w-full h-full flex justify-center items-center"><p
-      className="overflow-hidden text-ellipsis">Connecting...</p><LoadingSpinner className="size-4"/></div>
-  </motion.div>;
+  return <div className="w-full h-full flex justify-center items-center"><p
+      className="overflow-hidden text-ellipsis">Connecting...</p><LoadingSpinner className="size-4"/>
+  </div>;
 }
 
 export type CloseChatProps = {

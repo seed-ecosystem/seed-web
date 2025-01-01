@@ -1,19 +1,14 @@
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/modules/core/components/alert-dialog.tsx"
-import {Input} from "@/modules/core/components/input.tsx";
+  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
+  AlertDialogHeader, AlertDialogTitle,
+  AlertDialogTrigger
+} from "@/modules/core/components/alert-dialog.tsx";
 import {Button} from "@/modules/core/components/button.tsx";
 import {Plus} from "lucide-react";
+import {Input} from "@/modules/core/components/input.tsx";
 
-export function ImportChat() {
+export function NewChat() {
   return (
     <>
       <AlertDialog>

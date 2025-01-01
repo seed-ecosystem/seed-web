@@ -1,4 +1,3 @@
-import {motion} from "framer-motion";
 import {useEffect, useRef} from "react";
 import {Input} from "@/modules/core/components/input.tsx";
 
@@ -8,9 +7,7 @@ export interface ChatListTopBarProps {
 }
 
 export function ChatListTopBarContent({nickname, setNickname}: ChatListTopBarProps) {
-  return <motion.div className="absolute left-0 right-0 m-auto" key="nickname" initial={{opacity: 0}} animate={{opacity: 1}}>
-    <NicknameInput text={nickname} setText={setNickname}/>
-  </motion.div>;
+  return <NicknameInput text={nickname} setText={setNickname}/>;
 }
 
 function NicknameInput(
