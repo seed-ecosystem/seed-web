@@ -7,13 +7,12 @@ import {ChatListScreen} from "@/modules/chat-list/components/chat-list-screen.ts
 import {ChatTopBar} from "@/modules/chat/components/top-bar/chat-top-bar.tsx";
 import {ChatListTopBar} from "@/modules/chat-list/components/top-bar/chat-list-top-bar.tsx";
 import {useEach} from "@/coroutines/observable.ts";
-import {ChatLogic} from "@/modules/chat/logic/chat-logic.ts";
+import {TopBar} from "@/modules/top-bar/components/top-bar.tsx";
 
-export function MainScreen({events, getLoading, openChat, closeChat, chatListLogic}: MainLogic) {
+export function MainScreen({events, openChat, closeChat, chatList, topBar, getChat}: MainLogic) {
   const [, navigate] = useLocation();
   const [, chatParams] = useRoute("/chat/:chatId");
-  const [chat, updateChat] = useState<ChatLogic>();
-  const [loading, updateLoading] = useState(getLoading);
+  const [chat, updateChat] = useState(getChat);
 
   useEffect(() => {
     if (chatParams?.chatId === undefined) {
@@ -35,9 +34,6 @@ export function MainScreen({events, getLoading, openChat, closeChat, chatListLog
 
   useEach(events, async event => {
     switch (event.type) {
-      case "loading":
-        updateLoading(event.value);
-        break;
       case "chat":
         updateChat(event.value);
         break;
@@ -48,11 +44,12 @@ export function MainScreen({events, getLoading, openChat, closeChat, chatListLog
   });
 
   return MainContent({
-    loading,
-    closeChat,
-    ChatTopBar: chat ? () => ChatTopBar(chat.topBar) : undefined,
+    TopBar: () => TopBar(
+      topBar,
+      () => ChatListTopBar(chatList.topBar),
+      chat ? () => ChatTopBar(chat.topBar) : undefined
+    ),
     ChatScreen: chat ? () => ChatScreen(chat) : undefined,
-    ChatListTopBar: () => ChatListTopBar(chatListLogic.topBar),
-    ChatListScreen: () => ChatListScreen(chatListLogic),
+    ChatListScreen: () => ChatListScreen(chatList),
   });
 }

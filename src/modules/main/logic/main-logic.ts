@@ -5,11 +5,9 @@ import {WorkerStateHandle} from "@/modules/umbrella/logic/worker-state-handle.ts
 import {createNicknameStateHandle} from "@/modules/main/logic/nickname-state-handle.ts";
 import {loadNickname} from "@/modules/main/logic/load-nickname.ts";
 import {createObservable, Observable} from "@/coroutines/observable.ts";
+import {createTopBarLogic, TopBarLogic} from "@/modules/top-bar/logic/top-bar-logic.ts";
 
 export type MainEvent = {
-  type: "loading";
-  value: boolean;
-} | {
   type: "chat";
   value?: ChatLogic;
 } | {
@@ -17,10 +15,10 @@ export type MainEvent = {
 }
 
 export interface MainLogic {
-  chatListLogic: ChatListLogic;
+  topBar: TopBarLogic;
+  chatList: ChatListLogic;
 
   events: Observable<MainEvent>;
-  getLoading(): boolean;
   getChat(): ChatLogic | undefined;
 
   openChat(options: {chatId: string}): void;
@@ -37,7 +35,8 @@ export function createMainLogic(
 
   let nickname = createNicknameStateHandle({persistence});
   let chat: ChatLogic | undefined;
-  let chatListLogic = createChatListLogic({nickname, persistence});
+  let chatList = createChatListLogic({nickname, persistence});
+  let topBar = createTopBarLogic({worker, closeChat: () => setChat(undefined)});
 
   function setChat(value?: ChatLogic) {
     chat = value;
@@ -47,21 +46,13 @@ export function createMainLogic(
     }
   }
 
-  worker.events.subscribe(event => {
-    switch (event.type) {
-      case "connected":
-        events.emit({ type: "loading", value: !event.value });
-        break;
-    }
-  });
-
   loadNickname({persistence, nickname});
 
   return {
-    chatListLogic,
+    topBar,
+    chatList,
 
     events,
-    getLoading: () => !worker.isConnected(),
     getChat: () => chat,
 
     openChat: ({chatId}) => createChatLogic({persistence, worker, chatId, nickname}).then(setChat),

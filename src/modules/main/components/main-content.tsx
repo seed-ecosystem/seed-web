@@ -1,19 +1,15 @@
 import {MediaHiddenMD, MediaVisibleMD} from "@/modules/responsive/media-query.tsx";
 import {ReactElement} from "react";
-import {TopBarContent} from "@/modules/top-bar/top-bar-content.tsx";
 
 export interface MainProps {
-  loading: boolean;
-  closeChat(): void;
-  ChatListTopBar: () => ReactElement;
+  TopBar: () => ReactElement;
   ChatListScreen: () => ReactElement;
-  ChatTopBar?: () => ReactElement;
   ChatScreen?: () => ReactElement;
 }
 
-export function MainContent({loading, closeChat, ChatListTopBar, ChatListScreen, ChatTopBar, ChatScreen}: MainProps) {
+export function MainContent({TopBar, ChatListScreen, ChatScreen}: MainProps) {
   return <div className="h-svh flex flex-col">
-    <TopBarContent closeChat={closeChat} loading={loading} Chat={ChatTopBar} ChatList={ChatListTopBar} />
+    <TopBar />
 
     <MediaHiddenMD>
       {ChatScreen ? <ChatScreen /> : (<ChatListScreen />)}

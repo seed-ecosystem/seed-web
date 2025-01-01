@@ -1,9 +1,9 @@
-import {ImportChat} from "@/modules/top-bar/import-chat.tsx";
+import {ImportChat} from "@/modules/top-bar/components/import-chat.tsx";
 import {motion, AnimatePresence} from "framer-motion";
 import {LoadingSpinner} from "@/modules/core/components/loading-spinner.tsx";
 import {ReactElement} from "react";
 import {Link} from "wouter";
-import {Plus, X} from "lucide-react";
+import {X} from "lucide-react";
 import {Button} from "@/modules/core/components/button.tsx";
 
 export interface TopBarProps {
