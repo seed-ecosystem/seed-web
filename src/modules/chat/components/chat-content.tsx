@@ -12,6 +12,7 @@ export interface ChatProps {
 }
 
 export function ChatContent({updating, messages, text, setText, sendMessage}: ChatProps) {
+  console.log("RENDER!", updating, messages);
   return (
     <>
       <div className="h-full w-full overflow-hidden flex flex-col relative">

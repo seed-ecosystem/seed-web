@@ -1,46 +1,49 @@
 import {Link} from "wouter";
 import {Button} from "@/modules/core/components/button.tsx";
-import {Plus, X} from "lucide-react";
+import {Plus} from "lucide-react";
 import {LoadingSpinner} from "@/modules/core/components/loading-spinner.tsx";
 import {ReactElement} from "react";
+import {MediaHiddenMD, MediaVisibleMD} from "@/modules/responsive/media-query.tsx";
 
-export interface TopBarProps {
+export type TopBarProps = {
   loading: boolean;
-  closeChat: () => void;
-  Chat?: () => ReactElement;
+  chat?: ChatTopBar;
   ChatList: () => ReactElement;
 }
 
-export function TopBarContent({loading, closeChat, Chat, ChatList}: TopBarProps) {
+export type ChatTopBar = {
+  Menu: () => ReactElement;
+  Close: () => ReactElement;
+  Content: () => ReactElement;
+}
+
+export function TopBarContent({loading, chat, ChatList}: TopBarProps) {
   return (
     <div className="flex h-14 w-full border-b border-border/40 bg-background/95 items-center px-4">
       <Logo />
       <div className="flex h-full justify-center items-center flex-1 mx-4 relative">
         {loading
           ? <Connecting />
-          : Chat === undefined
+          : chat === undefined
             ? <ChatList />
-            : <Chat />}
+            : <chat.Content />}
       </div>
-      {Chat === undefined
+      {chat === undefined
         ? <CreateChat />
-        : <>
+        : <div>
+          <MediaVisibleMD>
+            <chat.Menu />
+          </MediaVisibleMD>
+          <MediaHiddenMD>
+            <chat.Close />
+          </MediaHiddenMD>
           {/*<div className="hidden md:block"><CreateChat /></div>*/}
           {/*<div className="md:hidden"><CloseChat onClick={closeChat}/></div>*/}
           {/*TODO: Support creation of new chat from chat*/}
-          <div><CloseChat onClick={closeChat}/></div>
-        </>
+        </div>
       }
     </div>
   );
-}
-
-type CloseChatProps = {
-  onClick(): void;
-}
-
-function CloseChat({onClick}: CloseChatProps) {
-  return <Button size="icon" variant="ghost" onClick={onClick}><X /></Button>;
 }
 
 function CreateChat() {

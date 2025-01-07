@@ -17,19 +17,12 @@ export type TopBarEvent = {
   value?: ChatTopBarLogic;
 };
 
-export type OpenChatOptions = {
-  chatId: string;
-  title: string;
-}
-
 export interface TopBarLogic {
   events: Observable<TopBarEvent>;
 
   getChatList(): ChatListTopBarLogic;
   getChat(): ChatTopBarLogic | undefined;
   getConnecting(): boolean;
-
-  closeChat(): void;
 }
 
 export function createTopBarLogic(
@@ -63,7 +56,7 @@ export function createTopBarLogic(
       return;
     }
     const {chatId, title} = chat;
-    const value = createChatTopBarLogic({worker, chatId, title});
+    const value = createChatTopBarLogic({worker, chatId, title, chatStateHandle});
     setChat(value);
   })
 
@@ -72,8 +65,6 @@ export function createTopBarLogic(
 
     getChatList: () => chatList,
     getChat: () => chat,
-    getConnecting: () => !worker.isConnected(),
-
-    closeChat: () => chatStateHandle.set(undefined),
+    getConnecting: () => !worker.isConnected()
   }
 }

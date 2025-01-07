@@ -8,7 +8,6 @@ import {createObservable, Observable} from "@/coroutines/observable.ts";
 import {createTopBarLogic, TopBarLogic} from "@/modules/top-bar/logic/top-bar-logic.ts";
 import {CreateChatLogic, createCreateChatLogic} from "@/modules/new-chat/logic/create-chat-logic.ts";
 import {launch} from "@/modules/coroutines/launch.ts";
-import {createChatTopBarLogic} from "@/modules/top-bar/logic/chat/chat-top-bar-logic.ts";
 import {createChatStateHandle} from "@/modules/main/logic/chat-state-handle.ts";
 
 export type MainEvent = {
@@ -66,8 +65,8 @@ export function createMainLogic(
       setChat(undefined);
       return;
     }
-    const {chatId, title} = chat;
-    const chatLogic = createChatLogic({persistence, worker, chatId, nicknameStateHandle, title});
+    const {chatId} = chat;
+    const chatLogic = createChatLogic({persistence, worker, chatId, nicknameStateHandle});
     setChat(chatLogic);
   });
 

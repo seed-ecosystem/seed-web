@@ -68,6 +68,9 @@ export function MainScreen(
         break;
       case "createChat":
         updateCreateChat(event.value);
+        if (!event.value) {
+          navigate("");
+        }
         break;
     }
   });

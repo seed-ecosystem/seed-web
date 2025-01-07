@@ -5,7 +5,6 @@ import {Cancellation, createObservable, Observable} from "@/coroutines/observabl
 import {WorkerStateHandle} from "@/modules/umbrella/logic/worker-state-handle.ts";
 import {listenWorkerEvents} from "@/modules/chat/logic/listen-worker-events.ts";
 import {sendMessage} from "@/modules/chat/logic/send-message.ts";
-import {ChatTopBarLogic, createChatTopBarLogic} from "@/modules/top-bar/logic/chat/chat-top-bar-logic.ts";
 import {NicknameStateHandle} from "@/modules/main/logic/nickname-state-handle.ts";
 import {listenNickname} from "@/modules/chat/logic/listen-nickname.ts";
 
@@ -24,8 +23,6 @@ export type ChatEvent = {
 };
 
 export interface ChatLogic {
-  topBar: ChatTopBarLogic;
-
   events: Observable<ChatEvent>;
 
   getUpdating(): boolean;
@@ -42,23 +39,19 @@ export interface ChatLogic {
 
 export function createChatLogic(
   {
-    persistence, worker, nicknameStateHandle, chatId, title
+    persistence, worker, nicknameStateHandle, chatId
   }: {
     chatId: string;
-    title: string;
     nicknameStateHandle: NicknameStateHandle;
     persistence: SeedPersistence;
     worker: WorkerStateHandle;
   },
 ): ChatLogic {
-  const topBar = createChatTopBarLogic({worker, chatId, title});
-
   const events: Observable<ChatEvent> = createObservable();
 
   let messages: Message[] = [];
   let localNonce = 0;
   let serverNonce = 0;
-  let loading = !worker.isConnected();
   let updating = !worker.isWaiting(chatId);
   let text = "";
 
@@ -69,7 +62,7 @@ export function createChatLogic(
 
   function setUpdating(value: boolean) {
     updating = value;
-    events.emit({ type: "updating", value: loading });
+    events.emit({ type: "updating", value: updating });
   }
 
   function setText(value: string) {
@@ -100,7 +93,6 @@ export function createChatLogic(
   });
 
   return {
-    topBar,
     events,
     getUpdating: () => updating,
     getMessages: () => messages,

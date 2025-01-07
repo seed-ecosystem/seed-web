@@ -1,5 +1,6 @@
 import {WorkerStateHandle} from "@/modules/umbrella/logic/worker-state-handle.ts";
 import {createObservable, Observable} from "@/coroutines/observable.ts";
+import {ChatStateHandle} from "@/modules/main/logic/chat-state-handle.ts";
 
 export type ChatTopBarEvent = {
   type: "waiting";
@@ -11,11 +12,15 @@ export interface ChatTopBarLogic {
 
   getWaiting(): boolean;
   getTitle(): string;
+
+  closeChat(): void;
+  shareChat(): void;
 }
 
 export function createChatTopBarLogic(
-  {worker, chatId, title}: {
+  {worker, chatStateHandle, chatId, title}: {
     worker: WorkerStateHandle;
+    chatStateHandle: ChatStateHandle;
     chatId: string;
     title: string;
   }
@@ -33,7 +38,11 @@ export function createChatTopBarLogic(
 
   return {
     events,
+
     getWaiting: () => worker.isWaiting(chatId),
-    getTitle: () => title
+    getTitle: () => title,
+
+    closeChat: () => chatStateHandle.set(undefined),
+    shareChat: () => {},
   };
 }
