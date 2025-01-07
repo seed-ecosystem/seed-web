@@ -5,7 +5,7 @@ import {Cancellation, createObservable, Observable} from "@/coroutines/observabl
 import {WorkerStateHandle} from "@/modules/umbrella/logic/worker-state-handle.ts";
 import {listenWorkerEvents} from "@/modules/chat/logic/listen-worker-events.ts";
 import {sendMessage} from "@/modules/chat/logic/send-message.ts";
-import {ChatTopBarLogic, createChatTopBarLogic} from "@/modules/chat/logic/top-bar/chat-top-bar-logic.ts";
+import {ChatTopBarLogic, createChatTopBarLogic} from "@/modules/top-bar/logic/chat/chat-top-bar-logic.ts";
 import {NicknameStateHandle} from "@/modules/main/logic/nickname-state-handle.ts";
 import {listenNickname} from "@/modules/chat/logic/listen-nickname.ts";
 
@@ -40,20 +40,17 @@ export interface ChatLogic {
   sendMessage(): void;
 }
 
-export async function createChatLogic(
+export function createChatLogic(
   {
-    persistence, worker, nickname, chatId
+    persistence, worker, nicknameStateHandle, chatId, title
   }: {
     chatId: string;
-    nickname: NicknameStateHandle;
+    title: string;
+    nicknameStateHandle: NicknameStateHandle;
     persistence: SeedPersistence;
     worker: WorkerStateHandle;
   },
-): Promise<ChatLogic | undefined> {
-  const chat = await persistence.chat.get(chatId);
-  if (!chat) return;
-  const title = chat.title;
-
+): ChatLogic {
   const topBar = createChatTopBarLogic({worker, chatId, title});
 
   const events: Observable<ChatEvent> = createObservable();
@@ -90,13 +87,13 @@ export async function createChatLogic(
   }
 
   listenNickname({
-    nickname,
+    nickname: nicknameStateHandle,
     getMessages: () => messages, setMessages,
     setDisplayNickname: (value) => events.emit({ type: "nickname", value })
   });
 
   loadLocalMessages({
-    chatId, nickname,
+    chatId, nickname: nicknameStateHandle,
     serverNonce, setServerNonce: (value) => serverNonce = value,
     localNonce, setLocalNonce: (value) => localNonce = value,
     setMessages, persistence
@@ -110,7 +107,7 @@ export async function createChatLogic(
     getText: () => text, setText,
     mount(): Cancellation {
       return listenWorkerEvents({
-        worker, chatId, nickname,
+        worker, chatId, nickname: nicknameStateHandle,
         getMessages: () => messages, setMessages,
         setUpdating,
         getLocalNonce: () => localNonce, setLocalNonce: (value) => localNonce = value,
@@ -120,7 +117,7 @@ export async function createChatLogic(
     sendMessage() {
       sendMessage({
         chatId,
-        nickname: nickname.get(),
+        nickname: nicknameStateHandle.get(),
         text, setText,
         getLocalNonce: () => localNonce,
         setLocalNonce: (value) => localNonce = value,

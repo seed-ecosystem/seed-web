@@ -1,39 +1,79 @@
 import {createObservable, Observable} from "@/coroutines/observable.ts";
 import {WorkerStateHandle} from "@/modules/umbrella/logic/worker-state-handle.ts";
+import {
+  ChatListTopBarLogic,
+  createChatListTopBarLogic
+} from "@/modules/top-bar/logic/chat-list/chat-list-top-bar-logic.ts";
+import {ChatTopBarLogic, createChatTopBarLogic} from "@/modules/top-bar/logic/chat/chat-top-bar-logic.ts";
+import {NicknameStateHandle} from "@/modules/main/logic/nickname-state-handle.ts";
+import {ChatListTopBarProps} from "@/modules/top-bar/components/chat-list/chat-list-top-bar-content.tsx";
+import {ChatStateHandle} from "@/modules/main/logic/chat-state-handle.ts";
 
 export type TopBarEvent = {
-  type: "loading",
+  type: "connecting";
   value: boolean;
+} | {
+  type: "chat";
+  value?: ChatTopBarLogic;
 };
+
+export type OpenChatOptions = {
+  chatId: string;
+  title: string;
+}
 
 export interface TopBarLogic {
   events: Observable<TopBarEvent>;
 
-  getLoading(): boolean;
+  getChatList(): ChatListTopBarLogic;
+  getChat(): ChatTopBarLogic | undefined;
+  getConnecting(): boolean;
 
   closeChat(): void;
 }
 
-
 export function createTopBarLogic(
-  {worker, closeChat}: {
+  {worker, nicknameStateHandle, chatStateHandle}: {
     worker: WorkerStateHandle;
-    closeChat(): void;
+    nicknameStateHandle: NicknameStateHandle;
+    chatStateHandle: ChatStateHandle;
   }
 ): TopBarLogic {
+  const chatList = createChatListTopBarLogic({nicknameStateHandle});
+
   const events: Observable<TopBarEvent> = createObservable();
+  let chat: ChatTopBarLogic | undefined;
+
+  function setChat(value?: ChatTopBarLogic) {
+    chat = value;
+    events.emit({ type: "chat", value: chat });
+  }
 
   worker.events.subscribe(event => {
     switch (event.type) {
       case "connected":
-        events.emit({ type: "loading", value: !event.value });
+        events.emit({ type: "connecting", value: !event.value });
         break;
     }
   });
 
+  chatStateHandle.updates.subscribe(chat => {
+    if (!chat) {
+      setChat(undefined);
+      return;
+    }
+    const {chatId, title} = chat;
+    const value = createChatTopBarLogic({worker, chatId, title});
+    setChat(value);
+  })
+
   return {
     events,
-    getLoading: () => !worker.isConnected(),
-    closeChat
+
+    getChatList: () => chatList,
+    getChat: () => chat,
+    getConnecting: () => !worker.isConnected(),
+
+    closeChat: () => chatStateHandle.set(undefined),
   }
 }

@@ -3,7 +3,6 @@ import React, {useEffect, useMemo} from "react";
 import {MainScreen} from "@/modules/main/components/main-screen.tsx";
 import {Route, useLocation, useRoute} from "wouter";
 import {useEach} from "@/coroutines/observable.ts";
-import {CreateChat} from "@/modules/new-chat/component/create-chat.tsx";
 
 export function App({logic}: {logic: Logic}) {
   const main = useMemo(() => logic.createMain(), [logic]);
@@ -31,6 +30,5 @@ export function App({logic}: {logic: Logic}) {
 
   return <>
     <MainScreen {...main} />
-    <Route path="/create"><CreateChat {...main.createCreateChat()} /></Route>
   </>;
 }

@@ -1,18 +1,34 @@
 import {MainLogic} from "@/modules/main/logic/main-logic.ts";
 import {useLocation, useRoute} from "wouter";
-import {useEffect, useMemo, useState} from "react";
+import {useEffect, useState} from "react";
 import {MainContent} from "@/modules/main/components/main-content.tsx";
 import {ChatScreen} from "@/modules/chat/components/chat-screen.tsx";
 import {ChatListScreen} from "@/modules/chat-list/components/chat-list-screen.tsx";
-import {ChatTopBar} from "@/modules/chat/components/top-bar/chat-top-bar.tsx";
-import {ChatListTopBar} from "@/modules/chat-list/components/top-bar/chat-list-top-bar.tsx";
 import {useEach} from "@/coroutines/observable.ts";
 import {TopBar} from "@/modules/top-bar/components/top-bar.tsx";
+import {CreateChat} from "@/modules/new-chat/component/create-chat.tsx";
 
-export function MainScreen({events, openChat, closeChat, chatList, topBar, getChat}: MainLogic) {
+export function MainScreen(
+  {
+    events,
+
+    getTopBar, getChat,
+    getChatList, getCreateChat,
+
+    openChat, closeChat,
+    openCreateChat, closeCreateChat,
+
+    escape
+  }: MainLogic
+) {
   const [, navigate] = useLocation();
-  const [, chatParams] = useRoute("/chat/:chatId");
+
+  const [topBar] = useState(getTopBar);
+  const [chatList] = useState(getChatList);
   const [chat, updateChat] = useState(getChat);
+  const [createChat, updateCreateChat] = useState(getCreateChat);
+
+  const [, chatParams] = useRoute("/chat/:chatId");
 
   useEffect(() => {
     if (chatParams?.chatId === undefined) {
@@ -22,10 +38,20 @@ export function MainScreen({events, openChat, closeChat, chatList, topBar, getCh
     }
   }, [chatParams?.chatId]);
 
+  const [createMatch] = useRoute("/create");
+
+  useEffect(() => {
+    if (createMatch) {
+      openCreateChat();
+    } else {
+      closeCreateChat();
+    }
+  }, [createMatch]);
+
   useEffect(() => {
     const listener = (event: KeyboardEvent) => {
       if (event.code == "Escape") {
-        closeChat();
+        escape();
       }
     };
     document.addEventListener("keydown", listener);
@@ -36,20 +62,20 @@ export function MainScreen({events, openChat, closeChat, chatList, topBar, getCh
     switch (event.type) {
       case "chat":
         updateChat(event.value);
+        if (!event.value) {
+          navigate("");
+        }
         break;
-      case "closeChat":
-        navigate("");
+      case "createChat":
+        updateCreateChat(event.value);
         break;
     }
   });
 
   return MainContent({
-    TopBar: () => TopBar(
-      topBar,
-      () => ChatListTopBar(chatList.topBar),
-      chat ? () => ChatTopBar(chat.topBar) : undefined
-    ),
+    TopBar: () => TopBar(topBar),
     ChatScreen: chat ? () => ChatScreen(chat) : undefined,
     ChatListScreen: () => ChatListScreen(chatList),
+    CreateChat: createChat ? () => CreateChat(createChat) : undefined,
   });
 }

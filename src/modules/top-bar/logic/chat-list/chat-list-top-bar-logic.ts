@@ -1,5 +1,6 @@
 import {NicknameStateHandle} from "@/modules/main/logic/nickname-state-handle.ts";
 import {createObservable, Observable} from "@/coroutines/observable.ts";
+import {WorkerStateHandle} from "@/modules/umbrella/logic/worker-state-handle.ts";
 
 export type ChatListTopBarEvent = {
   type: "nickname";
@@ -14,17 +15,17 @@ export interface ChatListTopBarLogic {
 }
 
 export function createChatListTopBarLogic(
-  {nickname}: {
-    nickname: NicknameStateHandle;
+  {nicknameStateHandle}: {
+    nicknameStateHandle: NicknameStateHandle;
   }
 ): ChatListTopBarLogic {
   const events: Observable<ChatListTopBarEvent> = createObservable();
 
-  nickname.updates.subscribe(update => events.emit({ type: "nickname", value: update }));
+  nicknameStateHandle.updates.subscribe(value => events.emit({type: "nickname", value}));
 
   return {
     events,
-    getNickname: nickname.get,
-    setNickname: nickname.set
+    getNickname: nicknameStateHandle.get,
+    setNickname: nicknameStateHandle.set,
   };
 }

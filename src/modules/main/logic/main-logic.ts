@@ -7,24 +7,32 @@ import {loadNickname} from "@/modules/main/logic/load-nickname.ts";
 import {createObservable, Observable} from "@/coroutines/observable.ts";
 import {createTopBarLogic, TopBarLogic} from "@/modules/top-bar/logic/top-bar-logic.ts";
 import {CreateChatLogic, createCreateChatLogic} from "@/modules/new-chat/logic/create-chat-logic.ts";
+import {launch} from "@/modules/coroutines/launch.ts";
+import {createChatTopBarLogic} from "@/modules/top-bar/logic/chat/chat-top-bar-logic.ts";
+import {createChatStateHandle} from "@/modules/main/logic/chat-state-handle.ts";
 
 export type MainEvent = {
   type: "chat";
   value?: ChatLogic;
 } | {
-  type: "closeChat";
+  type: "createChat";
+  value?: CreateChatLogic;
 }
 
 export interface MainLogic {
-  topBar: TopBarLogic;
-  chatList: ChatListLogic;
-  createCreateChat(): CreateChatLogic;
-
   events: Observable<MainEvent>;
+
+  getTopBar(): TopBarLogic;
+  getChatList(): ChatListLogic;
   getChat(): ChatLogic | undefined;
+  getCreateChat(): CreateChatLogic | undefined;
 
   openChat(options: {chatId: string}): void;
   closeChat(): void;
+  openCreateChat(): void;
+  closeCreateChat(): void;
+
+  escape(): void;
 }
 
 export function createMainLogic(
@@ -35,31 +43,61 @@ export function createMainLogic(
  ): MainLogic {
   const events: Observable<MainEvent> = createObservable();
 
-  let nickname = createNicknameStateHandle({persistence});
+  const nicknameStateHandle = createNicknameStateHandle({persistence});
+  const chatStateHandle = createChatStateHandle();
+  const topBar = createTopBarLogic({worker, nicknameStateHandle, chatStateHandle});
+  const chatList = createChatListLogic({persistence});
+
   let chat: ChatLogic | undefined;
-  let chatList = createChatListLogic({nickname, persistence});
-  let topBar = createTopBarLogic({worker, closeChat: () => setChat(undefined)});
+  let createChat: CreateChatLogic | undefined;
 
   function setChat(value?: ChatLogic) {
     chat = value;
-    events.emit({ type: "chat", value: value });
-    if (value == undefined) {
-      events.emit({ type: "closeChat" });
-    }
+    events.emit({ type: "chat", value });
   }
 
-  loadNickname({persistence, nickname});
+  function setCreateChat(value?: CreateChatLogic) {
+    createChat = value;
+    events.emit({ type: "createChat", value });
+  }
+
+  chatStateHandle.updates.subscribe(chat => {
+    if (!chat) {
+      setChat(undefined);
+      return;
+    }
+    const {chatId, title} = chat;
+    const chatLogic = createChatLogic({persistence, worker, chatId, nicknameStateHandle, title});
+    setChat(chatLogic);
+  });
+
+  loadNickname({persistence, nickname: nicknameStateHandle});
 
   return {
-    topBar,
-    chatList,
-
-    createCreateChat: () => createCreateChatLogic({persistence, worker}),
-
     events,
-    getChat: () => chat,
 
-    openChat: ({chatId}) => createChatLogic({persistence, worker, chatId, nickname}).then(setChat),
-    closeChat: () => setChat(undefined),
+    getTopBar: () => topBar,
+    getChatList: () => chatList,
+    getChat: () => chat,
+    getCreateChat: () => createChat,
+
+    openChat: ({chatId}) => launch(async () => {
+      const chat = await persistence.chat.get(chatId);
+      chatStateHandle.set({chatId: chat.id, title: chat.title});
+    }),
+    closeChat: () => chatStateHandle.set(undefined),
+    openCreateChat: () => {
+      const createChat = createCreateChatLogic({persistence, worker});
+      setCreateChat(createChat);
+    },
+    closeCreateChat: () => setCreateChat(undefined),
+
+    escape() {
+      if (createChat !== undefined) {
+        setCreateChat(undefined);
+      } else {
+        setChat(undefined);
+      }
+    }
   }
 }

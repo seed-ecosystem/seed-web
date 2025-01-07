@@ -1,7 +1,7 @@
-import {ChatListTopBarLogic} from "@/modules/chat-list/logic/top-bar/chat-list-top-bar-logic.ts";
-import {ChatListTopBarContent} from "@/modules/chat-list/components/top-bar/chat-list-top-bar-content.tsx";
 import {useState} from "react";
 import {useEach} from "@/coroutines/observable.ts";
+import {ChatListTopBarLogic} from "@/modules/top-bar/logic/chat-list/chat-list-top-bar-logic.ts";
+import {ChatListTopBarContent} from "@/modules/top-bar/components/chat-list/chat-list-top-bar-content.tsx";
 
 export function ChatListTopBar({events, getNickname, setNickname}: ChatListTopBarLogic) {
   const [nickname, updateNickname] = useState(getNickname);
