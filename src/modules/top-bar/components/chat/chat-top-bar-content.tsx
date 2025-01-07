@@ -42,7 +42,7 @@ export type ChatTopBarMenuProps = {
 
 export function ChatTopBarMenuContent({shareChat}: ChatTopBarMenuProps) {
   return <DropdownMenu>
-    <DropdownMenuTrigger asChild><Menu /></DropdownMenuTrigger>
+    <DropdownMenuTrigger asChild><Button size="icon" variant="ghost"><Menu /></Button></DropdownMenuTrigger>
     <DropdownMenuContent side="left" align="start">
       <DropdownMenuLabel>Options</DropdownMenuLabel>
       <DropdownMenuSeparator />
