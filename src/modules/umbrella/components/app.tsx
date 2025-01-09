@@ -1,8 +1,9 @@
 import {Logic} from "@/modules/umbrella/logic/logic.ts";
 import React, {useEffect, useMemo} from "react";
 import {MainScreen} from "@/modules/main/components/main-screen.tsx";
-import {Route, useLocation, useRoute} from "wouter";
+import {useLocation, useRoute} from "wouter";
 import {useEach} from "@/coroutines/observable.ts";
+import {Toaster} from "@/components/ui/toaster.tsx";
 
 export function App({logic}: {logic: Logic}) {
   const main = useMemo(() => logic.createMain(), [logic]);
@@ -28,7 +29,10 @@ export function App({logic}: {logic: Logic}) {
     }
   });
 
+  const MemoMainScreen = React.memo(MainScreen)
+
   return <>
-    <MainScreen {...main} />
+    <MemoMainScreen {...main} />
+    <Toaster />
   </>;
 }

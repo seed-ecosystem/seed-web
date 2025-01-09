@@ -5,11 +5,11 @@ import {createSeedClient, SeedClient} from "@/sdk/client/seed-client.ts";
 import {createSeedWorker as seedWorker, SeedWorker} from "@/sdk/worker/seed-worker.ts";
 import {AddKeyOptions, KeyPersistence} from "@/sdk/worker/key-persistence.ts";
 import {IndexedKey} from "@/sdk/worker/indexed-key.ts";
-import {Chat} from "@/modules/chat-list/persistence/chat.ts";
+import {Chat} from "@/modules/main/chat-list/persistence/chat.ts";
 import {subscribeToChats} from "@/modules/umbrella/logic/subscribe-to-chats.ts";
 import {createWorkerStateHandle} from "@/modules/umbrella/logic/worker-state-handle.ts";
 import {createObservable, Observable} from "@/coroutines/observable.ts";
-import {CreateChatLogic, createCreateChatLogic} from "@/modules/new-chat/logic/create-chat-logic.ts";
+import {NewLogic, createNewLogic} from "@/modules/main/new/logic/new-logic.ts";
 
 export type LogicEvent = {
   type: "open",
@@ -30,8 +30,6 @@ export async function createLogic(): Promise<Logic> {
   const worker = createSeedWorker({client, persistence});
   const workerStateHandle = createWorkerStateHandle({worker, persistence});
 
-  await addBetaChat({persistence});
-
   subscribeToChats({persistence, worker});
 
   return {
@@ -50,23 +48,6 @@ export async function createLogic(): Promise<Logic> {
     },
     createMain: () => createMainLogic({persistence, worker: workerStateHandle})
   };
-}
-
-async function addBetaChat(
-  {persistence}: {
-    persistence: SeedPersistence;
-  }
-) {
-  const chatId = "bHKhl2cuQ01pDXSRaqq/OMJeDFJVNIY5YuQB2w7ve+c=";
-
-  if ((await persistence.chat.list()).length == 0) {
-    await persistence.chat.add({
-      id: chatId,
-      title: "Beta Chat",
-      initialKey: "/uwFt2yxHi59l26H9V8VTN3Kq+FtRewuWNfz1TNVcnM=",
-      initialNonce: 0
-    });
-  }
 }
 
 type CreateSeedWorkerOptions = {

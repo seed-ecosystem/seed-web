@@ -15,7 +15,7 @@ export function subscribeToChats(
     const chats = await persistence.chat.list();
     for (const chat of chats) {
       const lastMessage = await persistence.message.lastMessage({chatId: chat.id});
-      await worker.subscribe({ chatId: chat.id, nonce: lastMessage ? (lastMessage.nonce + 1) : 0 });
+      worker.subscribe({ chatId: chat.id, nonce: lastMessage ? (lastMessage.nonce + 1) : 0 });
     }
   });
 }

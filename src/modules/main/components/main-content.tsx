@@ -6,9 +6,10 @@ export interface MainProps {
   ChatListScreen: () => ReactElement;
   ChatScreen?: () => ReactElement;
   CreateChat?: () => ReactElement;
+  ShareChat?: () => ReactElement;
 }
 
-export function MainContent({TopBar, ChatListScreen, ChatScreen, CreateChat}: MainProps) {
+export function MainContent({TopBar, ChatListScreen, ChatScreen, CreateChat, ShareChat}: MainProps) {
   return <div className="h-svh flex flex-col">
     <TopBar />
 
@@ -26,6 +27,7 @@ export function MainContent({TopBar, ChatListScreen, ChatScreen, CreateChat}: Ma
     </MediaVisibleMD>
 
     {CreateChat && <CreateChat />}
+    {ShareChat && <ShareChat />}
   </div>;
 }
 

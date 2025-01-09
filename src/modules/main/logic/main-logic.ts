@@ -1,21 +1,27 @@
-import {ChatLogic, createChatLogic} from "@/modules/chat/logic/chat-logic.ts";
+import {ChatLogic, createChatLogic} from "@/modules/main/chat/logic/chat-logic.ts";
 import {SeedPersistence} from "@/modules/umbrella/persistence/seed-persistence.ts";
-import {ChatListLogic, createChatListLogic} from "@/modules/chat-list/logic/chat-list-logic.ts";
+import {ChatListLogic, createChatListLogic} from "@/modules/main/chat-list/logic/chat-list-logic.ts";
 import {WorkerStateHandle} from "@/modules/umbrella/logic/worker-state-handle.ts";
 import {createNicknameStateHandle} from "@/modules/main/logic/nickname-state-handle.ts";
 import {loadNickname} from "@/modules/main/logic/load-nickname.ts";
 import {createObservable, Observable} from "@/coroutines/observable.ts";
-import {createTopBarLogic, TopBarLogic} from "@/modules/top-bar/logic/top-bar-logic.ts";
-import {CreateChatLogic, createCreateChatLogic} from "@/modules/new-chat/logic/create-chat-logic.ts";
+import {createTopBarLogic, TopBarLogic} from "@/modules/main/top-bar/logic/top-bar-logic.ts";
+import {NewLogic, createNewLogic} from "@/modules/main/new/logic/new-logic.ts";
 import {launch} from "@/modules/coroutines/launch.ts";
 import {createChatStateHandle} from "@/modules/main/logic/chat-state-handle.ts";
+import {createShareChatLogic, ShareChatLogic} from "@/modules/main/share/logic/share-chat-logic.ts";
+import {createShareStateHandle} from "@/modules/main/logic/share-state-handle.ts";
+import {createNewStateHandle} from "@/modules/main/logic/new-state-handle.ts";
 
 export type MainEvent = {
   type: "chat";
   value?: ChatLogic;
 } | {
-  type: "createChat";
-  value?: CreateChatLogic;
+  type: "new";
+  value?: NewLogic;
+} | {
+  type: "share";
+  value?: ShareChatLogic;
 }
 
 export interface MainLogic {
@@ -24,12 +30,10 @@ export interface MainLogic {
   getTopBar(): TopBarLogic;
   getChatList(): ChatListLogic;
   getChat(): ChatLogic | undefined;
-  getCreateChat(): CreateChatLogic | undefined;
+  getCreateChat(): NewLogic | undefined;
+  getShareChat(): ShareChatLogic | undefined;
 
-  openChat(options: {chatId: string}): void;
-  closeChat(): void;
-  openCreateChat(): void;
-  closeCreateChat(): void;
+  bindChat(chatId?: string): void;
 
   escape(): void;
 }
@@ -44,20 +48,33 @@ export function createMainLogic(
 
   const nicknameStateHandle = createNicknameStateHandle({persistence});
   const chatStateHandle = createChatStateHandle();
-  const topBar = createTopBarLogic({worker, nicknameStateHandle, chatStateHandle});
+  const shareStateHandle = createShareStateHandle();
+  const newStateHandle = createNewStateHandle();
+
+  const topBar = createTopBarLogic({
+    worker,
+    nicknameStateHandle, chatStateHandle,
+    shareStateHandle, newStateHandle
+  });
   const chatList = createChatListLogic({persistence});
 
   let chat: ChatLogic | undefined;
-  let createChat: CreateChatLogic | undefined;
+  let createChat: NewLogic | undefined;
+  let shareChat: ShareChatLogic | undefined;
 
   function setChat(value?: ChatLogic) {
     chat = value;
     events.emit({ type: "chat", value });
   }
 
-  function setCreateChat(value?: CreateChatLogic) {
+  function setNew(value?: NewLogic) {
     createChat = value;
-    events.emit({ type: "createChat", value });
+    events.emit({type: "new", value});
+  }
+
+  function setShare(value?: ShareChatLogic) {
+    shareChat = value;
+    events.emit({type: "share", value});
   }
 
   chatStateHandle.updates.subscribe(chat => {
@@ -70,6 +87,13 @@ export function createMainLogic(
     setChat(chatLogic);
   });
 
+  shareStateHandle.updates.subscribe(props => {
+    setShare(props.shown ? createShareChatLogic({shareStateHandle, persistence, chatId: props.chatId}) : undefined);
+  });
+  newStateHandle.updates.subscribe(shown => {
+    setNew(shown ? createNewLogic({persistence, worker, newStateHandle}) : undefined);
+  });
+
   loadNickname({persistence, nickname: nicknameStateHandle});
 
   return {
@@ -79,21 +103,23 @@ export function createMainLogic(
     getChatList: () => chatList,
     getChat: () => chat,
     getCreateChat: () => createChat,
+    getShareChat: () => shareChat,
 
-    openChat: ({chatId}) => launch(async () => {
+    bindChat: (chatId) => launch(async () => {
+      if (!chatId) {
+        chatStateHandle.set(undefined);
+        return;
+      }
       const chat = await persistence.chat.get(chatId);
       chatStateHandle.set({chatId: chat.id, title: chat.title});
     }),
-    closeChat: () => chatStateHandle.set(undefined),
-    openCreateChat: () => {
-      const createChat = createCreateChatLogic({persistence, worker});
-      setCreateChat(createChat);
-    },
-    closeCreateChat: () => setCreateChat(undefined),
 
+    // this of moving this into dialogs
     escape() {
       if (createChat !== undefined) {
-        setCreateChat(undefined);
+        setNew(undefined);
+      } else if (shareChat !== undefined) {
+        setShare(undefined);
       } else {
         setChat(undefined);
       }
