@@ -48,7 +48,7 @@ export function CreateChatContent({title, setTitle, create, cancel}: CreateChatC
     <AlertDialog open={true}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Add Chat</AlertDialogTitle>
+          <AlertDialogTitle>New Chat</AlertDialogTitle>
           <AlertDialogDescription>Enter chat title and start chatting right away</AlertDialogDescription>
         </AlertDialogHeader>
         <Input ref={titleRef} enterKeyHint="done" placeholder="Title" onChange={(e) => setTitle(e.target.value)} />
