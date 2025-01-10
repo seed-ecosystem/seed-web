@@ -25,7 +25,7 @@ export function createNicknameStateHandle(
     updates,
     displayUpdates,
     set: (value) => {
-      nickname = value ?? "Anonymous";
+      nickname = !value || value.trim().length == 0 ? "Anonymous" : value;
       displayNickname = value ?? "";
       updates.emit(nickname);
       displayUpdates.emit(displayNickname);
