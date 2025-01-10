@@ -1,5 +1,6 @@
 import {SeedPersistence} from "@/modules/umbrella/persistence/seed-persistence.ts";
 import {SeedWorker} from "@/sdk/worker/seed-worker.ts";
+import {launch} from "@/modules/coroutines/launch.ts";
 
 export type SubscribeToChatsOptions = {
   persistence: SeedPersistence;
@@ -15,7 +16,8 @@ export function subscribeToChats(
     const chats = await persistence.chat.list();
     for (const chat of chats) {
       const lastMessage = await persistence.message.lastMessage({chatId: chat.id});
-      worker.subscribe({ chatId: chat.id, nonce: lastMessage ? (lastMessage.nonce + 1) : 0 });
+      const nonce = lastMessage?.nonce ?? chat.initialNonce;
+      launch(async () => worker.subscribe({ chatId: chat.id, nonce }));
     }
   });
 }
