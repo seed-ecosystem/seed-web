@@ -12,6 +12,7 @@ import {createChatStateHandle} from "@/modules/main/logic/chat-state-handle.ts";
 import {createShareChatLogic, ShareChatLogic} from "@/modules/main/share/logic/share-chat-logic.ts";
 import {createShareStateHandle} from "@/modules/main/logic/share-state-handle.ts";
 import {createNewStateHandle} from "@/modules/main/logic/new-state-handle.ts";
+import {ChatListStateHandle, createChatListStateHandle} from "@/modules/main/chat-list/logic/chat-list-state-handle.ts";
 
 export type MainEvent = {
   type: "chat";
@@ -39,9 +40,10 @@ export interface MainLogic {
 }
 
 export function createMainLogic(
-  {persistence, worker}: {
+  {persistence, worker, chatListStateHandle}: {
     persistence: SeedPersistence;
     worker: WorkerStateHandle;
+    chatListStateHandle: ChatListStateHandle;
   }
  ): MainLogic {
   const events: Observable<MainEvent> = createObservable();
@@ -56,7 +58,7 @@ export function createMainLogic(
     nicknameStateHandle, chatStateHandle,
     shareStateHandle, newStateHandle
   });
-  const chatList = createChatListLogic({persistence, worker});
+  const chatList = createChatListLogic({persistence, worker, chatListStateHandle});
 
   let chat: ChatLogic | undefined;
   let createChat: NewLogic | undefined;
@@ -83,7 +85,7 @@ export function createMainLogic(
       return;
     }
     const {chatId} = chat;
-    const chatLogic = createChatLogic({persistence, worker, chatId, nicknameStateHandle});
+    const chatLogic = createChatLogic({persistence, worker, chatId, nicknameStateHandle, chatListStateHandle});
     setChat(chatLogic);
   });
 
@@ -91,7 +93,7 @@ export function createMainLogic(
     setShare(props.shown ? createShareChatLogic({shareStateHandle, persistence, chatId: props.chatId}) : undefined);
   });
   newStateHandle.updates.subscribe(shown => {
-    setNew(shown ? createNewLogic({persistence, worker, newStateHandle}) : undefined);
+    setNew(shown ? createNewLogic({persistence, worker, newStateHandle, chatListStateHandle}) : undefined);
   });
 
   loadNickname({persistence, nickname: nicknameStateHandle});

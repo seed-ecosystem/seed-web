@@ -5,7 +5,6 @@ import {Chat} from "@/modules/main/chat-list/logic/chat.ts";
 
 export interface ChatListProps {
   chats: Chat[];
-  onClick?: () => void;
 }
 
 export function ChatListContent({chats}: ChatListProps) {

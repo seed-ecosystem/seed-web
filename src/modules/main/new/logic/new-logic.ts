@@ -4,6 +4,7 @@ import {launch} from "@/modules/coroutines/launch.ts";
 import {randomAESKey} from "@/sdk/crypto/subtle-crypto.ts";
 import {WorkerStateHandle} from "@/modules/umbrella/logic/worker-state-handle.ts";
 import {NewStateHandle} from "@/modules/main/logic/new-state-handle.ts";
+import {ChatListStateHandle} from "@/modules/main/chat-list/logic/chat-list-state-handle.ts";
 
 export type NewEvent = {
   type: "title";
@@ -24,10 +25,11 @@ export interface NewLogic {
 }
 
 export function createNewLogic(
-  {persistence, worker, newStateHandle}: {
+  {persistence, worker, newStateHandle, chatListStateHandle}: {
     persistence: SeedPersistence;
     worker: WorkerStateHandle;
     newStateHandle: NewStateHandle;
+    chatListStateHandle: ChatListStateHandle;
   }
 ): NewLogic {
   const events: Observable<NewEvent> = createObservable();
@@ -52,15 +54,17 @@ export function createNewLogic(
         if (title.trim().length == 0) return;
         const privateKey = await randomAESKey();
         const chatId = await randomAESKey();
-        await persistence.chat.add({
+        const chat = {
           id: chatId,
           title: title,
           initialKey: privateKey,
           initialNonce: 0,
           lastMessageDate: new Date(),
-        });
+        };
+        await persistence.chat.add(chat);
         events.emit({ type: "openChat", chatId });
         worker.subscribe({ chatId, nonce: 0 });
+        chatListStateHandle.set([chat, ...chatListStateHandle.get()]);
         newStateHandle.setShown(false);
       });
     },

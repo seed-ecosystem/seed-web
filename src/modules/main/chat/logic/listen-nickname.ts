@@ -1,5 +1,6 @@
 import {NicknameStateHandle} from "@/modules/main/logic/nickname-state-handle.ts";
 import {Message} from "@/modules/main/chat/logic/message.ts";
+import {Cancellation} from "@/coroutines/cancellation.ts";
 
 export type ListenNicknameOptions = {
   nickname: NicknameStateHandle;
@@ -8,8 +9,8 @@ export type ListenNicknameOptions = {
   setDisplayNickname(value: string): void;
 }
 
-export function listenNickname({nickname, getMessages, setMessages, setDisplayNickname}: ListenNicknameOptions) {
-  nickname.updates.subscribe(value => {
+export function listenNickname({nickname, getMessages, setMessages, setDisplayNickname}: ListenNicknameOptions): Cancellation {
+  const cancel1 = nickname.updates.subscribe(value => {
     const messages = getMessages().map(message => {
       if (message.content.type != "regular") return message;
 
@@ -39,5 +40,10 @@ export function listenNickname({nickname, getMessages, setMessages, setDisplayNi
     setMessages(messages);
   });
 
-  nickname.displayUpdates.subscribe(setDisplayNickname);
+  const cancel2 = nickname.displayUpdates.subscribe(setDisplayNickname);
+
+  return () => {
+    cancel1();
+    cancel2();
+  };
 }

@@ -9,7 +9,7 @@ import {Chat} from "@/modules/main/chat-list/persistence/chat.ts";
 import {subscribeToChats} from "@/modules/umbrella/logic/subscribe-to-chats.ts";
 import {createWorkerStateHandle} from "@/modules/umbrella/logic/worker-state-handle.ts";
 import {createObservable, Observable} from "@/coroutines/observable.ts";
-import {NewLogic, createNewLogic} from "@/modules/main/new/logic/new-logic.ts";
+import {createChatListStateHandle} from "@/modules/main/chat-list/logic/chat-list-state-handle.ts";
 
 export type LogicEvent = {
   type: "open",
@@ -29,6 +29,7 @@ export async function createLogic(): Promise<Logic> {
   const client = createSeedClient({socket});
   const worker = createSeedWorker({client, persistence});
   const workerStateHandle = createWorkerStateHandle({worker, persistence});
+  const chatListStateHandle = createChatListStateHandle();
 
   subscribeToChats({persistence, worker});
 
@@ -44,9 +45,11 @@ export async function createLogic(): Promise<Logic> {
           events.emit({ type: "open", chatId: chat.id });
         });
         workerStateHandle.subscribe({ chatId: chat.id, nonce: chat.initialNonce });
+        chatListStateHandle.set([chat, ...chatListStateHandle.get()]);
+        console.log("SET!");
       });
     },
-    createMain: () => createMainLogic({persistence, worker: workerStateHandle})
+    createMain: () => createMainLogic({persistence, worker: workerStateHandle, chatListStateHandle})
   };
 }
 

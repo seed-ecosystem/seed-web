@@ -1,6 +1,7 @@
 import {Message, MessageContent} from "@/modules/main/chat/logic/message.ts";
 import {WorkerStateHandle} from "@/modules/umbrella/logic/worker-state-handle.ts";
 import {sanitizeContent} from "@/modules/umbrella/logic/sanitize-messages.ts";
+import {ChatListStateHandle} from "@/modules/main/chat-list/logic/chat-list-state-handle.ts";
 
 export type SendMessageOptions = {
   chatId: string;
@@ -15,6 +16,7 @@ export type SendMessageOptions = {
   setMessages(messages: Message[]): void;
   editMessage(message: Message): void;
   worker: WorkerStateHandle;
+  chatListStateHandle: ChatListStateHandle;
 }
 
 export function sendMessage(
@@ -23,7 +25,7 @@ export function sendMessage(
     getLocalNonce, setLocalNonce,
     getServerNonce, setServerNonce,
     getMessages, setMessages,
-    editMessage, worker
+    editMessage, worker, chatListStateHandle
   }: SendMessageOptions
 ) {
   setText("");
@@ -50,6 +52,17 @@ export function sendMessage(
   };
 
   setMessages([message, ...getMessages()]);
+
+  const chatList = [...chatListStateHandle.get()];
+  for (let i = 0; i < chatList.length; i++) {
+    const chat = chatList[i];
+    if (chat.id != chatId) continue;
+    chat.lastMessage = content;
+    chatList.splice(i, 1);
+    chatList.unshift(chat);
+    break;
+  }
+  chatListStateHandle.set(chatList);
 
   worker.sendMessage({ chatId, content }).then(serverNonce => {
     if (serverNonce != null) {

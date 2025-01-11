@@ -8,6 +8,7 @@ import {sendMessage} from "@/modules/main/chat/logic/send-message.ts";
 import {NicknameStateHandle} from "@/modules/main/logic/nickname-state-handle.ts";
 import {listenNickname} from "@/modules/main/chat/logic/listen-nickname.ts";
 import {Cancellation} from "@/coroutines/cancellation.ts";
+import {ChatListStateHandle} from "@/modules/main/chat-list/logic/chat-list-state-handle.ts";
 
 export type ChatEvent = {
   type: "nickname";
@@ -40,10 +41,11 @@ export interface ChatLogic {
 
 export function createChatLogic(
   {
-    persistence, worker, nicknameStateHandle, chatId
+    persistence, worker, nicknameStateHandle, chatListStateHandle, chatId
   }: {
     chatId: string;
     nicknameStateHandle: NicknameStateHandle;
+    chatListStateHandle: ChatListStateHandle;
     persistence: SeedPersistence;
     worker: WorkerStateHandle;
   },
@@ -80,12 +82,6 @@ export function createChatLogic(
     )
   }
 
-  listenNickname({
-    nickname: nicknameStateHandle,
-    getMessages: () => messages, setMessages,
-    setDisplayNickname: (value) => events.emit({ type: "nickname", value })
-  });
-
   loadLocalMessages({
     chatId, nickname: nicknameStateHandle,
     serverNonce, setServerNonce: (value) => serverNonce = value,
@@ -99,13 +95,22 @@ export function createChatLogic(
     getMessages: () => messages,
     getText: () => text, setText,
     mount(): Cancellation {
-      return listenWorkerEvents({
+      const cancel1 = listenNickname({
+        nickname: nicknameStateHandle,
+        getMessages: () => messages, setMessages,
+        setDisplayNickname: (value) => events.emit({ type: "nickname", value })
+      });
+      const cancel2 = listenWorkerEvents({
         worker, chatId, nickname: nicknameStateHandle,
         getMessages: () => messages, setMessages,
         setUpdating,
         getLocalNonce: () => localNonce, setLocalNonce: (value) => localNonce = value,
         getServerNonce: () => serverNonce, setServerNonce: (value) => serverNonce = value,
       });
+      return () => {
+        cancel1();
+        cancel2();
+      };
     },
     sendMessage() {
       sendMessage({
@@ -117,7 +122,7 @@ export function createChatLogic(
         getServerNonce: () => serverNonce,
         setServerNonce: (value) => serverNonce = value,
         getMessages: () => messages, setMessages,
-        editMessage, worker
+        editMessage, worker, chatListStateHandle
       });
     }
   }

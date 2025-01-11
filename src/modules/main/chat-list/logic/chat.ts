@@ -1,7 +1,7 @@
 export interface Chat {
   id: string;
   title: string;
-  lastMessage: {
+  lastMessage?: {
     title: string;
     text: string;
   };

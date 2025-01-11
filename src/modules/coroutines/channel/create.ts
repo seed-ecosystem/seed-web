@@ -1,5 +1,6 @@
 import {launch} from "@/modules/coroutines/launch.ts";
-import {Cancellation, Channel} from "@/modules/coroutines/channel/channel.ts";
+import {Channel} from "@/modules/coroutines/channel/channel.ts";
+import {Cancellation} from "@/coroutines/cancellation.ts";
 
 interface Send<T> {
   element: T;
@@ -111,10 +112,8 @@ export function createChannel<T>(): Channel<T> {
         }
       });
 
-      return {
-        cancel() {
-          cancellation?.cancel();
-        }
+      return () => {
+        if (cancellation) cancellation();
       };
     },
 

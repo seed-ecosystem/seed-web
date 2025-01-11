@@ -49,7 +49,6 @@ export async function createPersistence(): Promise<SeedPersistence> {
         while (cursor?.value) {
           const chat = cursor.value;
           chat.lastMessageDate = new Date(); // Assign current date
-          console.log(chat);
           await chatStore.put(chat);
           await cursor.continue();
         }

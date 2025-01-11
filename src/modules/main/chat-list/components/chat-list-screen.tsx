@@ -4,7 +4,7 @@ import {ChatListContent} from "@/modules/main/chat-list/components/chat-list-con
 import {useEach} from "@/coroutines/observable.ts";
 
 export function ChatListScreen({events, getChats, mount}: ChatListLogic) {
-  const [chats, updateChats] = useState(getChats());
+  const [chats, updateChats] = useState(getChats);
 
   useEach(events, event => {
     switch (event.type) {

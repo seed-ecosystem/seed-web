@@ -5,6 +5,7 @@ import {createObservable, Observable} from "@/coroutines/observable.ts";
 import {WorkerStateHandle} from "@/modules/umbrella/logic/worker-state-handle.ts";
 import {updateLastMessage} from "@/modules/main/chat-list/logic/update-last-message.ts";
 import {Cancellation} from "@/coroutines/cancellation.ts";
+import {ChatListStateHandle, createChatListStateHandle} from "@/modules/main/chat-list/logic/chat-list-state-handle.ts";
 
 export type ChatListEvent = {
   type: "chats";
@@ -20,29 +21,26 @@ export interface ChatListLogic {
 }
 
 export function createChatListLogic(
-  {persistence, worker}: {
+  {persistence, worker, chatListStateHandle}: {
     persistence: SeedPersistence;
     worker: WorkerStateHandle;
+    chatListStateHandle: ChatListStateHandle;
   }
 ): ChatListLogic {
-  const events = createObservable<ChatListEvent>();
+  const events: Observable<ChatListEvent> = createObservable();
 
-  let chats: Chat[] = [];
-
-  function setChats(value: Chat[]) {
-    chats = value;
-    events.emit({ type: "chats", value: chats });
-  }
-
-  loadLocalChats({persistence}).then(setChats);
+  loadLocalChats({persistence}).then(chatListStateHandle.set);
 
   return {
     events,
-    getChats: () => chats,
+    getChats: chatListStateHandle.get,
     mount(): Cancellation {
-      let cancelUpdateLastMessage = updateLastMessage({persistence, worker});
+      let cancel1 = updateLastMessage({persistence, worker, chatListStateHandle});
+      let cancel2 = chatListStateHandle.updates.subscribe(value => events.emit({ type: "chats", value }));
+
       return () => {
-        cancelUpdateLastMessage();
+        cancel1();
+        cancel2();
       }
     }
   };
