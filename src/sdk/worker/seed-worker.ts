@@ -53,10 +53,12 @@ export function createSeedWorker(
   const events = createObservable<SeedWorkerEvent>();
   let accumulated: Record<string, (ClientEvent & { type: "new" })[]> = {};
   let waitingChatIds: string[] = [];
+  let subscribedChatIds: string[] = [];
 
   client.events.subscribeAsChannel().onEach(async (event) => {
     switch (event.type) {
       case "new":
+        console.log("WAIT NEW", event.message.chatId, waitingChatIds);
         if (waitingChatIds.includes(event.message.chatId)) {
           const decrypted = await decryptNewEvents(persistence, event.message.chatId, [event]);
           events.emit(decrypted);
@@ -68,6 +70,7 @@ export function createSeedWorker(
         }
         break;
       case "wait":
+        console.log("WAIT");
         waitingChatIds.push(event.chatId);
         if (event.chatId in accumulated) {
           const decrypted = await decryptNewEvents(persistence, event.chatId, accumulated[event.chatId]);
@@ -83,6 +86,7 @@ export function createSeedWorker(
           }
           accumulated = {};
           waitingChatIds = [];
+          subscribedChatIds = [];
         }
         events.emit(event);
         break;
@@ -115,7 +119,9 @@ export function createSeedWorker(
       }
     },
 
-    subscribe({ chatId, nonce }): Promise<void> {
+    async subscribe({ chatId, nonce }): Promise<void> {
+      if (subscribedChatIds.includes(chatId)) return;
+      subscribedChatIds.push(chatId);
       return client.subscribe({chatId, nonce});
     },
   };
