@@ -1,6 +1,6 @@
 import {LoadingSpinner} from "@/modules/core/components/loading-spinner.tsx";
 import {Button} from "@/modules/core/components/button.tsx";
-import {Forward, LogOut, Menu, Share, X} from "lucide-react";
+import {Forward, LogOut, Menu, MessageSquareX, Share, X} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent, DropdownMenuItem,
@@ -48,7 +48,7 @@ export function ChatTopBarMenuContent({shareChat, deleteChat}: ChatTopBarMenuPro
       <DropdownMenuLabel>Options</DropdownMenuLabel>
       <DropdownMenuSeparator />
       <DropdownMenuItem onClick={shareChat}><Forward/> Share Chat</DropdownMenuItem>
-      <DropdownMenuItem onClick={deleteChat}><LogOut/> Leave Chat</DropdownMenuItem>
+      <DropdownMenuItem onClick={deleteChat}><MessageSquareX/> Leave Chat</DropdownMenuItem>
     </DropdownMenuContent>
   </DropdownMenu>;
 }
