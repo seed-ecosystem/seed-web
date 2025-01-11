@@ -10,6 +10,7 @@ import {subscribeToChats} from "@/modules/umbrella/logic/subscribe-to-chats.ts";
 import {createWorkerStateHandle} from "@/modules/umbrella/logic/worker-state-handle.ts";
 import {createObservable, Observable} from "@/coroutines/observable.ts";
 import {createChatListStateHandle} from "@/modules/main/chat-list/logic/chat-list-state-handle.ts";
+import {pickRandomNickname} from "@/modules/umbrella/logic/pick-random-nickname.ts";
 
 export type LogicEvent = {
   type: "open",
@@ -31,6 +32,7 @@ export async function createLogic(): Promise<Logic> {
   const workerStateHandle = createWorkerStateHandle({worker, persistence});
   const chatListStateHandle = createChatListStateHandle({persistence});
 
+  await pickRandomNickname({persistence});
   subscribeToChats({persistence, worker});
 
   return {
