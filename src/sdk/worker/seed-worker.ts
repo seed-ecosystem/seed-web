@@ -58,7 +58,6 @@ export function createSeedWorker(
   client.events.subscribeAsChannel().onEach(async (event) => {
     switch (event.type) {
       case "new":
-        console.log("WAIT NEW", event.message.chatId, waitingChatIds);
         if (waitingChatIds.includes(event.message.chatId)) {
           const decrypted = await decryptNewEvents(persistence, event.message.chatId, [event]);
           events.emit(decrypted);
@@ -70,7 +69,6 @@ export function createSeedWorker(
         }
         break;
       case "wait":
-        console.log("WAIT");
         waitingChatIds.push(event.chatId);
         if (event.chatId in accumulated) {
           const decrypted = await decryptNewEvents(persistence, event.chatId, accumulated[event.chatId]);
