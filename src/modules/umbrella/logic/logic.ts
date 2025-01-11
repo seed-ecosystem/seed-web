@@ -29,7 +29,7 @@ export async function createLogic(): Promise<Logic> {
   const client = createSeedClient({socket});
   const worker = createSeedWorker({client, persistence});
   const workerStateHandle = createWorkerStateHandle({worker, persistence});
-  const chatListStateHandle = createChatListStateHandle();
+  const chatListStateHandle = createChatListStateHandle({persistence});
 
   subscribeToChats({persistence, worker});
 
@@ -41,12 +41,11 @@ export async function createLogic(): Promise<Logic> {
           events.emit({ type: "open", chatId: chat.id });
           return;
         }
-        persistence.chat.add(chat).then(() => {
+        persistence.chat.put(chat).then(() => {
           events.emit({ type: "open", chatId: chat.id });
         });
         workerStateHandle.subscribe({ chatId: chat.id, nonce: chat.initialNonce });
-        chatListStateHandle.set([chat, ...chatListStateHandle.get()]);
-        console.log("SET!");
+        chatListStateHandle.unshift(chat);
       });
     },
     createMain: () => createMainLogic({persistence, worker: workerStateHandle, chatListStateHandle})

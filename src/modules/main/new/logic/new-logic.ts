@@ -61,10 +61,10 @@ export function createNewLogic(
           initialNonce: 0,
           lastMessageDate: new Date(),
         };
-        await persistence.chat.add(chat);
+        await persistence.chat.put(chat);
         events.emit({ type: "openChat", chatId });
         worker.subscribe({ chatId, nonce: 0 });
-        chatListStateHandle.set([chat, ...chatListStateHandle.get()]);
+        chatListStateHandle.unshift(chat);
         newStateHandle.setShown(false);
       });
     },

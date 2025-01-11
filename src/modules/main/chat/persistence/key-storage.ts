@@ -33,7 +33,7 @@ export function createKeyStorage(db: IDBPDatabase): KeyStorage {
     async add(keys: Key[]): Promise<void> {
       const transaction = db.transaction("key", "readwrite")
       await Promise.all([
-        ...keys.map(key => transaction.store.add(key)),
+        ...keys.map(key => transaction.store.put(key)),
         transaction.done
       ]);
     },

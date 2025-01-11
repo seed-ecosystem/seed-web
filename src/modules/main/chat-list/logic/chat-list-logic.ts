@@ -29,7 +29,7 @@ export function createChatListLogic(
 ): ChatListLogic {
   const events: Observable<ChatListEvent> = createObservable();
 
-  loadLocalChats({persistence}).then(chatListStateHandle.set);
+  loadLocalChats({persistence}).then(chatListStateHandle.init);
 
   return {
     events,
