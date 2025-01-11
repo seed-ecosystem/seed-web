@@ -15,6 +15,8 @@ import {createNewStateHandle} from "@/modules/main/logic/new-state-handle.ts";
 import {ChatListStateHandle, createChatListStateHandle} from "@/modules/main/chat-list/logic/chat-list-state-handle.ts";
 import {createDeleteStateHandle} from "@/modules/main/logic/delete-state-handle.ts";
 import {createDeleteLogic, DeleteLogic} from "@/modules/main/delete/logic/delete-logic.ts";
+import {createRenameStateHandle} from "@/modules/main/logic/rename-state-handle.ts";
+import {createRenameLogic, RenameLogic} from "@/modules/main/rename/logic/rename-logic.ts";
 
 export type MainEvent = {
   type: "chat";
@@ -28,6 +30,9 @@ export type MainEvent = {
 } | {
   type: "delete";
   value?: DeleteLogic;
+} | {
+  type: "rename";
+  value?: RenameLogic;
 }
 
 export interface MainLogic {
@@ -39,6 +44,7 @@ export interface MainLogic {
   getCreateChat(): NewLogic | undefined;
   getShareChat(): ShareChatLogic | undefined;
   getDeleteChat(): DeleteLogic | undefined;
+  getRenameChat(): RenameLogic | undefined;
 
   bindChat(chatId?: string): void;
 
@@ -59,11 +65,12 @@ export function createMainLogic(
   const shareStateHandle = createShareStateHandle();
   const newStateHandle = createNewStateHandle();
   const deleteStateHandle = createDeleteStateHandle();
+  const renameStateHandle = createRenameStateHandle();
 
   const topBar = createTopBarLogic({
     worker,
     nicknameStateHandle, chatStateHandle,
-    shareStateHandle, newStateHandle, deleteStateHandle
+    shareStateHandle, newStateHandle, deleteStateHandle, renameStateHandle
   });
   const chatList = createChatListLogic({persistence, worker, chatListStateHandle});
 
@@ -71,6 +78,7 @@ export function createMainLogic(
   let createChat: NewLogic | undefined;
   let shareChat: ShareChatLogic | undefined;
   let deleteChat: DeleteLogic | undefined;
+  let renameChat: RenameLogic | undefined;
 
   function setChat(value?: ChatLogic) {
     chat = value;
@@ -79,17 +87,22 @@ export function createMainLogic(
 
   function setNew(value?: NewLogic) {
     createChat = value;
-    events.emit({type: "new", value});
+    events.emit({ type: "new", value });
   }
 
   function setShare(value?: ShareChatLogic) {
     shareChat = value;
-    events.emit({type: "share", value});
+    events.emit({ type: "share", value });
   }
 
   function setDelete(value?: DeleteLogic) {
     deleteChat = value;
-    events.emit({type: "delete", value});
+    events.emit({ type: "delete", value });
+  }
+
+  function setRename(value?: RenameLogic) {
+    renameChat = value;
+    events.emit({ type: "rename", value });
   }
 
   chatStateHandle.updates.subscribe(chat => {
@@ -108,6 +121,9 @@ export function createMainLogic(
   deleteStateHandle.updates.subscribe(props => {
     setDelete(props.shown ? createDeleteLogic({deleteStateHandle, chatListStateHandle, chatStateHandle, chatId: props.chatId}) : undefined);
   });
+  renameStateHandle.updates.subscribe(props => {
+    setRename(props.shown ? createRenameLogic({renameStateHandle, chatListStateHandle, chatStateHandle, chatId: props.chatId, title: props.title}) : undefined);
+  });
   newStateHandle.updates.subscribe(shown => {
     setNew(shown ? createNewLogic({persistence, worker, newStateHandle, chatListStateHandle}) : undefined);
   });
@@ -123,6 +139,7 @@ export function createMainLogic(
     getCreateChat: () => createChat,
     getShareChat: () => shareChat,
     getDeleteChat: () => deleteChat,
+    getRenameChat: () => renameChat,
 
     bindChat: (chatId) => launch(async () => {
       if (!chatId) {
@@ -141,6 +158,8 @@ export function createMainLogic(
         setShare(undefined);
       } else if (deleteChat !== undefined) {
         setDelete(undefined);
+      } else if (renameChat !== undefined) {
+        setRename(undefined);
       } else {
         setChat(undefined);
       }

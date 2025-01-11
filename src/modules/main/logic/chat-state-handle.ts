@@ -9,6 +9,7 @@ export interface ChatStateHandle {
   updates: Observable<Chat>;
   set(chat: Chat): void;
   get(): Chat;
+  rename(title: string): void;
 }
 
 export function createChatStateHandle(): ChatStateHandle {
@@ -16,12 +17,18 @@ export function createChatStateHandle(): ChatStateHandle {
 
   let chat: Chat;
 
+  function setChat(value: Chat) {
+    chat = value;
+    updates.emit(chat);
+  }
+
   return {
     updates,
-    set(value) {
-      chat = value;
-      updates.emit(chat);
-    },
-    get: () => chat
+    set: setChat,
+    get: () => chat,
+    rename: (title) => {
+      if (!chat) return;
+      setChat({ ...chat, title });
+    }
   };
 }

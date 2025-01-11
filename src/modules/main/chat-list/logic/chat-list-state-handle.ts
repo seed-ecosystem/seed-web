@@ -10,6 +10,7 @@ export interface ChatListStateHandle {
   popUp(chatId: string, lastMessage: Chat["lastMessage"]): void;
   unshift(chat: Chat): void;
   delete(chatId: string): void;
+  rename(chatId: string, title: string): void;
 }
 
 export function createChatListStateHandle(
@@ -54,6 +55,17 @@ export function createChatListStateHandle(
       newList.splice(index, 1);
       setChatList(newList);
       launch(() => persistence.chat.delete(chatId));
+    },
+
+    rename(chatId: string, title: string) {
+      const newList = [...chatList];
+      const index = chatList.findIndex(chat => chat.id === chatId);
+      newList[index] = {
+        ...newList[index],
+        title: title
+      };
+      setChatList(newList);
+      launch(() => persistence.chat.rename(chatId, title));
     }
   };
 }

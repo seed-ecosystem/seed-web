@@ -8,10 +8,10 @@ import React, {useState} from "react";
 import {ChatTopBar} from "@/modules/main/top-bar/components/top-bar-content.tsx";
 import {useEach} from "@/coroutines/observable.ts";
 
-export function createChatTopBar({events, getWaiting, getTitle, closeChat, shareChat, deleteChat}: ChatTopBarLogic): ChatTopBar {
+export function createChatTopBar({events, getWaiting, getTitle, closeChat, shareChat, deleteChat, renameChat}: ChatTopBarLogic): ChatTopBar {
   return {
     Close: () => ChatTopBarCloseContent({closeChat}),
-    Menu: () => ChatTopBarMenuContent({shareChat, deleteChat}),
+    Menu: () => ChatTopBarMenuContent({shareChat, deleteChat, renameChat}),
 
     Content(): React.ReactElement {
       const [waiting, updateWaiting] = useState(getWaiting);

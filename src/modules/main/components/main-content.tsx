@@ -8,9 +8,10 @@ export interface MainProps {
   CreateChat?: () => ReactElement;
   ShareChat?: () => ReactElement;
   DeleteChat?: () => ReactElement;
+  RenameChat?: () => ReactElement;
 }
 
-export function MainContent({TopBar, ChatListScreen, ChatScreen, CreateChat, ShareChat, DeleteChat}: MainProps) {
+export function MainContent({TopBar, ChatListScreen, ChatScreen, CreateChat, ShareChat, DeleteChat, RenameChat}: MainProps) {
   return <div className="h-svh flex flex-col">
     <TopBar />
 
@@ -30,6 +31,7 @@ export function MainContent({TopBar, ChatListScreen, ChatScreen, CreateChat, Sha
     {CreateChat && <CreateChat />}
     {ShareChat && <ShareChat />}
     {DeleteChat && <DeleteChat />}
+    {RenameChat && <RenameChat />}
   </div>;
 }
 

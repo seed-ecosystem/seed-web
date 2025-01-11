@@ -3,6 +3,7 @@ import {createObservable, Observable} from "@/coroutines/observable.ts";
 import {ChatStateHandle} from "@/modules/main/logic/chat-state-handle.ts";
 import {ShareStateHandle} from "@/modules/main/logic/share-state-handle.ts";
 import {DeleteStateHandle} from "@/modules/main/logic/delete-state-handle.ts";
+import {RenameStateHandle} from "@/modules/main/logic/rename-state-handle.ts";
 
 export type ChatTopBarEvent = {
   type: "waiting";
@@ -18,14 +19,16 @@ export interface ChatTopBarLogic {
   closeChat(): void;
   shareChat(): void;
   deleteChat(): void;
+  renameChat(): void;
 }
 
 export function createChatTopBarLogic(
-  {worker, chatStateHandle, chatId, title, shareStateHandle, deleteStateHandle}: {
+  {worker, chatStateHandle, chatId, title, shareStateHandle, deleteStateHandle, renameStateHandle}: {
     worker: WorkerStateHandle;
     chatStateHandle: ChatStateHandle;
     shareStateHandle: ShareStateHandle;
     deleteStateHandle: DeleteStateHandle;
+    renameStateHandle: RenameStateHandle;
     chatId: string;
     title: string;
   }
@@ -50,5 +53,6 @@ export function createChatTopBarLogic(
     closeChat: () => chatStateHandle.set(undefined),
     shareChat: () => shareStateHandle.set({ shown: true, chatId }),
     deleteChat: () => deleteStateHandle.set({ shown: true, chatId }),
+    renameChat: () => renameStateHandle.set({ shown: true, chatId, title }),
   };
 }

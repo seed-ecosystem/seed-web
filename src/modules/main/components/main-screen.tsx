@@ -9,6 +9,7 @@ import {TopBar} from "@/modules/main/top-bar/components/top-bar.tsx";
 import {CreateChat} from "@/modules/main/new/component/create-chat.tsx";
 import {ShareChat} from "@/modules/main/share/component/share-chat.tsx";
 import {DeleteChat} from "@/modules/main/delete/component/delete-chat.tsx";
+import {RenameChat} from "@/modules/main/rename/component/rename-chat.tsx";
 
 export function MainScreen(
   {
@@ -21,6 +22,7 @@ export function MainScreen(
     getCreateChat,
     getShareChat,
     getDeleteChat,
+    getRenameChat,
 
     escape
   }: MainLogic
@@ -33,6 +35,7 @@ export function MainScreen(
   const [createChat, updateNew] = useState(getCreateChat);
   const [shareChat, updateShare] = useState(getShareChat);
   const [deleteChat, updateDelete] = useState(getDeleteChat);
+  const [renameChat, updateRename] = useState(getRenameChat);
 
   const [, chatParams] = useRoute("/chat/:chatId/*?");
 
@@ -52,6 +55,9 @@ export function MainScreen(
         break;
       case "delete":
         updateDelete(event.value);
+        break;
+      case "rename":
+        updateRename(event.value);
         break;
     }
   });
@@ -81,5 +87,6 @@ export function MainScreen(
     CreateChat: createChat ? () => CreateChat(createChat) : undefined,
     ShareChat: shareChat ? () => ShareChat(shareChat) : undefined,
     DeleteChat: deleteChat ? () => DeleteChat(deleteChat) : undefined,
+    RenameChat: renameChat ? () => RenameChat(renameChat) : undefined,
   });
 }

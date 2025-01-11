@@ -23,7 +23,7 @@ export function CreateChatContent({title, setTitle, create, cancel}: CreateChatC
   useEffect(() => {
     const current = titleRef.current;
     if (!current) return;
-    if (current.value != title) return;
+    if (current.value == title) return;
     current.value = title;
   }, [title]);
 
@@ -51,7 +51,7 @@ export function CreateChatContent({title, setTitle, create, cancel}: CreateChatC
           <AlertDialogTitle>New Chat</AlertDialogTitle>
           <AlertDialogDescription>Enter chat title and start chatting right away</AlertDialogDescription>
         </AlertDialogHeader>
-        <Input ref={titleRef} enterKeyHint="done" placeholder="Title" onChange={(e) => setTitle(e.target.value)} />
+        <Input ref={titleRef} enterKeyHint="done" placeholder="Title" onChange={(e) => setTitle(e.target.value)} autoFocus />
         <AlertDialogFooter>
           <AlertDialogCancel onClick={cancel}>Cancel</AlertDialogCancel>
           <AlertDialogAction onClick={create}>Create</AlertDialogAction>

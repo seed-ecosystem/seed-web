@@ -5,6 +5,7 @@ export interface ChatStorage {
   put(chat: Chat): Promise<void>;
   list(): Promise<Chat[]>;
   get(id: string): Promise<Chat>;
+  rename(id: string, title: string): Promise<void>;
   exists(id: string): Promise<boolean>;
   updateLastMessageDate(id: string, date: Date): Promise<void>;
   delete(id: string): Promise<void>;
@@ -24,6 +25,15 @@ export function createChatStorage(db: IDBPDatabase): ChatStorage {
 
     async get(id: string): Promise<Chat> {
       return await db.transaction("chat").store.get(IDBKeyRange.only(id));
+    },
+
+    async rename(id: string, title: string): Promise<void> {
+      const transaction = db.transaction("chat", "readwrite");
+      const chat = {
+        ...await transaction.store.get(IDBKeyRange.only(id)),
+        title
+      };
+      await transaction.store.put(chat);
     },
 
     async delete(id: string): Promise<void> {

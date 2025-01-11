@@ -1,6 +1,6 @@
 import {LoadingSpinner} from "@/modules/core/components/loading-spinner.tsx";
 import {Button} from "@/modules/core/components/button.tsx";
-import {Forward, LogOut, Menu, MessageSquareX, Share, X} from "lucide-react";
+import {Forward, LogOut, Menu, MessageSquareX, Pen, Share, X} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent, DropdownMenuItem,
@@ -37,18 +37,20 @@ export function ChatTopBarCloseContent({closeChat}: ChatTopBarCloseProps) {
 }
 
 export type ChatTopBarMenuProps = {
+  renameChat: () => void;
   shareChat: () => void;
   deleteChat: () => void;
 }
 
-export function ChatTopBarMenuContent({shareChat, deleteChat}: ChatTopBarMenuProps) {
+export function ChatTopBarMenuContent({renameChat, shareChat, deleteChat}: ChatTopBarMenuProps) {
   return <DropdownMenu>
     <DropdownMenuTrigger asChild><Button size="icon" variant="ghost"><Menu /></Button></DropdownMenuTrigger>
     <DropdownMenuContent side="left" align="start">
       <DropdownMenuLabel>Options</DropdownMenuLabel>
       <DropdownMenuSeparator />
-      <DropdownMenuItem onClick={shareChat}><Forward/> Share Chat</DropdownMenuItem>
-      <DropdownMenuItem onClick={deleteChat}><MessageSquareX/> Leave Chat</DropdownMenuItem>
+      <DropdownMenuItem onClick={renameChat}><Pen/> Rename</DropdownMenuItem>
+      <DropdownMenuItem onClick={shareChat}><Forward/> Share</DropdownMenuItem>
+      <DropdownMenuItem onClick={deleteChat}><MessageSquareX/> Leave</DropdownMenuItem>
     </DropdownMenuContent>
   </DropdownMenu>;
 }
