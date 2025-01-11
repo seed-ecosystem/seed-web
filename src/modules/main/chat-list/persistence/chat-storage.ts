@@ -30,7 +30,7 @@ export function createChatStorage(db: IDBPDatabase): ChatStorage {
     },
 
     async list(): Promise<Chat[]> {
-      return await db.transaction("chat").store.index("lastMessageDate").getAll();
+      return (await db.transaction("chat").store.index("lastMessageDate").getAll()).reverse();
     },
 
     async updateLastMessageDate(id: string, date: Date): Promise<void> {

@@ -56,7 +56,7 @@ export function createMainLogic(
     nicknameStateHandle, chatStateHandle,
     shareStateHandle, newStateHandle
   });
-  const chatList = createChatListLogic({persistence});
+  const chatList = createChatListLogic({persistence, worker});
 
   let chat: ChatLogic | undefined;
   let createChat: NewLogic | undefined;

@@ -46,7 +46,7 @@ export async function createPersistence(): Promise<SeedPersistence> {
         chatStore.createIndex("lastMessageDate", "lastMessageDate");
 
         const cursor = await chatStore.openCursor();
-        while (cursor) {
+        while (cursor?.value) {
           const chat = cursor.value;
           chat.lastMessageDate = new Date(); // Assign current date
           console.log(chat);

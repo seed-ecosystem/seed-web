@@ -1,7 +1,7 @@
 import {WorkerStateHandle} from "@/modules/umbrella/logic/worker-state-handle.ts";
 import {Message} from "@/modules/main/chat/logic/message.ts";
-import {Cancellation} from "@/coroutines/observable.ts";
 import {NicknameStateHandle} from "@/modules/main/logic/nickname-state-handle.ts";
+import {Cancellation} from "@/coroutines/cancellation.ts";
 
 export type ListenWorkerEventsOptions = {
   worker: WorkerStateHandle;

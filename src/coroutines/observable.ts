@@ -2,6 +2,7 @@ import {Channel} from "@/modules/coroutines/channel/channel.ts";
 import {createChannel} from "@/modules/coroutines/channel/create.ts";
 import {launch} from "@/modules/coroutines/launch.ts";
 import {useEffect} from "react";
+import {Cancellation} from "@/coroutines/cancellation.ts";
 
 export interface Observable<T = unknown> {
   // Essential methods
@@ -17,10 +18,6 @@ export interface Observable<T = unknown> {
 
 export interface Observer<T> {
   (value: T): void;
-}
-
-export interface Cancellation {
-  (): void;
 }
 
 export function useEach<T>(

@@ -1,12 +1,13 @@
 import {SeedPersistence} from "@/modules/umbrella/persistence/seed-persistence.ts";
 import {Message} from "@/modules/main/chat/logic/message.ts";
 import {loadLocalMessages} from "@/modules/main/chat/logic/load-local-messages-usecase.ts";
-import {Cancellation, createObservable, Observable} from "@/coroutines/observable.ts";
+import {createObservable, Observable} from "@/coroutines/observable.ts";
 import {WorkerStateHandle} from "@/modules/umbrella/logic/worker-state-handle.ts";
 import {listenWorkerEvents} from "@/modules/main/chat/logic/listen-worker-events.ts";
 import {sendMessage} from "@/modules/main/chat/logic/send-message.ts";
 import {NicknameStateHandle} from "@/modules/main/logic/nickname-state-handle.ts";
 import {listenNickname} from "@/modules/main/chat/logic/listen-nickname.ts";
+import {Cancellation} from "@/coroutines/cancellation.ts";
 
 export type ChatEvent = {
   type: "nickname";
