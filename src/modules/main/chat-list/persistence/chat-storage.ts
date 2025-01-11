@@ -6,12 +6,13 @@ export interface ChatStorage {
   list(): Promise<Chat[]>;
   get(id: string): Promise<Chat>;
   exists(id: string): Promise<boolean>;
+  updateLastMessageDate(id: string, date: Date): Promise<void>;
 }
 
 export function createChatObjectStore(db: IDBPDatabase){
   db.createObjectStore("chat", {
     keyPath: "id"
-  });
+  }).createIndex("lastMessageDate", "lastMessageDate");
 }
 
 export function createChatStorage(db: IDBPDatabase): ChatStorage {
@@ -29,7 +30,18 @@ export function createChatStorage(db: IDBPDatabase): ChatStorage {
     },
 
     async list(): Promise<Chat[]> {
-      return await db.transaction("chat").store.getAll();
-    }
+      return await db.transaction("chat").store.index("lastMessageDate").getAll();
+    },
+
+    async updateLastMessageDate(id: string, date: Date): Promise<void> {
+      const tx = db.transaction("chat", "readwrite");
+      const store = tx.store;
+      const chat = await store.get(IDBKeyRange.only(id));
+      if (chat) {
+        chat.lastMessageDate = date;
+        await store.put(chat);
+      }
+      await tx.done;
+    },
   };
 }

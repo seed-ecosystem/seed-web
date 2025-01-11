@@ -56,7 +56,8 @@ export function createNewLogic(
           id: chatId,
           title: title,
           initialKey: privateKey,
-          initialNonce: 0
+          initialNonce: 0,
+          lastMessageDate: new Date(),
         });
         events.emit({ type: "openChat", chatId });
         worker.subscribe({ chatId, nonce: 0 });

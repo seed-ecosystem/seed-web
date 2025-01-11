@@ -17,7 +17,8 @@ export function App({logic}: {logic: Logic}) {
       id: decodeURIComponent(importChat.chatId),
       title: decodeURIComponent(importChat.title),
       initialKey: decodeURIComponent(importChat.chatKey),
-      initialNonce: +decodeURIComponent(importChat.nonce)
+      initialNonce: +decodeURIComponent(importChat.nonce),
+      lastMessageDate: new Date(),
     });
   }, [importChat]);
 
