@@ -7,8 +7,8 @@ import {ChatListScreen} from "@/modules/main/chat-list/components/chat-list-scre
 import {useEach} from "@/coroutines/observable.ts";
 import {TopBar} from "@/modules/main/top-bar/components/top-bar.tsx";
 import {CreateChat} from "@/modules/main/new/component/create-chat.tsx";
-import {ShareChatContent} from "@/modules/main/share/component/share-chat-content.tsx";
-import {ShareChat} from "@/modules/main/share/component/share-content.tsx";
+import {ShareChat} from "@/modules/main/share/component/share-chat.tsx";
+import {DeleteChat} from "@/modules/main/delete/component/delete-chat.tsx";
 
 export function MainScreen(
   {
@@ -20,6 +20,7 @@ export function MainScreen(
     getChat, bindChat,
     getCreateChat,
     getShareChat,
+    getDeleteChat,
 
     escape
   }: MainLogic
@@ -31,6 +32,7 @@ export function MainScreen(
   const [chat, updateChat] = useState(getChat);
   const [createChat, updateNew] = useState(getCreateChat);
   const [shareChat, updateShare] = useState(getShareChat);
+  const [deleteChat, updateDelete] = useState(getDeleteChat);
 
   const [, chatParams] = useRoute("/chat/:chatId/*?");
 
@@ -47,6 +49,9 @@ export function MainScreen(
         break;
       case "share":
         updateShare(event.value);
+        break;
+      case "delete":
+        updateDelete(event.value);
         break;
     }
   });
@@ -75,5 +80,6 @@ export function MainScreen(
     ChatListScreen: () => ChatListScreen(chatList),
     CreateChat: createChat ? () => CreateChat(createChat) : undefined,
     ShareChat: shareChat ? () => ShareChat(shareChat) : undefined,
+    DeleteChat: deleteChat ? () => DeleteChat(deleteChat) : undefined,
   });
 }

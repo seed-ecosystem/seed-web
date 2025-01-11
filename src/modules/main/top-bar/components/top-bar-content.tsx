@@ -1,7 +1,6 @@
 import {Link} from "wouter";
 import {LoadingSpinner} from "@/modules/core/components/loading-spinner.tsx";
 import {ReactElement} from "react";
-import {MediaHiddenMD, MediaVisibleMD} from "@/modules/responsive/media-query.tsx";
 
 export type TopBarProps = {
   loading: boolean;

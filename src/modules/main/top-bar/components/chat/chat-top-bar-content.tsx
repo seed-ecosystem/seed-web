@@ -1,6 +1,6 @@
 import {LoadingSpinner} from "@/modules/core/components/loading-spinner.tsx";
 import {Button} from "@/modules/core/components/button.tsx";
-import {Menu, X} from "lucide-react";
+import {Forward, LogOut, Menu, Share, X} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent, DropdownMenuItem,
@@ -38,15 +38,17 @@ export function ChatTopBarCloseContent({closeChat}: ChatTopBarCloseProps) {
 
 export type ChatTopBarMenuProps = {
   shareChat: () => void;
+  deleteChat: () => void;
 }
 
-export function ChatTopBarMenuContent({shareChat}: ChatTopBarMenuProps) {
+export function ChatTopBarMenuContent({shareChat, deleteChat}: ChatTopBarMenuProps) {
   return <DropdownMenu>
     <DropdownMenuTrigger asChild><Button size="icon" variant="ghost"><Menu /></Button></DropdownMenuTrigger>
     <DropdownMenuContent side="left" align="start">
       <DropdownMenuLabel>Options</DropdownMenuLabel>
       <DropdownMenuSeparator />
-      <DropdownMenuItem onClick={shareChat}>Share Chat</DropdownMenuItem>
+      <DropdownMenuItem onClick={shareChat}><Forward/> Share Chat</DropdownMenuItem>
+      <DropdownMenuItem onClick={deleteChat}><LogOut/> Leave Chat</DropdownMenuItem>
     </DropdownMenuContent>
   </DropdownMenu>;
 }

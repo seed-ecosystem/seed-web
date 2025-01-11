@@ -5,7 +5,7 @@ import {createObservable, Observable} from "@/coroutines/observable.ts";
 import {WorkerStateHandle} from "@/modules/umbrella/logic/worker-state-handle.ts";
 import {updateLastMessage} from "@/modules/main/chat-list/logic/update-last-message.ts";
 import {Cancellation} from "@/coroutines/cancellation.ts";
-import {ChatListStateHandle, createChatListStateHandle} from "@/modules/main/chat-list/logic/chat-list-state-handle.ts";
+import {ChatListStateHandle} from "@/modules/main/chat-list/logic/chat-list-state-handle.ts";
 
 export type ChatListEvent = {
   type: "chats";
@@ -35,7 +35,7 @@ export function createChatListLogic(
     events,
     getChats: chatListStateHandle.get,
     mount(): Cancellation {
-      let cancel1 = updateLastMessage({persistence, worker, chatListStateHandle});
+      let cancel1 = updateLastMessage({worker, chatListStateHandle});
       let cancel2 = chatListStateHandle.updates.subscribe(value => events.emit({ type: "chats", value }));
 
       return () => {

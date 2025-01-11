@@ -53,16 +53,7 @@ export function sendMessage(
 
   setMessages([message, ...getMessages()]);
 
-  const chatList = [...chatListStateHandle.get()];
-  for (let i = 0; i < chatList.length; i++) {
-    const chat = chatList[i];
-    if (chat.id != chatId) continue;
-    chat.lastMessage = content;
-    chatList.splice(i, 1);
-    chatList.unshift(chat);
-    break;
-  }
-  chatListStateHandle.set(chatList);
+  chatListStateHandle.popUp(chatId, content);
 
   worker.sendMessage({ chatId, content }).then(serverNonce => {
     if (serverNonce != null) {
