@@ -7,6 +7,9 @@ import {CircleX} from "lucide-react";
 import {Message} from "@/modules/main/chat/logic/message.ts";
 import {convertTitleToAvatar} from "@/convert-title-to-avatar.ts";
 import {memo} from "react";
+import Linkify from "linkify-react";
+import {Link} from "wouter";
+import {IntermediateRepresentation} from "linkifyjs";
 
 export const MessagesList = memo((
   {messages}: {
@@ -37,7 +40,9 @@ export const MessagesList = memo((
               <ChatBubbleAvatar fallback={convertTitleToAvatar(message.content.title)}/>
               <ChatBubbleMessage variant={variant}>
                 <Label htmlFor="text">{message.content.title}</Label>
-                <p id="text">{message.content.text}</p>
+                <Linkify options={{ target: '_blank', render: RenderLink }}>
+                  <p id="text">{message.content.text}</p>
+                </Linkify>
               </ChatBubbleMessage>
               {message.loading && <LoadingSpinner/>}
               {message.failure && <CircleX/>}
@@ -53,3 +58,8 @@ export const MessagesList = memo((
     </div>
   </>
 ));
+
+function RenderLink({attributes, content}: IntermediateRepresentation) {
+  const { href, ...props } = attributes;
+  return <a className="underline" href={href} {...props}>{content}</a>;
+}
