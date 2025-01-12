@@ -12,6 +12,7 @@ import {createObservable, Observable} from "@/coroutines/observable.ts";
 import {createChatListStateHandle} from "@/modules/main/chat-list/logic/chat-list-state-handle.ts";
 import {pickRandomNickname} from "@/modules/umbrella/logic/pick-random-nickname.ts";
 import {launch} from "@/modules/coroutines/launch.ts";
+import {createChatStateHandle} from "@/modules/main/logic/chat-state-handle.ts";
 
 export type LogicEvent = {
   type: "open",
@@ -31,7 +32,8 @@ export async function createLogic(): Promise<Logic> {
   const client = createSeedClient({socket});
   const worker = createSeedWorker({client, persistence});
   const workerStateHandle = createWorkerStateHandle({worker, persistence});
-  const chatListStateHandle = createChatListStateHandle({persistence});
+  const chatStateHandle = createChatStateHandle();
+  const chatListStateHandle = createChatListStateHandle({persistence, chatStateHandle});
 
   await pickRandomNickname({persistence});
   subscribeToChats({persistence, worker});
@@ -50,7 +52,7 @@ export async function createLogic(): Promise<Logic> {
         events.emit({ type: "open", chatId: chat.id });
       });
     },
-    createMain: () => createMainLogic({persistence, worker: workerStateHandle, chatListStateHandle})
+    createMain: () => createMainLogic({persistence, worker: workerStateHandle, chatListStateHandle, chatStateHandle})
   };
 }
 

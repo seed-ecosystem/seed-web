@@ -2,6 +2,7 @@ import {createObservable, Observable} from "@/coroutines/observable.ts";
 import {Chat} from "@/modules/main/chat-list/logic/chat.ts";
 import {SeedPersistence} from "@/modules/umbrella/persistence/seed-persistence.ts";
 import {launch} from "@/modules/coroutines/launch.ts";
+import {ChatStateHandle} from "@/modules/main/logic/chat-state-handle.ts";
 
 export interface ChatListStateHandle {
   updates: Observable<Chat[]>;
@@ -14,8 +15,9 @@ export interface ChatListStateHandle {
 }
 
 export function createChatListStateHandle(
-  {persistence}: {
+  {persistence, chatStateHandle}: {
     persistence: SeedPersistence;
+    chatStateHandle: ChatStateHandle;
   }
 ): ChatListStateHandle {
   const updates: Observable<Chat[]> = createObservable();
@@ -27,12 +29,17 @@ export function createChatListStateHandle(
     updates.emit(value);
   }
 
+  chatStateHandle.updates.subscribe(active => {
+    chatList = chatList.map(chat => combine(chat, active?.chatId));
+  });
+
   return {
     updates,
 
     get: () => chatList,
 
     init(chatList: Chat[]) {
+      chatList = chatList.map(chat => combine(chat, chatStateHandle.get()?.chatId))
       setChatList(chatList);
     },
 
@@ -46,7 +53,7 @@ export function createChatListStateHandle(
     },
 
     unshift(chat: Chat) {
-      setChatList([chat, ...chatList]);
+      setChatList([combine(chat, chatStateHandle.get()?.chatId), ...chatList]);
     },
 
     delete(chatId: string) {
@@ -67,5 +74,12 @@ export function createChatListStateHandle(
       setChatList(newList);
       launch(() => persistence.chat.rename(chatId, title));
     }
+  };
+}
+
+function combine(chat: Chat, activeChatId?: string) {
+  return {
+    ...chat,
+    isActive: chat.id === activeChatId,
   };
 }

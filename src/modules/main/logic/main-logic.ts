@@ -8,7 +8,7 @@ import {createObservable, Observable} from "@/coroutines/observable.ts";
 import {createTopBarLogic, TopBarLogic} from "@/modules/main/top-bar/logic/top-bar-logic.ts";
 import {NewLogic, createNewLogic} from "@/modules/main/new/logic/new-logic.ts";
 import {launch} from "@/modules/coroutines/launch.ts";
-import {createChatStateHandle} from "@/modules/main/logic/chat-state-handle.ts";
+import {ChatStateHandle, createChatStateHandle} from "@/modules/main/logic/chat-state-handle.ts";
 import {createShareChatLogic, ShareChatLogic} from "@/modules/main/share/logic/share-chat-logic.ts";
 import {createShareStateHandle} from "@/modules/main/logic/share-state-handle.ts";
 import {createNewStateHandle} from "@/modules/main/logic/new-state-handle.ts";
@@ -52,16 +52,16 @@ export interface MainLogic {
 }
 
 export function createMainLogic(
-  {persistence, worker, chatListStateHandle}: {
+  {persistence, worker, chatListStateHandle, chatStateHandle}: {
     persistence: SeedPersistence;
     worker: WorkerStateHandle;
     chatListStateHandle: ChatListStateHandle;
+    chatStateHandle: ChatStateHandle;
   }
  ): MainLogic {
   const events: Observable<MainEvent> = createObservable();
 
   const nicknameStateHandle = createNicknameStateHandle({persistence});
-  const chatStateHandle = createChatStateHandle();
   const shareStateHandle = createShareStateHandle();
   const newStateHandle = createNewStateHandle();
   const deleteStateHandle = createDeleteStateHandle();
