@@ -25,8 +25,7 @@ export const MessagesList = memo((
 
         <ChatMessageList
           dataLength={messages.length}
-          next={() => {
-          }}
+          next={() => {}}
           hasMore={false}
           style={{display: 'flex', flexDirection: 'column-reverse'}}>
           {messages.map((message) => {

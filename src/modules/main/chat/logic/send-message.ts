@@ -46,7 +46,7 @@ export function sendMessage(
   const message: Message = {
     content,
     failure: false,
-    loading: true,
+    loading: !worker.isConnected(), // Loading after 200ms
     localNonce: localNonce,
     serverNonce: null
   };
@@ -55,7 +55,15 @@ export function sendMessage(
 
   chatListStateHandle.popUp(chatId, content, 0);
 
+  let messageSent: boolean;
+
+  setTimeout(() => {
+    if (messageSent) return;
+    editMessage({ ...message, loading: true });
+  }, 300);
+
   worker.sendMessage({ chatId, content }).then(serverNonce => {
+    messageSent = true;
     if (serverNonce != null) {
       editMessage({
         ...message,
