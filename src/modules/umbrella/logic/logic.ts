@@ -47,6 +47,7 @@ export async function createLogic(): Promise<Logic> {
           events.emit({ type: "open", chatId: chat.id });
           return;
         }
+        await worker.subscribe({ chatId: chat.id, nonce: chat.initialNonce });
         await persistence.chat.put(chat);
         chatListStateHandle.unshift(chat);
         events.emit({ type: "open", chatId: chat.id });

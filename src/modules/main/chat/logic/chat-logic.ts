@@ -54,7 +54,7 @@ export function createChatLogic(
 
   let messages: Message[] = [];
   let localNonce = 0;
-  let serverNonce = 0;
+  let serverNonce = -1;
   let updating = !worker.isWaiting(chatId);
   let text = "";
 
