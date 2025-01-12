@@ -4,10 +4,10 @@ import {Chat} from "@/modules/main/chat-list/persistence/chat.ts";
 export interface ChatStorage {
   put(chat: Chat): Promise<void>;
   list(): Promise<Chat[]>;
-  get(id: string): Promise<Chat>;
+  get(id: string): Promise<Chat | undefined>;
   rename(id: string, title: string): Promise<void>;
   exists(id: string): Promise<boolean>;
-  updateLastMessageDate(id: string, date: Date): Promise<void>;
+  update(id: string, keys: Partial<Omit<Chat, "id">>): Promise<void>;
   delete(id: string): Promise<void>;
 }
 
@@ -48,12 +48,12 @@ export function createChatStorage(db: IDBPDatabase): ChatStorage {
       return (await db.transaction("chat").store.index("lastMessageDate").getAll()).reverse();
     },
 
-    async updateLastMessageDate(id: string, date: Date): Promise<void> {
+    async update(id: string, keys: Partial<Omit<Chat, "id">>): Promise<void> {
       const tx = db.transaction("chat", "readwrite");
       const store = tx.store;
-      const chat = await store.get(IDBKeyRange.only(id));
+      let chat = await store.get(IDBKeyRange.only(id));
       if (chat) {
-        chat.lastMessageDate = date;
+        chat = { ...chat, ...keys }
         await store.put(chat);
       }
       await tx.done;

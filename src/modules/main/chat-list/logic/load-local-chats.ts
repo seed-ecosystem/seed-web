@@ -9,18 +9,20 @@ export async function loadLocalChats({persistence}: LoadLocalChatsOptions): Prom
   const list: Chat[] = [];
 
   for (const chat of await persistence.chat.list()) {
-    const lastMessage = await persistence.message.lastMessage({chatId: chat.id});
+    let lastMessage;
 
-    const messageTitle = lastMessage?.content?.type == "regular" ? lastMessage?.content?.title : "Service";
-    const messageText = lastMessage?.content?.type == "regular" ? lastMessage?.content?.text : "Service Message";
+    lastMessage = await persistence.message.lastMessage({chatId: chat.id});
+
+    lastMessage = lastMessage?.content?.type == "regular" ? {
+      title: lastMessage.content.title,
+      text: lastMessage.content.text
+    } : undefined;
 
     list.push({
       id: chat.id,
       title: chat.title,
-      lastMessage: {
-        title: messageTitle,
-        text: messageText,
-      }
+      unreadCount: chat.unreadCount,
+      lastMessage
     });
   }
 

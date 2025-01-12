@@ -33,7 +33,7 @@ export function createShareChatLogic(
   }
 
   launch(async () => {
-    const {title, initialNonce, initialKey} = await persistence.chat.get(chatId);
+    const {title, initialNonce, initialKey} = (await persistence.chat.get(chatId))!;
     const lastKey = await persistence.key.lastKey({chatId});
 
     let nonce, key;

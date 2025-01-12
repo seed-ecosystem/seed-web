@@ -147,6 +147,7 @@ export function createMainLogic(
         return;
       }
       const chat = await persistence.chat.get(chatId);
+      if (!chat) return;
       chatStateHandle.set({chatId: chat.id, title: chat.title});
     }),
 

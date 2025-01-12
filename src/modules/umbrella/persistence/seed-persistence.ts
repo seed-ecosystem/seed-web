@@ -10,9 +10,7 @@ import {
 } from "@/modules/main/chat/persistence/nickname-storage.ts";
 import {openDB} from "idb";
 import {ChatStorage, createChatObjectStore, createChatStorage} from "@/modules/main/chat-list/persistence/chat-storage.ts";
-import {node} from "globals";
 import {createKeyObjectStore, createKeyStorage, KeyStorage} from "@/modules/main/chat/persistence/key-storage.ts";
-import {ChatMessage} from "@/modules/main/chat/persistence/chat-message.ts";
 
 export interface SeedPersistence {
   message: MessageStorage;
@@ -22,7 +20,7 @@ export interface SeedPersistence {
 }
 
 export async function createPersistence(): Promise<SeedPersistence> {
-  const db = await openDB("persistence", 7, {
+  const db = await openDB("persistence", 8, {
     async upgrade(db, version, _, transaction) {
       // Full schema creation
       if (version == 0) {
@@ -51,6 +49,15 @@ export async function createPersistence(): Promise<SeedPersistence> {
           chat.lastMessageDate = new Date(); // Assign current date
           await chatStore.put(chat);
           await cursor.continue();
+        }
+      }
+      if (version <= 7) {
+        const chatStore = transaction.objectStore("chat");
+
+        const cursor = await chatStore.openCursor();
+        for await (const {value: chat} of cursor!) {
+          chat.unreadCount = 0;
+          await chatStore.put(chat);
         }
       }
     }

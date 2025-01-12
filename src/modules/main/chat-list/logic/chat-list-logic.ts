@@ -1,5 +1,5 @@
 import {SeedPersistence} from "@/modules/umbrella/persistence/seed-persistence.ts";
-import {Chat} from "@/modules/main/chat-list/logic/chat.ts";
+import {UiChat} from "@/modules/main/chat-list/logic/chat.ts";
 import {loadLocalChats} from "@/modules/main/chat-list/logic/load-local-chats.ts";
 import {createObservable, Observable} from "@/coroutines/observable.ts";
 import {WorkerStateHandle} from "@/modules/umbrella/logic/worker-state-handle.ts";
@@ -10,13 +10,13 @@ import {ChatStateHandle} from "@/modules/main/logic/chat-state-handle.ts";
 
 export type ChatListEvent = {
   type: "chats";
-  value: Chat[];
+  value: UiChat[];
 }
 
 export interface ChatListLogic {
   events: Observable<ChatListEvent>;
 
-  getChats(): Chat[];
+  getChats(): UiChat[];
 
   mount(): Cancellation;
 }

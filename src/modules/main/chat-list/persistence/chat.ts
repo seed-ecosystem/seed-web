@@ -4,4 +4,5 @@ export interface Chat {
   initialKey: string;
   initialNonce: number;
   lastMessageDate: Date;
+  unreadCount: number;
 }

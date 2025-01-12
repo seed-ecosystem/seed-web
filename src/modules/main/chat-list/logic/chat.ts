@@ -1,9 +1,13 @@
 export interface Chat {
   id: string;
   title: string;
-  isActive?: boolean;
+  unreadCount: number;
   lastMessage?: {
     title: string;
     text: string;
   };
+}
+
+export interface UiChat extends Chat {
+  isActive: boolean;
 }

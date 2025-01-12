@@ -53,7 +53,7 @@ export function sendMessage(
 
   setMessages([message, ...getMessages()]);
 
-  chatListStateHandle.popUp(chatId, content);
+  chatListStateHandle.popUp(chatId, content, 0);
 
   worker.sendMessage({ chatId, content }).then(serverNonce => {
     if (serverNonce != null) {

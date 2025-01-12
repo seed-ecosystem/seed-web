@@ -75,7 +75,7 @@ function createSeedWorker({client, persistence}: CreateSeedWorkerOptions): SeedW
     },
 
     async getInitialKey({chatId}): Promise<IndexedKey> {
-      const data = await persistence.chat.get(chatId);
+      const data = (await persistence.chat.get(chatId))!;
       return {
         key: data.initialKey,
         nonce: data.initialNonce

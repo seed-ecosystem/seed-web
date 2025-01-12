@@ -60,6 +60,7 @@ export function createNewLogic(
           initialKey: privateKey,
           initialNonce: 0,
           lastMessageDate: new Date(),
+          unreadCount: 0,
         };
         await persistence.chat.put(chat);
         events.emit({ type: "openChat", chatId });
