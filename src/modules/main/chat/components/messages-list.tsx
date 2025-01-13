@@ -8,7 +8,6 @@ import {Message} from "@/modules/main/chat/logic/message.ts";
 import {convertTitleToAvatar} from "@/convert-title-to-avatar.ts";
 import {memo} from "react";
 import Linkify from "linkify-react";
-import {Link} from "wouter";
 import {IntermediateRepresentation} from "linkifyjs";
 
 export const MessagesList = memo((

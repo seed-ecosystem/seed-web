@@ -47,6 +47,8 @@ export function listenWorkerEvents(
               ...content,
               author: nickname.get() == content.title
             };
+          } else {
+            continue;
           }
 
           const nonce = getLocalNonce() + 1;

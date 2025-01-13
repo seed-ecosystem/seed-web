@@ -46,7 +46,7 @@ export function sendMessage(
   const message: Message = {
     content,
     failure: false,
-    loading: !worker.isConnected(), // Loading after 200ms
+    loading: !worker.isConnected(), // Loading after 300ms
     localNonce: localNonce,
     serverNonce: null
   };

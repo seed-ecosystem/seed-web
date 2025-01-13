@@ -55,7 +55,7 @@ export function createChatLogic(
   let messages: Message[] = [];
   let localNonce = 0;
   let serverNonce = -1;
-  let updating = !worker.isWaiting(chatId);
+  let updating = true;
   let text = "";
 
   function setMessages(value: Message[]) {
@@ -86,7 +86,8 @@ export function createChatLogic(
     chatId, nickname: nicknameStateHandle,
     serverNonce, setServerNonce: (value) => serverNonce = value,
     localNonce, setLocalNonce: (value) => localNonce = value,
-    setMessages, persistence
+    setMessages, setUpdating: () => setUpdating(!worker.isWaiting(chatId)),
+    persistence,
   });
 
   return {

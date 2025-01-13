@@ -11,6 +11,7 @@ export type LoadLocalMessagesOptions = {
   localNonce: number;
   setLocalNonce(value: number): void;
   setMessages(values: Message[]): void;
+  setUpdating(): void;
   persistence: SeedPersistence;
 }
 
