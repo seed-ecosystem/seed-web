@@ -1,10 +1,11 @@
-import {SeedPersistence} from "@/worker/persistence/seed-persistence.ts";
+import {SeedPersistence} from "@/modules/umbrella/persistence/seed-persistence.ts";
+import {SeedWorker} from "@/sdk/worker/seed-worker.ts";
 import {launch} from "@/modules/coroutines/launch.ts";
-import {WorkerAdapter} from "@/worker/worker-adapter.ts";
+import {WorkerStateHandle} from "@/modules/umbrella/logic/worker-state-handle.ts";
 
 export type SubscribeToChatsOptions = {
   persistence: SeedPersistence;
-  worker: WorkerAdapter;
+  worker: WorkerStateHandle;
 };
 
 export function subscribeToChats(

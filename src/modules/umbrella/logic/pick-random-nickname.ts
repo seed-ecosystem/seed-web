@@ -1,4 +1,4 @@
-import {SeedPersistence} from "@/worker/persistence/seed-persistence.ts";
+import {SeedPersistence} from "@/modules/umbrella/persistence/seed-persistence.ts";
 
 export type PickRandomNicknameOptions = {
   persistence: SeedPersistence;

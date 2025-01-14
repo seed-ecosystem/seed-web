@@ -1,22 +1,22 @@
 import {ChatLogic, createChatLogic} from "@/modules/main/chat/logic/chat-logic.ts";
-import {SeedPersistence} from "@/worker/persistence/seed-persistence.ts";
+import {SeedPersistence} from "@/modules/umbrella/persistence/seed-persistence.ts";
 import {ChatListLogic, createChatListLogic} from "@/modules/main/chat-list/logic/chat-list-logic.ts";
+import {WorkerStateHandle} from "@/modules/umbrella/logic/worker-state-handle.ts";
 import {createNicknameStateHandle} from "@/modules/main/logic/nickname-state-handle.ts";
 import {loadNickname} from "@/modules/main/logic/load-nickname.ts";
 import {createObservable, Observable} from "@/coroutines/observable.ts";
 import {createTopBarLogic, TopBarLogic} from "@/modules/main/top-bar/logic/top-bar-logic.ts";
 import {NewLogic, createNewLogic} from "@/modules/main/new/logic/new-logic.ts";
 import {launch} from "@/modules/coroutines/launch.ts";
-import {ChatStateHandle} from "@/modules/main/logic/chat-state-handle.ts";
+import {ChatStateHandle, createChatStateHandle} from "@/modules/main/logic/chat-state-handle.ts";
 import {createShareChatLogic, ShareChatLogic} from "@/modules/main/share/logic/share-chat-logic.ts";
 import {createShareStateHandle} from "@/modules/main/logic/share-state-handle.ts";
 import {createNewStateHandle} from "@/modules/main/logic/new-state-handle.ts";
-import {ChatListStateHandle} from "@/modules/main/chat-list/logic/chat-list-state-handle.ts";
+import {ChatListStateHandle, createChatListStateHandle} from "@/modules/main/chat-list/logic/chat-list-state-handle.ts";
 import {createDeleteStateHandle} from "@/modules/main/logic/delete-state-handle.ts";
 import {createDeleteLogic, DeleteLogic} from "@/modules/main/delete/logic/delete-logic.ts";
 import {createRenameStateHandle} from "@/modules/main/logic/rename-state-handle.ts";
 import {createRenameLogic, RenameLogic} from "@/modules/main/rename/logic/rename-logic.ts";
-import {WorkerAdapter} from "@/worker/worker-adapter.ts";
 
 export type MainEvent = {
   type: "chat";
@@ -54,7 +54,7 @@ export interface MainLogic {
 export function createMainLogic(
   {persistence, worker, chatListStateHandle, chatStateHandle}: {
     persistence: SeedPersistence;
-    worker: WorkerAdapter;
+    worker: WorkerStateHandle;
     chatListStateHandle: ChatListStateHandle;
     chatStateHandle: ChatStateHandle;
   }

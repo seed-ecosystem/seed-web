@@ -1,5 +1,5 @@
 import {IDBPDatabase} from "idb";
-import {Chat} from "@/worker/persistence/chat-list/chat.ts";
+import {Chat} from "@/modules/main/chat-list/persistence/chat.ts";
 
 export interface ChatStorage {
   put(chat: Chat): Promise<void>;

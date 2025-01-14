@@ -1,5 +1,5 @@
 import {Message} from "@/modules/main/chat/logic/message.ts";
-import {SeedPersistence} from "@/worker/persistence/seed-persistence.ts";
+import {SeedPersistence} from "@/modules/umbrella/persistence/seed-persistence.ts";
 import {launch} from "@/modules/coroutines/launch.ts";
 import {NicknameStateHandle} from "@/modules/main/logic/nickname-state-handle.ts";
 

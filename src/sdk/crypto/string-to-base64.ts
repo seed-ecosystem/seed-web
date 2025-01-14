@@ -5,11 +5,11 @@ export function arrayBufferToBase64(buffer: ArrayBuffer) {
   for (let i = 0; i < len; i++) {
     binary += String.fromCharCode(bytes[i]);
   }
-  return self.btoa(binary);
+  return window.btoa(binary);
 }
 
 export function base64ToArrayBuffer(string: string): ArrayBuffer {
-  string = self.atob(string);
+  string = window.atob(string);
   const buf = new ArrayBuffer(string.length); // 2 bytes for each char
   const bufView = new Uint8Array(buf);
   for (let i = 0; i < string.length; i++) {

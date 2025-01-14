@@ -1,9 +1,9 @@
+import {WorkerStateHandle} from "@/modules/umbrella/logic/worker-state-handle.ts";
 import {createObservable, Observable} from "@/coroutines/observable.ts";
 import {ChatStateHandle} from "@/modules/main/logic/chat-state-handle.ts";
 import {ShareStateHandle} from "@/modules/main/logic/share-state-handle.ts";
 import {DeleteStateHandle} from "@/modules/main/logic/delete-state-handle.ts";
 import {RenameStateHandle} from "@/modules/main/logic/rename-state-handle.ts";
-import {WorkerAdapter} from "@/worker/worker-adapter.ts";
 
 export type ChatTopBarEvent = {
   type: "waiting";
@@ -24,7 +24,7 @@ export interface ChatTopBarLogic {
 
 export function createChatTopBarLogic(
   {worker, chatStateHandle, chatId, title, shareStateHandle, deleteStateHandle, renameStateHandle}: {
-    worker: WorkerAdapter;
+    worker: WorkerStateHandle;
     chatStateHandle: ChatStateHandle;
     shareStateHandle: ShareStateHandle;
     deleteStateHandle: DeleteStateHandle;
@@ -35,20 +35,11 @@ export function createChatTopBarLogic(
 ): ChatTopBarLogic {
   const events: Observable<ChatTopBarEvent> = createObservable();
 
-  let waiting = true;
-
-  function setWaiting(value: boolean) {
-    waiting = value;
-    events.emit({ type: "waiting", value });
-  }
-
-  worker.isWaiting(chatId).then(setWaiting);
-
   worker.events.subscribe(event => {
     switch (event.type) {
       case "waiting":
         if (chatId != event.chatId) return;
-        setWaiting(event.value);
+        events.emit({ type: "waiting", value: event.value });
         break;
     }
   });
@@ -56,7 +47,7 @@ export function createChatTopBarLogic(
   return {
     events,
 
-    getWaiting: () => waiting,
+    getWaiting: () => worker.isWaiting(chatId),
     getTitle: () => title,
 
     closeChat: () => chatStateHandle.set(undefined),

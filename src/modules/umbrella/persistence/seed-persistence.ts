@@ -2,15 +2,15 @@ import {
   createMessageObjectStore,
   createMessageStorage,
   MessageStorage
-} from "@/worker/persistence/message/message-storage.ts";
+} from "@/modules/main/chat/persistence/message-storage.ts";
 import {
   createNicknameObjectStore,
   createNicknameStorage,
   NicknameStorage
-} from "@/worker/persistence/nickname/nickname-storage.ts";
+} from "@/modules/main/chat/persistence/nickname-storage.ts";
 import {openDB} from "idb";
-import {ChatStorage, createChatObjectStore, createChatStorage} from "@/worker/persistence/chat-list/chat-storage.ts";
-import {createKeyObjectStore, createKeyStorage, KeyStorage} from "@/worker/persistence/key/key-storage.ts";
+import {ChatStorage, createChatObjectStore, createChatStorage} from "@/modules/main/chat-list/persistence/chat-storage.ts";
+import {createKeyObjectStore, createKeyStorage, KeyStorage} from "@/modules/main/chat/persistence/key-storage.ts";
 
 export interface SeedPersistence {
   message: MessageStorage;

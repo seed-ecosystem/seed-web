@@ -1,14 +1,14 @@
-import {SeedPersistence} from "@/worker/persistence/seed-persistence.ts";
+import {SeedPersistence} from "@/modules/umbrella/persistence/seed-persistence.ts";
 import {Message} from "@/modules/main/chat/logic/message.ts";
 import {loadLocalMessages} from "@/modules/main/chat/logic/load-local-messages-usecase.ts";
 import {createObservable, Observable} from "@/coroutines/observable.ts";
+import {WorkerStateHandle} from "@/modules/umbrella/logic/worker-state-handle.ts";
 import {listenWorkerEvents} from "@/modules/main/chat/logic/listen-worker-events.ts";
 import {sendMessage} from "@/modules/main/chat/logic/send-message.ts";
 import {NicknameStateHandle} from "@/modules/main/logic/nickname-state-handle.ts";
 import {listenNickname} from "@/modules/main/chat/logic/listen-nickname.ts";
 import {Cancellation} from "@/coroutines/cancellation.ts";
 import {ChatListStateHandle} from "@/modules/main/chat-list/logic/chat-list-state-handle.ts";
-import {WorkerAdapter} from "@/worker/worker-adapter.ts";
 
 export type ChatEvent = {
   type: "nickname";
@@ -47,7 +47,7 @@ export function createChatLogic(
     nicknameStateHandle: NicknameStateHandle;
     chatListStateHandle: ChatListStateHandle;
     persistence: SeedPersistence;
-    worker: WorkerAdapter;
+    worker: WorkerStateHandle;
   },
 ): ChatLogic {
   const events: Observable<ChatEvent> = createObservable();

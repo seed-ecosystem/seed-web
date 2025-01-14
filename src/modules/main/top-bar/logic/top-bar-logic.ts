@@ -1,4 +1,5 @@
 import {createObservable, Observable} from "@/coroutines/observable.ts";
+import {WorkerStateHandle} from "@/modules/umbrella/logic/worker-state-handle.ts";
 import {
   ChatListTopBarLogic,
   createChatListTopBarLogic
@@ -10,7 +11,6 @@ import {ShareStateHandle} from "@/modules/main/logic/share-state-handle.ts";
 import {NewStateHandle} from "@/modules/main/logic/new-state-handle.ts";
 import {DeleteStateHandle} from "@/modules/main/logic/delete-state-handle.ts";
 import {RenameStateHandle} from "@/modules/main/logic/rename-state-handle.ts";
-import {WorkerAdapter} from "@/worker/worker-adapter.ts";
 
 export type TopBarEvent = {
   type: "connecting";
@@ -30,7 +30,7 @@ export interface TopBarLogic {
 
 export function createTopBarLogic(
   {worker, nicknameStateHandle, chatStateHandle, shareStateHandle, newStateHandle, deleteStateHandle, renameStateHandle}: {
-    worker: WorkerAdapter;
+    worker: WorkerStateHandle;
     nicknameStateHandle: NicknameStateHandle;
     chatStateHandle: ChatStateHandle;
     shareStateHandle: ShareStateHandle;

@@ -1,7 +1,7 @@
 import {Message, MessageContent} from "@/modules/main/chat/logic/message.ts";
-import {sanitizeContent} from "@/modules/core/logic/sanitize-messages.ts";
+import {WorkerStateHandle} from "@/modules/umbrella/logic/worker-state-handle.ts";
+import {sanitizeContent} from "@/modules/umbrella/logic/sanitize-messages.ts";
 import {ChatListStateHandle} from "@/modules/main/chat-list/logic/chat-list-state-handle.ts";
-import {WorkerAdapter} from "@/worker/worker-adapter.ts";
 
 export type SendMessageOptions = {
   chatId: string;
@@ -15,7 +15,7 @@ export type SendMessageOptions = {
   getMessages(): Message[];
   setMessages(messages: Message[]): void;
   editMessage(message: Message): void;
-  worker: WorkerAdapter;
+  worker: WorkerStateHandle;
   chatListStateHandle: ChatListStateHandle;
 }
 

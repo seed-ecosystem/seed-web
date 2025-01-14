@@ -1,4 +1,4 @@
-import {ChatMessage} from "@/worker/persistence/chat/chat-message.ts";
+import {ChatMessage} from "@/modules/main/chat/persistence/chat-message.ts";
 import {IDBPDatabase} from "idb";
 import {RandomRanger} from "typia/lib/programmers/helpers/RandomRanger";
 import number = RandomRanger.number;

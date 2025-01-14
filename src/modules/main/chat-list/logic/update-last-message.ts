@@ -1,9 +1,10 @@
+import {WorkerStateHandle} from "@/modules/umbrella/logic/worker-state-handle.ts";
 import {Cancellation} from "@/coroutines/cancellation.ts";
 import {ChatListStateHandle} from "@/modules/main/chat-list/logic/chat-list-state-handle.ts";
-import {WorkerAdapter} from "@/worker/worker-adapter.ts";
+import {ChatStateHandle} from "@/modules/main/logic/chat-state-handle.ts";
 
 export type UpdateLastMessageOptions = {
-  worker: WorkerAdapter;
+  worker: WorkerStateHandle;
   chatListStateHandle: ChatListStateHandle;
 }
 
