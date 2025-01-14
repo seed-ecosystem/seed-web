@@ -1,4 +1,4 @@
-import {SeedPersistence} from "@/modules/umbrella/persistence/seed-persistence.ts";
+import {SeedPersistence} from "@/worker/persistence/seed-persistence.ts";
 import {NicknameStateHandle} from "@/modules/main/logic/nickname-state-handle.ts";
 
 export interface LoadNicknameOptions {

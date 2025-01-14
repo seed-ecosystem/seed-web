@@ -5,7 +5,7 @@ import {
   stringToArrayBuffer
 } from "@/sdk/crypto/string-to-base64.ts";
 
-export const crypto = window.crypto.subtle;
+export const crypto = self.crypto.subtle;
 
 const aesOptions = {
   name: "AES-GCM",
@@ -77,7 +77,7 @@ export async function encryptAes256(
   const { data, key } = options;
 
   const importedKey = await importCryptoKey(key, aesOptions, "encrypt");
-  const iv = window.crypto.getRandomValues(new Uint8Array(12));
+  const iv = self.crypto.getRandomValues(new Uint8Array(12));
 
   const encrypted = await crypto.encrypt(
     {

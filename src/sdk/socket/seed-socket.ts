@@ -70,7 +70,7 @@ export function createSeedSocket(url: string): SeedSocket {
       isConnected = true;
       events.emit({ type: "connected", value: isConnected });
 
-      intervalId = window.setInterval(
+      intervalId = self.setInterval(
         () => {
           console.log("<< ws: ping");
           queuedRequests.push({
@@ -116,18 +116,18 @@ export function createSeedSocket(url: string): SeedSocket {
     };
   }
 
-  window.addEventListener("offline", () => {
-    ws.onclose = () => {};
-    ws.close();
-    onclose(null);
-  });
-
-  window.onpageshow = () => {
-    if (ws.readyState == WebSocket.CONNECTING) {
-      console.log("<< ws: reconnecting");
-      ws.close();
-    }
-  };
+  // window.addEventListener("offline", () => {
+  //   ws.onclose = () => {};
+  //   ws.close();
+  //   onclose(null);
+  // });
+  //
+  // window.onpageshow = () => {
+  //   if (ws.readyState == WebSocket.CONNECTING) {
+  //     console.log("<< ws: reconnecting");
+  //     ws.close();
+  //   }
+  // };
 
   setupWebsocket();
 

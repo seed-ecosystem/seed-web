@@ -1,6 +1,5 @@
 import {NicknameStateHandle} from "@/modules/main/logic/nickname-state-handle.ts";
 import {createObservable, Observable} from "@/coroutines/observable.ts";
-import {WorkerStateHandle} from "@/modules/umbrella/logic/worker-state-handle.ts";
 import {NewStateHandle} from "@/modules/main/logic/new-state-handle.ts";
 
 export type ChatListTopBarEvent = {

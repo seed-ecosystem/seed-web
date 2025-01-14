@@ -1,5 +1,5 @@
 import {createObservable, Observable} from "@/coroutines/observable.ts";
-import {SeedPersistence} from "@/modules/umbrella/persistence/seed-persistence.ts";
+import {SeedPersistence} from "@/worker/persistence/seed-persistence.ts";
 import {launch} from "@/modules/coroutines/launch.ts";
 
 export interface NicknameStateHandle {

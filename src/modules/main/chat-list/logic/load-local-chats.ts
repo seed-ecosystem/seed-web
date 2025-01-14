@@ -1,5 +1,5 @@
 import {Chat} from "@/modules/main/chat-list/logic/chat.ts";
-import {SeedPersistence} from "@/modules/umbrella/persistence/seed-persistence.ts";
+import {SeedPersistence} from "@/worker/persistence/seed-persistence.ts";
 
 export type LoadLocalChatsOptions = {
   persistence: SeedPersistence;

@@ -1,18 +1,29 @@
 import path from "path"
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import UnpluginTypia from '@ryoppippi/unplugin-typia/vite'
+import { defineConfig } from "vite"
+import react from "@vitejs/plugin-react"
+import UnpluginTypia from "@ryoppippi/unplugin-typia/vite"
 
 // https://vite.dev/config/
-export default defineConfig({
-  plugins: [react(), UnpluginTypia()],
-  base: '/seed-web/',
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
+export default defineConfig(() => {
+  return {
+    plugins: [
+      UnpluginTypia(),
+      react()
+    ],
+    worker: {
+      plugins: () => [UnpluginTypia()]
     },
-  },
-  build: {
-    target: "ES2022"
-  },
+    base: "/seed-web/",
+    resolve: {
+      alias: {
+        "@": path.resolve(__dirname, "./src"),
+      },
+    },
+    build: {
+      target: "ES2022"
+    },
+    esbuild: {
+      plugins: [UnpluginTypia().esbuild()]
+    }
+  };
 });

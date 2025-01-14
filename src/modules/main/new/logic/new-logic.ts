@@ -1,10 +1,10 @@
 import {createObservable, Observable} from "@/coroutines/observable.ts";
-import {SeedPersistence} from "@/modules/umbrella/persistence/seed-persistence.ts";
+import {SeedPersistence} from "@/worker/persistence/seed-persistence.ts";
 import {launch} from "@/modules/coroutines/launch.ts";
 import {randomAESKey} from "@/sdk/crypto/subtle-crypto.ts";
-import {WorkerStateHandle} from "@/modules/umbrella/logic/worker-state-handle.ts";
 import {NewStateHandle} from "@/modules/main/logic/new-state-handle.ts";
 import {ChatListStateHandle} from "@/modules/main/chat-list/logic/chat-list-state-handle.ts";
+import {WorkerAdapter} from "@/worker/worker-adapter.ts";
 
 export type NewEvent = {
   type: "title";
@@ -27,7 +27,7 @@ export interface NewLogic {
 export function createNewLogic(
   {persistence, worker, newStateHandle, chatListStateHandle}: {
     persistence: SeedPersistence;
-    worker: WorkerStateHandle;
+    worker: WorkerAdapter;
     newStateHandle: NewStateHandle;
     chatListStateHandle: ChatListStateHandle;
   }
