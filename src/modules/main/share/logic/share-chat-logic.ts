@@ -45,7 +45,10 @@ export function createShareChatLogic(
       key = initialKey;
     }
 
-    setShareUrl(`https://seed-ecosystem.github.io/seed-web/#/import/${encodeURIComponent(title)}/${encodeURIComponent(chatId)}/${encodeURIComponent(key)}/${nonce}`);
+    const origin = window.location.origin;
+    const baseUrl = import.meta.env.BASE_URL;
+
+    setShareUrl(`${origin}${baseUrl}#/import/${encodeURIComponent(title)}/${encodeURIComponent(chatId)}/${encodeURIComponent(key)}/${nonce}`);
   });
 
   return {
