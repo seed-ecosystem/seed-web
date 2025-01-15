@@ -1,1 +1,1 @@
-{"name":"seed","short_name":"seed","start_url":"/seed-web/","display":"standalone","background_color":"#ffffff","lang":"en","scope":"/seed-web/"}
+{"name":"Seed Messaging Platform","short_name":"Seed","start_url":"/seed-web/","display":"standalone","background_color":"#ffffff","lang":"en","scope":"/seed-web/","description":"First Messaging Platform that does not identify you","theme_color":"#ffffff","icons":[{"src":"icon.svg","type":"image/svg+xml","sizes":"any"}]}
