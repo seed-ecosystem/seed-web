@@ -33,6 +33,21 @@ export default defineConfig({
     },
   },
   build: {
-    target: "ES2022"
-  },
+    minify: false,
+    sourcemap: true, // NOTE: sourcemaps may be incorrect, double check!
+    target: "esnext",
+    modulePreload: {
+      polyfill: false
+    },
+    rollupOptions: {
+      output: {
+        format: "esm",
+        entryFileNames: "assets/[hash:21].js",
+        chunkFileNames: "assets/[hash:21].js",
+        assetFileNames: "assets/[hash:21].[ext]",
+        hashCharacters: "hex"
+      }
+    },
+    assetsInlineLimit: Number.MAX_SAFE_INTEGER
+  }
 });
