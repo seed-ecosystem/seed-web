@@ -10,7 +10,20 @@ export default defineConfig({
     UnpluginTypia(),
     react(),
     VitePWA({
-      registerType: 'autoUpdate'
+      registerType: 'autoUpdate',
+      manifest: {
+        name: "Seed Messaging Platform",
+        short_name: "Seed",
+        description: "First Messaging Platform that does not identify you",
+        theme_color: "#ffffff",
+        icons: [
+          {
+            src: "icon.svg",
+            type: "image/svg+xml",
+            sizes: "any"
+          }
+        ]
+      }
     })
   ],
   base: '/seed-web/',

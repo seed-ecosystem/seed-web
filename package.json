@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview",
+    "preview": "vite build && vite preview",
     "test": "vitest",
     "test:browser": "vitest --workspace=vitest.workspace.ts",
     "prepare": "ts-patch install && typia patch"
