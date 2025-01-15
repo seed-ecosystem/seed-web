@@ -1,7 +1,7 @@
 import {createObservable, Observable} from "@/coroutines/observable.ts";
 import {Chat, UiChat} from "@/modules/main/chat-list/logic/chat.ts";
 import {SeedPersistence} from "@/modules/umbrella/persistence/seed-persistence.ts";
-import {launch} from "@/modules/coroutines/launch.ts";
+import {launch} from "@/coroutines/launch.ts";
 import {ChatStateHandle} from "@/modules/main/logic/chat-state-handle.ts";
 
 export interface ChatListStateHandle {

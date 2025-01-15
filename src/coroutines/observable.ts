@@ -1,6 +1,5 @@
-import {Channel} from "@/modules/coroutines/channel/channel.ts";
-import {createChannel} from "@/modules/coroutines/channel/create.ts";
-import {launch} from "@/modules/coroutines/launch.ts";
+import {Channel, createChannel} from "@/coroutines/channel.ts";
+import {launch} from "@/coroutines/launch.ts";
 import {useEffect} from "react";
 import {Cancellation} from "@/coroutines/cancellation.ts";
 

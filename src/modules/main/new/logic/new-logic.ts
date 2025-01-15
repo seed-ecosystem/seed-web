@@ -1,6 +1,6 @@
 import {createObservable, Observable} from "@/coroutines/observable.ts";
 import {SeedPersistence} from "@/modules/umbrella/persistence/seed-persistence.ts";
-import {launch} from "@/modules/coroutines/launch.ts";
+import {launch} from "@/coroutines/launch.ts";
 import {randomAESKey} from "@/sdk/crypto/subtle-crypto.ts";
 import {WorkerStateHandle} from "@/modules/umbrella/logic/worker-state-handle.ts";
 import {NewStateHandle} from "@/modules/main/logic/new-state-handle.ts";
