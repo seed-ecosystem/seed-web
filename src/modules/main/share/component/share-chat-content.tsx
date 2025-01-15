@@ -11,7 +11,7 @@ import {useMediaQuery} from "react-responsive";
 import {Button} from "@/modules/core/components/button.tsx";
 import {Copy} from "lucide-react";
 import {useToast} from "@/hooks/use-toast.ts";
-import {launch} from "@/modules/coroutines/launch.ts";
+import {launch} from "@/coroutines/launch.ts";
 
 export type ShareChatProps = {
   shareUrl: string;

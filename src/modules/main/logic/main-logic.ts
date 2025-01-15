@@ -7,7 +7,7 @@ import {loadNickname} from "@/modules/main/logic/load-nickname.ts";
 import {createObservable, Observable} from "@/coroutines/observable.ts";
 import {createTopBarLogic, TopBarLogic} from "@/modules/main/top-bar/logic/top-bar-logic.ts";
 import {NewLogic, createNewLogic} from "@/modules/main/new/logic/new-logic.ts";
-import {launch} from "@/modules/coroutines/launch.ts";
+import {launch} from "@/coroutines/launch.ts";
 import {ChatStateHandle, createChatStateHandle} from "@/modules/main/logic/chat-state-handle.ts";
 import {createShareChatLogic, ShareChatLogic} from "@/modules/main/share/logic/share-chat-logic.ts";
 import {createShareStateHandle} from "@/modules/main/logic/share-state-handle.ts";

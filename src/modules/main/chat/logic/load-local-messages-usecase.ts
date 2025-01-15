@@ -1,6 +1,6 @@
 import {Message} from "@/modules/main/chat/logic/message.ts";
 import {SeedPersistence} from "@/modules/umbrella/persistence/seed-persistence.ts";
-import {launch} from "@/modules/coroutines/launch.ts";
+import {launch} from "@/coroutines/launch.ts";
 import {NicknameStateHandle} from "@/modules/main/logic/nickname-state-handle.ts";
 
 export type LoadLocalMessagesOptions = {

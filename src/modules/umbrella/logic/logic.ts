@@ -11,7 +11,7 @@ import {createWorkerStateHandle} from "@/modules/umbrella/logic/worker-state-han
 import {createObservable, Observable} from "@/coroutines/observable.ts";
 import {createChatListStateHandle} from "@/modules/main/chat-list/logic/chat-list-state-handle.ts";
 import {pickRandomNickname} from "@/modules/umbrella/logic/pick-random-nickname.ts";
-import {launch} from "@/modules/coroutines/launch.ts";
+import {launch} from "@/coroutines/launch.ts";
 import {createChatStateHandle} from "@/modules/main/logic/chat-state-handle.ts";
 
 export type LogicEvent = {

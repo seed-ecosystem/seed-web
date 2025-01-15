@@ -1,6 +1,6 @@
 import {createObservable, Observable} from "@/coroutines/observable.ts";
 import {ShareStateHandle} from "@/modules/main/logic/share-state-handle.ts";
-import {launch} from "@/modules/coroutines/launch.ts";
+import {launch} from "@/coroutines/launch.ts";
 import {SeedPersistence} from "@/modules/umbrella/persistence/seed-persistence.ts";
 import {deriveNextKey} from "@/sdk/crypto/derive-next-key.ts";
 
