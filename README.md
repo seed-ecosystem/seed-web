@@ -1,50 +1,32 @@
-# React + TypeScript + Vite
+# Seed
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+> Private Messaging Platform
 
-Currently, two official plugins are available:
+First Messaging Platform that does not identify you
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Private by Design
 
-## Expanding the ESLint configuration
+We believe that you shouldn't trust server and developers. Protocol itself implies that 
+your messages are impossible to read.
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+## No Authorization
 
-- Configure the top-level `parserOptions` property like this:
+You can start using the app with a single click. No authorization needed. 
+Even for synchronization.
 
-```js
-export default tseslint.config({
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
+## Transparent
 
-- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
-- Optionally add `...tseslint.configs.stylisticTypeChecked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
+Our project is open-source and everyone can see the code. Server is also open-source, 
+though you can't really verify if the same code is running on our production. 
+Thanks to the protocol itself, even malicious server can't get any 
+data from your messages!
 
-```js
-// eslint.config.js
-import react from 'eslint-plugin-react'
+## No ADs. Ever
 
-export default tseslint.config({
-  // Set the react version
-  settings: { react: { version: '18.3' } },
-  plugins: {
-    // Add the react plugin
-    react,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended rules
-    ...react.configs.recommended.rules,
-    ...react.configs['jsx-runtime'].rules,
-  },
-})
-```
+Everything is either local, or encrypted. Because server can't see contents of anything, we 
+can't do targeted ADs, therefore even if we would want to add ADs, we couldn't. Who will want to
+buy ADs in our service if they can't be targeted?
+
+## Start using now
+
+[Web Version](https://seed-ecosystem.github.io/seed-web), Android (soon), iOS (soon), Desktop (soon)
