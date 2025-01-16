@@ -1,6 +1,8 @@
 import {Link} from "wouter";
 import {LoadingSpinner} from "@/modules/core/components/loading-spinner.tsx";
 import {ReactElement} from "react";
+import {Button} from "@/modules/core/components/button.tsx";
+import {MediaVisibleMD} from "@/modules/responsive/media-query.tsx";
 
 export type TopBarProps = {
   loading: boolean;
@@ -21,7 +23,7 @@ export type ChatListTopBar = {
 
 export function TopBarContent({loading, chat, chatList}: TopBarProps) {
   return (
-    <div className="flex h-14 w-full border-b border-border/40 bg-background/95 items-center px-4">
+    <div className="flex h-14 w-full border-b border-border/40 bg-background/95 items-center px-4 gap-2">
       <Logo />
       <div className="flex h-full justify-center items-center flex-1 mx-4 relative">
         {loading
@@ -45,5 +47,16 @@ function Connecting() {
 }
 
 function Logo() {
-  return <h1 className="text-2xl font-medium"><Link to="/">Seed</Link></h1>;
+  return (
+    <>
+      <h1 className="text-2xl font-medium"><Link to="/">Seed</Link></h1>
+      <MediaVisibleMD>
+        <a className="mx-3" href="https://github.com/seed-ecosystem/seed-web" target="_blank">
+          <img
+            src="https://img.shields.io/github/stars/seed-ecosystem/seed-web"
+            alt="Source code on GitHub"/>
+        </a>
+      </MediaVisibleMD>
+    </>
+  );
 }
