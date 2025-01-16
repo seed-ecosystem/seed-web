@@ -9390,7 +9390,7 @@ function ChatListScreen({ events, getChats, mount }) {
 }
 
 function TopBarContent({ loading, chat, chatList }) {
-  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex h-14 w-full border-b border-border/40 bg-background/95 items-center px-4", children: [
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex h-14 w-full border-b border-border/40 bg-background/95 items-center px-4 gap-2", children: [
     /* @__PURE__ */ jsxRuntimeExports.jsx(Logo, {}),
     /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex h-full justify-center items-center flex-1 mx-4 relative", children: loading ? /* @__PURE__ */ jsxRuntimeExports.jsx(Connecting, {}) : chat === void 0 ? /* @__PURE__ */ jsxRuntimeExports.jsx(chatList.Content, {}) : /* @__PURE__ */ jsxRuntimeExports.jsx(chat.Content, {}) }),
     chat === void 0 ? /* @__PURE__ */ jsxRuntimeExports.jsx(chatList.Create, {}) : /* @__PURE__ */ jsxRuntimeExports.jsx(chat.Menu, {})
@@ -9409,7 +9409,16 @@ function Connecting() {
   ] });
 }
 function Logo() {
-  return /* @__PURE__ */ jsxRuntimeExports.jsx("h1", { className: "text-2xl font-medium", children: /* @__PURE__ */ jsxRuntimeExports.jsx(Link, { to: "/", children: "Seed" }) });
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsx("h1", { className: "text-2xl font-medium", children: /* @__PURE__ */ jsxRuntimeExports.jsx(Link, { to: "/", children: "Seed" }) }),
+    /* @__PURE__ */ jsxRuntimeExports.jsx(MediaVisibleMD, { children: /* @__PURE__ */ jsxRuntimeExports.jsx("a", { className: "mx-3", href: "https://github.com/seed-ecosystem/seed-web", target: "_blank", children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+      "img",
+      {
+        src: "https://img.shields.io/github/stars/seed-ecosystem/seed-web",
+        alt: "Source code on GitHub"
+      }
+    ) }) })
+  ] });
 }
 
 // packages/core/primitive/src/primitive.tsx
@@ -19060,4 +19069,4 @@ const logic = await createLogic();
 createRoot(document.getElementById("root")).render(
   /* @__PURE__ */ jsxRuntimeExports.jsx(reactExports.StrictMode, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(Router, { hook: useHashLocation, children: /* @__PURE__ */ jsxRuntimeExports.jsx(App, { logic }) }) })
 );
-//# sourceMappingURL=ec36e4e0b974efdfc462f.js.map
+//# sourceMappingURL=724dd386284017b4aa725.js.map
