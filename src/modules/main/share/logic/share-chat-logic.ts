@@ -33,7 +33,7 @@ export function createShareChatLogic(
   }
 
   launch(async () => {
-    const {title, initialNonce, initialKey} = (await persistence.chat.get(chatId))!;
+    const {title, initialNonce, initialKey, serverUrl} = (await persistence.chat.get(chatId))!;
     const lastKey = await persistence.key.lastKey({chatId});
 
     let nonce, key;
@@ -48,7 +48,7 @@ export function createShareChatLogic(
     const origin = window.location.origin;
     const baseUrl = import.meta.env.BASE_URL;
 
-    setShareUrl(`${origin}${baseUrl}#/import/${encodeURIComponent(title)}/${encodeURIComponent(chatId)}/${encodeURIComponent(key)}/${nonce}`);
+    setShareUrl(`${origin}${baseUrl}#/import/${encodeURIComponent(title)}/${encodeURIComponent(chatId)}/${encodeURIComponent(key)}/${nonce}/${encodeURIComponent(serverUrl)}`);
   });
 
   return {

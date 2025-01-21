@@ -9,7 +9,7 @@ export function App({logic}: {logic: Logic}) {
   const main = useMemo(() => logic.createMain(), [logic]);
 
   const [, navigate] = useLocation();
-  const [, importChat] = useRoute("/import/:title/:chatId/:chatKey/:nonce");
+  const [, importChat] = useRoute("/import/:title/:chatId/:chatKey/:nonce/:serverUrl");
 
   useEffect(() => {
     if (!importChat) return;
@@ -19,7 +19,8 @@ export function App({logic}: {logic: Logic}) {
       initialKey: decodeURIComponent(importChat.chatKey),
       initialNonce: +decodeURIComponent(importChat.nonce),
       lastMessageDate: new Date(),
-      unreadCount: 0
+      unreadCount: 0,
+      serverUrl: decodeURIComponent(importChat.serverUrl),
     });
   }, [importChat]);
 
