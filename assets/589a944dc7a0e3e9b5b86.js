@@ -884,7 +884,7 @@ function createKeyStorage(db) {
 }
 
 async function createPersistence() {
-  const db = await openDB("persistence", 8, {
+  const db = await openDB("persistence", 9, {
     async upgrade(db2, version, _, transaction) {
       if (version == 0) {
         createNicknameObjectStore(db2);
@@ -918,6 +918,14 @@ async function createPersistence() {
         const cursor = await chatStore.openCursor();
         for await (const { value: chat } of cursor) {
           chat.unreadCount = 0;
+          await chatStore.put(chat);
+        }
+      }
+      if (version <= 8) {
+        const chatStore = transaction.objectStore("chat");
+        const cursor = await chatStore.openCursor();
+        for await (const { value: chat } of cursor) {
+          chat.serverUrl = "https://meetacy.app/seed-go";
           await chatStore.put(chat);
         }
       }
@@ -1732,8 +1740,46 @@ async function verifyHmacSha256({ data, key, signature }) {
   return await crypto.verify(hmacOptions, importedKey, base64ToArrayBuffer(signature), stringToArrayBuffer(data));
 }
 
+function createBackendSelectorLogic() {
+  const events = createObservable();
+  let option = { type: "go" };
+  function setOption(type) {
+    option = createBackendSelectorOptionLogic(type);
+    events.emit({ type: "option", value: option });
+  }
+  return {
+    events,
+    getOption: () => option,
+    setOption
+  };
+}
+function createBackendSelectorOptionLogic(type) {
+  switch (type) {
+    case "go":
+    case "kt":
+      return { type };
+    case "custom":
+      return createBackendSelectorCustomOptionLogic();
+  }
+}
+function createBackendSelectorCustomOptionLogic() {
+  const events = createObservable();
+  let value = "";
+  function setValue(update) {
+    value = update;
+    events.emit({ type: "value", value: update });
+  }
+  return {
+    type: "custom",
+    events,
+    getValue: () => value,
+    setValue
+  };
+}
+
 function createNewLogic({ persistence, worker, newStateHandle, chatListStateHandle }) {
   const events = createObservable();
+  const selector = createBackendSelectorLogic();
   let title = "";
   let blocked = false;
   function setTitle(value) {
@@ -1742,13 +1788,16 @@ function createNewLogic({ persistence, worker, newStateHandle, chatListStateHand
   }
   return {
     events,
+    selector,
     getTitle: () => title,
     setTitle,
     create() {
       if (blocked) return;
+      if (title.trim().length == 0) return;
+      const option = selector.getOption();
+      if (option.type === "custom" && getServerUrl(option).trim().length == 0) return;
       blocked = true;
       launch(async () => {
-        if (title.trim().length == 0) return;
         const privateKey = await randomAESKey();
         const chatId = await randomAESKey();
         const chat = {
@@ -1757,7 +1806,8 @@ function createNewLogic({ persistence, worker, newStateHandle, chatListStateHand
           initialKey: privateKey,
           initialNonce: 0,
           lastMessageDate: /* @__PURE__ */ new Date(),
-          unreadCount: 0
+          unreadCount: 0,
+          serverUrl: getServerUrl(option)
         };
         await persistence.chat.put(chat);
         events.emit({ type: "openChat", chatId });
@@ -1772,6 +1822,16 @@ function createNewLogic({ persistence, worker, newStateHandle, chatListStateHand
       newStateHandle.setShown(false);
     }
   };
+}
+function getServerUrl(option) {
+  switch (option.type) {
+    case "go":
+      return "https://meetacy.app/seed-go";
+    case "kt":
+      return "https://meetacy.app/seed-kt";
+    case "custom":
+      return option.getValue();
+  }
 }
 
 function deriveNextKey({ key }) {
@@ -1789,7 +1849,7 @@ function createShareChatLogic({ shareStateHandle, persistence, chatId }) {
     events.emit({ type: "shareUrl", value });
   }
   launch(async () => {
-    const { title, initialNonce, initialKey } = await persistence.chat.get(chatId);
+    const { title, initialNonce, initialKey, serverUrl } = await persistence.chat.get(chatId);
     const lastKey = await persistence.key.lastKey({ chatId });
     let nonce, key;
     if (lastKey) {
@@ -1801,7 +1861,7 @@ function createShareChatLogic({ shareStateHandle, persistence, chatId }) {
     }
     const origin = window.location.origin;
     const baseUrl = "/seed-web/";
-    setShareUrl(`${origin}${baseUrl}#/import/${encodeURIComponent(title)}/${encodeURIComponent(chatId)}/${encodeURIComponent(key)}/${nonce}`);
+    setShareUrl(`${origin}${baseUrl}#/import/${encodeURIComponent(title)}/${encodeURIComponent(chatId)}/${encodeURIComponent(key)}/${nonce}/${encodeURIComponent(serverUrl)}`);
   });
   return {
     events,
@@ -6106,25 +6166,25 @@ var useLayoutEffect2 = Boolean(globalThis?.document) ? reactExports.useLayoutEff
 };
 
 // packages/react/compose-refs/src/composeRefs.tsx
-function setRef$8(ref, value) {
+function setRef$9(ref, value) {
   if (typeof ref === "function") {
     ref(value);
   } else if (ref !== null && ref !== void 0) {
     ref.current = value;
   }
 }
-function composeRefs$8(...refs) {
-  return (node) => refs.forEach((ref) => setRef$8(ref, node));
+function composeRefs$9(...refs) {
+  return (node) => refs.forEach((ref) => setRef$9(ref, node));
 }
-function useComposedRefs$5(...refs) {
-  return reactExports.useCallback(composeRefs$8(...refs), refs);
+function useComposedRefs$6(...refs) {
+  return reactExports.useCallback(composeRefs$9(...refs), refs);
 }
 
 // packages/react/slot/src/Slot.tsx
-var Slot$8 = reactExports.forwardRef((props, forwardedRef) => {
+var Slot$9 = reactExports.forwardRef((props, forwardedRef) => {
   const { children, ...slotProps } = props;
   const childrenArray = reactExports.Children.toArray(children);
-  const slottable = childrenArray.find(isSlottable$8);
+  const slottable = childrenArray.find(isSlottable$9);
   if (slottable) {
     const newElement = slottable.props.children;
     const newChildren = childrenArray.map((child) => {
@@ -6135,31 +6195,31 @@ var Slot$8 = reactExports.forwardRef((props, forwardedRef) => {
         return child;
       }
     });
-    return /* @__PURE__ */ jsxRuntimeExports.jsx(SlotClone$8, { ...slotProps, ref: forwardedRef, children: reactExports.isValidElement(newElement) ? reactExports.cloneElement(newElement, void 0, newChildren) : null });
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(SlotClone$9, { ...slotProps, ref: forwardedRef, children: reactExports.isValidElement(newElement) ? reactExports.cloneElement(newElement, void 0, newChildren) : null });
   }
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(SlotClone$8, { ...slotProps, ref: forwardedRef, children });
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(SlotClone$9, { ...slotProps, ref: forwardedRef, children });
 });
-Slot$8.displayName = "Slot";
-var SlotClone$8 = reactExports.forwardRef((props, forwardedRef) => {
+Slot$9.displayName = "Slot";
+var SlotClone$9 = reactExports.forwardRef((props, forwardedRef) => {
   const { children, ...slotProps } = props;
   if (reactExports.isValidElement(children)) {
-    const childrenRef = getElementRef$b(children);
+    const childrenRef = getElementRef$d(children);
     return reactExports.cloneElement(children, {
-      ...mergeProps$8(slotProps, children.props),
+      ...mergeProps$9(slotProps, children.props),
       // @ts-ignore
-      ref: forwardedRef ? composeRefs$8(forwardedRef, childrenRef) : childrenRef
+      ref: forwardedRef ? composeRefs$9(forwardedRef, childrenRef) : childrenRef
     });
   }
   return reactExports.Children.count(children) > 1 ? reactExports.Children.only(null) : null;
 });
-SlotClone$8.displayName = "SlotClone";
-var Slottable$8 = ({ children }) => {
+SlotClone$9.displayName = "SlotClone";
+var Slottable$9 = ({ children }) => {
   return /* @__PURE__ */ jsxRuntimeExports.jsx(jsxRuntimeExports.Fragment, { children });
 };
-function isSlottable$8(child) {
-  return reactExports.isValidElement(child) && child.type === Slottable$8;
+function isSlottable$9(child) {
+  return reactExports.isValidElement(child) && child.type === Slottable$9;
 }
-function mergeProps$8(slotProps, childProps) {
+function mergeProps$9(slotProps, childProps) {
   const overrideProps = { ...childProps };
   for (const propName in childProps) {
     const slotPropValue = slotProps[propName];
@@ -6182,7 +6242,7 @@ function mergeProps$8(slotProps, childProps) {
   }
   return { ...slotProps, ...overrideProps };
 }
-function getElementRef$b(element) {
+function getElementRef$d(element) {
   let getter = Object.getOwnPropertyDescriptor(element.props, "ref")?.get;
   let mayWarn = getter && "isReactWarning" in getter && getter.isReactWarning;
   if (mayWarn) {
@@ -6197,7 +6257,7 @@ function getElementRef$b(element) {
 }
 
 // packages/react/primitive/src/Primitive.tsx
-var NODES$7 = [
+var NODES$8 = [
   "a",
   "button",
   "div",
@@ -6215,10 +6275,10 @@ var NODES$7 = [
   "svg",
   "ul"
 ];
-var Primitive$7 = NODES$7.reduce((primitive, node) => {
+var Primitive$8 = NODES$8.reduce((primitive, node) => {
   const Node = reactExports.forwardRef((props, forwardedRef) => {
     const { asChild, ...primitiveProps } = props;
-    const Comp = asChild ? Slot$8 : node;
+    const Comp = asChild ? Slot$9 : node;
     if (typeof window !== "undefined") {
       window[Symbol.for("radix-ui")] = true;
     }
@@ -6244,7 +6304,7 @@ var Avatar$1 = reactExports.forwardRef(
         scope: __scopeAvatar,
         imageLoadingStatus,
         onImageLoadingStatusChange: setImageLoadingStatus,
-        children: /* @__PURE__ */ jsxRuntimeExports.jsx(Primitive$7.span, { ...avatarProps, ref: forwardedRef })
+        children: /* @__PURE__ */ jsxRuntimeExports.jsx(Primitive$8.span, { ...avatarProps, ref: forwardedRef })
       }
     );
   }
@@ -6266,7 +6326,7 @@ var AvatarImage$1 = reactExports.forwardRef(
         handleLoadingStatusChange(imageLoadingStatus);
       }
     }, [imageLoadingStatus, handleLoadingStatusChange]);
-    return imageLoadingStatus === "loaded" ? /* @__PURE__ */ jsxRuntimeExports.jsx(Primitive$7.img, { ...imageProps, ref: forwardedRef, src }) : null;
+    return imageLoadingStatus === "loaded" ? /* @__PURE__ */ jsxRuntimeExports.jsx(Primitive$8.img, { ...imageProps, ref: forwardedRef, src }) : null;
   }
 );
 AvatarImage$1.displayName = IMAGE_NAME;
@@ -6282,7 +6342,7 @@ var AvatarFallback$1 = reactExports.forwardRef(
         return () => window.clearTimeout(timerId);
       }
     }, [delayMs]);
-    return canRender && context.imageLoadingStatus !== "loaded" ? /* @__PURE__ */ jsxRuntimeExports.jsx(Primitive$7.span, { ...fallbackProps, ref: forwardedRef }) : null;
+    return canRender && context.imageLoadingStatus !== "loaded" ? /* @__PURE__ */ jsxRuntimeExports.jsx(Primitive$8.span, { ...fallbackProps, ref: forwardedRef }) : null;
   }
 );
 AvatarFallback$1.displayName = FALLBACK_NAME;
@@ -6342,7 +6402,7 @@ const AvatarFallback = reactExports.forwardRef(({ className, ...props }, ref) =>
   {
     ref,
     className: cn(
-      "flex h-full w-full items-center justify-center rounded-full bg-muted select-none",
+      "flex h-full w-full items-center justify-center rounded-full bg-muted select-backend-none",
       className
     ),
     ...props
@@ -6427,7 +6487,7 @@ const buttonVariants = cva(
 );
 const Button = reactExports.forwardRef(
   ({ className, variant, size, asChild = false, ...props }, ref) => {
-    const Comp = asChild ? Slot$8 : "button";
+    const Comp = asChild ? Slot$9 : "button";
     return /* @__PURE__ */ jsxRuntimeExports.jsx(
       Comp,
       {
@@ -7031,7 +7091,7 @@ ChatMessageList.displayName = "ChatMessageList";
 var NAME$2 = "Label";
 var Label$2 = reactExports.forwardRef((props, forwardedRef) => {
   return /* @__PURE__ */ jsxRuntimeExports.jsx(
-    Primitive$7.label,
+    Primitive$8.label,
     {
       ...props,
       ref: forwardedRef,
@@ -9422,7 +9482,7 @@ function Logo() {
 }
 
 // packages/core/primitive/src/primitive.tsx
-function composeEventHandlers$4(originalEventHandler, ourEventHandler, { checkForDefaultPrevented = true } = {}) {
+function composeEventHandlers$5(originalEventHandler, ourEventHandler, { checkForDefaultPrevented = true } = {}) {
   return function handleEvent(event) {
     originalEventHandler?.(event);
     if (checkForDefaultPrevented === false || !event.defaultPrevented) {
@@ -9432,18 +9492,18 @@ function composeEventHandlers$4(originalEventHandler, ourEventHandler, { checkFo
 }
 
 // packages/react/compose-refs/src/composeRefs.tsx
-function setRef$7(ref, value) {
+function setRef$8(ref, value) {
   if (typeof ref === "function") {
     return ref(value);
   } else if (ref !== null && ref !== void 0) {
     ref.current = value;
   }
 }
-function composeRefs$7(...refs) {
+function composeRefs$8(...refs) {
   return (node) => {
     let hasCleanup = false;
     const cleanups = refs.map((ref) => {
-      const cleanup = setRef$7(ref, node);
+      const cleanup = setRef$8(ref, node);
       if (!hasCleanup && typeof cleanup == "function") {
         hasCleanup = true;
       }
@@ -9456,7 +9516,7 @@ function composeRefs$7(...refs) {
           if (typeof cleanup == "function") {
             cleanup();
           } else {
-            setRef$7(refs[i], null);
+            setRef$8(refs[i], null);
           }
         }
       };
@@ -9507,6 +9567,160 @@ function useUncontrolledState({
 }
 
 // packages/react/slot/src/Slot.tsx
+var Slot$8 = reactExports.forwardRef((props, forwardedRef) => {
+  const { children, ...slotProps } = props;
+  const childrenArray = reactExports.Children.toArray(children);
+  const slottable = childrenArray.find(isSlottable$8);
+  if (slottable) {
+    const newElement = slottable.props.children;
+    const newChildren = childrenArray.map((child) => {
+      if (child === slottable) {
+        if (reactExports.Children.count(newElement) > 1) return reactExports.Children.only(null);
+        return reactExports.isValidElement(newElement) ? newElement.props.children : null;
+      } else {
+        return child;
+      }
+    });
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(SlotClone$8, { ...slotProps, ref: forwardedRef, children: reactExports.isValidElement(newElement) ? reactExports.cloneElement(newElement, void 0, newChildren) : null });
+  }
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(SlotClone$8, { ...slotProps, ref: forwardedRef, children });
+});
+Slot$8.displayName = "Slot";
+var SlotClone$8 = reactExports.forwardRef((props, forwardedRef) => {
+  const { children, ...slotProps } = props;
+  if (reactExports.isValidElement(children)) {
+    const childrenRef = getElementRef$c(children);
+    return reactExports.cloneElement(children, {
+      ...mergeProps$8(slotProps, children.props),
+      // @ts-ignore
+      ref: forwardedRef ? composeRefs$8(forwardedRef, childrenRef) : childrenRef
+    });
+  }
+  return reactExports.Children.count(children) > 1 ? reactExports.Children.only(null) : null;
+});
+SlotClone$8.displayName = "SlotClone";
+var Slottable$8 = ({ children }) => {
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(jsxRuntimeExports.Fragment, { children });
+};
+function isSlottable$8(child) {
+  return reactExports.isValidElement(child) && child.type === Slottable$8;
+}
+function mergeProps$8(slotProps, childProps) {
+  const overrideProps = { ...childProps };
+  for (const propName in childProps) {
+    const slotPropValue = slotProps[propName];
+    const childPropValue = childProps[propName];
+    const isHandler = /^on[A-Z]/.test(propName);
+    if (isHandler) {
+      if (slotPropValue && childPropValue) {
+        overrideProps[propName] = (...args) => {
+          childPropValue(...args);
+          slotPropValue(...args);
+        };
+      } else if (slotPropValue) {
+        overrideProps[propName] = slotPropValue;
+      }
+    } else if (propName === "style") {
+      overrideProps[propName] = { ...slotPropValue, ...childPropValue };
+    } else if (propName === "className") {
+      overrideProps[propName] = [slotPropValue, childPropValue].filter(Boolean).join(" ");
+    }
+  }
+  return { ...slotProps, ...overrideProps };
+}
+function getElementRef$c(element) {
+  let getter = Object.getOwnPropertyDescriptor(element.props, "ref")?.get;
+  let mayWarn = getter && "isReactWarning" in getter && getter.isReactWarning;
+  if (mayWarn) {
+    return element.ref;
+  }
+  getter = Object.getOwnPropertyDescriptor(element, "ref")?.get;
+  mayWarn = getter && "isReactWarning" in getter && getter.isReactWarning;
+  if (mayWarn) {
+    return element.props.ref;
+  }
+  return element.props.ref || element.ref;
+}
+
+// packages/react/primitive/src/Primitive.tsx
+var NODES$7 = [
+  "a",
+  "button",
+  "div",
+  "form",
+  "h2",
+  "h3",
+  "img",
+  "input",
+  "label",
+  "li",
+  "nav",
+  "ol",
+  "p",
+  "span",
+  "svg",
+  "ul"
+];
+var Primitive$7 = NODES$7.reduce((primitive, node) => {
+  const Node = reactExports.forwardRef((props, forwardedRef) => {
+    const { asChild, ...primitiveProps } = props;
+    const Comp = asChild ? Slot$8 : node;
+    if (typeof window !== "undefined") {
+      window[Symbol.for("radix-ui")] = true;
+    }
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(Comp, { ...primitiveProps, ref: forwardedRef });
+  });
+  Node.displayName = `Primitive.${node}`;
+  return { ...primitive, [node]: Node };
+}, {});
+
+// packages/core/primitive/src/primitive.tsx
+function composeEventHandlers$4(originalEventHandler, ourEventHandler, { checkForDefaultPrevented = true } = {}) {
+  return function handleEvent(event) {
+    originalEventHandler?.(event);
+    if (checkForDefaultPrevented === false || !event.defaultPrevented) {
+      return ourEventHandler?.(event);
+    }
+  };
+}
+
+// packages/react/compose-refs/src/composeRefs.tsx
+function setRef$7(ref, value) {
+  if (typeof ref === "function") {
+    return ref(value);
+  } else if (ref !== null && ref !== void 0) {
+    ref.current = value;
+  }
+}
+function composeRefs$7(...refs) {
+  return (node) => {
+    let hasCleanup = false;
+    const cleanups = refs.map((ref) => {
+      const cleanup = setRef$7(ref, node);
+      if (!hasCleanup && typeof cleanup == "function") {
+        hasCleanup = true;
+      }
+      return cleanup;
+    });
+    if (hasCleanup) {
+      return () => {
+        for (let i = 0; i < cleanups.length; i++) {
+          const cleanup = cleanups[i];
+          if (typeof cleanup == "function") {
+            cleanup();
+          } else {
+            setRef$7(refs[i], null);
+          }
+        }
+      };
+    }
+  };
+}
+function useComposedRefs$5(...refs) {
+  return reactExports.useCallback(composeRefs$7(...refs), refs);
+}
+
+// packages/react/slot/src/Slot.tsx
 var Slot$7 = reactExports.forwardRef((props, forwardedRef) => {
   const { children, ...slotProps } = props;
   const childrenArray = reactExports.Children.toArray(children);
@@ -9529,7 +9743,7 @@ Slot$7.displayName = "Slot";
 var SlotClone$7 = reactExports.forwardRef((props, forwardedRef) => {
   const { children, ...slotProps } = props;
   if (reactExports.isValidElement(children)) {
-    const childrenRef = getElementRef$a(children);
+    const childrenRef = getElementRef$b(children);
     return reactExports.cloneElement(children, {
       ...mergeProps$7(slotProps, children.props),
       // @ts-ignore
@@ -9546,6 +9760,186 @@ function isSlottable$7(child) {
   return reactExports.isValidElement(child) && child.type === Slottable$7;
 }
 function mergeProps$7(slotProps, childProps) {
+  const overrideProps = { ...childProps };
+  for (const propName in childProps) {
+    const slotPropValue = slotProps[propName];
+    const childPropValue = childProps[propName];
+    const isHandler = /^on[A-Z]/.test(propName);
+    if (isHandler) {
+      if (slotPropValue && childPropValue) {
+        overrideProps[propName] = (...args) => {
+          childPropValue(...args);
+          slotPropValue(...args);
+        };
+      } else if (slotPropValue) {
+        overrideProps[propName] = slotPropValue;
+      }
+    } else if (propName === "style") {
+      overrideProps[propName] = { ...slotPropValue, ...childPropValue };
+    } else if (propName === "className") {
+      overrideProps[propName] = [slotPropValue, childPropValue].filter(Boolean).join(" ");
+    }
+  }
+  return { ...slotProps, ...overrideProps };
+}
+function getElementRef$b(element) {
+  let getter = Object.getOwnPropertyDescriptor(element.props, "ref")?.get;
+  let mayWarn = getter && "isReactWarning" in getter && getter.isReactWarning;
+  if (mayWarn) {
+    return element.ref;
+  }
+  getter = Object.getOwnPropertyDescriptor(element, "ref")?.get;
+  mayWarn = getter && "isReactWarning" in getter && getter.isReactWarning;
+  if (mayWarn) {
+    return element.props.ref;
+  }
+  return element.props.ref || element.ref;
+}
+
+function createCollection(name) {
+  const PROVIDER_NAME = name + "CollectionProvider";
+  const [createCollectionContext, createCollectionScope] = createContextScope(PROVIDER_NAME);
+  const [CollectionProviderImpl, useCollectionContext] = createCollectionContext(
+    PROVIDER_NAME,
+    { collectionRef: { current: null }, itemMap: /* @__PURE__ */ new Map() }
+  );
+  const CollectionProvider = (props) => {
+    const { scope, children } = props;
+    const ref = React$1.useRef(null);
+    const itemMap = React$1.useRef(/* @__PURE__ */ new Map()).current;
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(CollectionProviderImpl, { scope, itemMap, collectionRef: ref, children });
+  };
+  CollectionProvider.displayName = PROVIDER_NAME;
+  const COLLECTION_SLOT_NAME = name + "CollectionSlot";
+  const CollectionSlot = React$1.forwardRef(
+    (props, forwardedRef) => {
+      const { scope, children } = props;
+      const context = useCollectionContext(COLLECTION_SLOT_NAME, scope);
+      const composedRefs = useComposedRefs$5(forwardedRef, context.collectionRef);
+      return /* @__PURE__ */ jsxRuntimeExports.jsx(Slot$7, { ref: composedRefs, children });
+    }
+  );
+  CollectionSlot.displayName = COLLECTION_SLOT_NAME;
+  const ITEM_SLOT_NAME = name + "CollectionItemSlot";
+  const ITEM_DATA_ATTR = "data-radix-collection-item";
+  const CollectionItemSlot = React$1.forwardRef(
+    (props, forwardedRef) => {
+      const { scope, children, ...itemData } = props;
+      const ref = React$1.useRef(null);
+      const composedRefs = useComposedRefs$5(forwardedRef, ref);
+      const context = useCollectionContext(ITEM_SLOT_NAME, scope);
+      React$1.useEffect(() => {
+        context.itemMap.set(ref, { ref, ...itemData });
+        return () => void context.itemMap.delete(ref);
+      });
+      return /* @__PURE__ */ jsxRuntimeExports.jsx(Slot$7, { ...{ [ITEM_DATA_ATTR]: "" }, ref: composedRefs, children });
+    }
+  );
+  CollectionItemSlot.displayName = ITEM_SLOT_NAME;
+  function useCollection(scope) {
+    const context = useCollectionContext(name + "CollectionConsumer", scope);
+    const getItems = React$1.useCallback(() => {
+      const collectionNode = context.collectionRef.current;
+      if (!collectionNode) return [];
+      const orderedNodes = Array.from(collectionNode.querySelectorAll(`[${ITEM_DATA_ATTR}]`));
+      const items = Array.from(context.itemMap.values());
+      const orderedItems = items.sort(
+        (a, b) => orderedNodes.indexOf(a.ref.current) - orderedNodes.indexOf(b.ref.current)
+      );
+      return orderedItems;
+    }, [context.collectionRef, context.itemMap]);
+    return getItems;
+  }
+  return [
+    { Provider: CollectionProvider, Slot: CollectionSlot, ItemSlot: CollectionItemSlot },
+    useCollection,
+    createCollectionScope
+  ];
+}
+
+// packages/react/compose-refs/src/composeRefs.tsx
+function setRef$6(ref, value) {
+  if (typeof ref === "function") {
+    return ref(value);
+  } else if (ref !== null && ref !== void 0) {
+    ref.current = value;
+  }
+}
+function composeRefs$6(...refs) {
+  return (node) => {
+    let hasCleanup = false;
+    const cleanups = refs.map((ref) => {
+      const cleanup = setRef$6(ref, node);
+      if (!hasCleanup && typeof cleanup == "function") {
+        hasCleanup = true;
+      }
+      return cleanup;
+    });
+    if (hasCleanup) {
+      return () => {
+        for (let i = 0; i < cleanups.length; i++) {
+          const cleanup = cleanups[i];
+          if (typeof cleanup == "function") {
+            cleanup();
+          } else {
+            setRef$6(refs[i], null);
+          }
+        }
+      };
+    }
+  };
+}
+function useComposedRefs$4(...refs) {
+  return reactExports.useCallback(composeRefs$6(...refs), refs);
+}
+
+// packages/react/direction/src/Direction.tsx
+var DirectionContext = reactExports.createContext(void 0);
+function useDirection(localDir) {
+  const globalDir = reactExports.useContext(DirectionContext);
+  return localDir || globalDir || "ltr";
+}
+
+// packages/react/slot/src/Slot.tsx
+var Slot$6 = reactExports.forwardRef((props, forwardedRef) => {
+  const { children, ...slotProps } = props;
+  const childrenArray = reactExports.Children.toArray(children);
+  const slottable = childrenArray.find(isSlottable$6);
+  if (slottable) {
+    const newElement = slottable.props.children;
+    const newChildren = childrenArray.map((child) => {
+      if (child === slottable) {
+        if (reactExports.Children.count(newElement) > 1) return reactExports.Children.only(null);
+        return reactExports.isValidElement(newElement) ? newElement.props.children : null;
+      } else {
+        return child;
+      }
+    });
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(SlotClone$6, { ...slotProps, ref: forwardedRef, children: reactExports.isValidElement(newElement) ? reactExports.cloneElement(newElement, void 0, newChildren) : null });
+  }
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(SlotClone$6, { ...slotProps, ref: forwardedRef, children });
+});
+Slot$6.displayName = "Slot";
+var SlotClone$6 = reactExports.forwardRef((props, forwardedRef) => {
+  const { children, ...slotProps } = props;
+  if (reactExports.isValidElement(children)) {
+    const childrenRef = getElementRef$a(children);
+    return reactExports.cloneElement(children, {
+      ...mergeProps$6(slotProps, children.props),
+      // @ts-ignore
+      ref: forwardedRef ? composeRefs$6(forwardedRef, childrenRef) : childrenRef
+    });
+  }
+  return reactExports.Children.count(children) > 1 ? reactExports.Children.only(null) : null;
+});
+SlotClone$6.displayName = "SlotClone";
+var Slottable$6 = ({ children }) => {
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(jsxRuntimeExports.Fragment, { children });
+};
+function isSlottable$6(child) {
+  return reactExports.isValidElement(child) && child.type === Slottable$6;
+}
+function mergeProps$6(slotProps, childProps) {
   const overrideProps = { ...childProps };
   for (const propName in childProps) {
     const slotPropValue = slotProps[propName];
@@ -9604,341 +9998,7 @@ var NODES$6 = [
 var Primitive$6 = NODES$6.reduce((primitive, node) => {
   const Node = reactExports.forwardRef((props, forwardedRef) => {
     const { asChild, ...primitiveProps } = props;
-    const Comp = asChild ? Slot$7 : node;
-    if (typeof window !== "undefined") {
-      window[Symbol.for("radix-ui")] = true;
-    }
-    return /* @__PURE__ */ jsxRuntimeExports.jsx(Comp, { ...primitiveProps, ref: forwardedRef });
-  });
-  Node.displayName = `Primitive.${node}`;
-  return { ...primitive, [node]: Node };
-}, {});
-
-// packages/core/primitive/src/primitive.tsx
-function composeEventHandlers$3(originalEventHandler, ourEventHandler, { checkForDefaultPrevented = true } = {}) {
-  return function handleEvent(event) {
-    originalEventHandler?.(event);
-    if (checkForDefaultPrevented === false || !event.defaultPrevented) {
-      return ourEventHandler?.(event);
-    }
-  };
-}
-
-// packages/react/compose-refs/src/composeRefs.tsx
-function setRef$6(ref, value) {
-  if (typeof ref === "function") {
-    return ref(value);
-  } else if (ref !== null && ref !== void 0) {
-    ref.current = value;
-  }
-}
-function composeRefs$6(...refs) {
-  return (node) => {
-    let hasCleanup = false;
-    const cleanups = refs.map((ref) => {
-      const cleanup = setRef$6(ref, node);
-      if (!hasCleanup && typeof cleanup == "function") {
-        hasCleanup = true;
-      }
-      return cleanup;
-    });
-    if (hasCleanup) {
-      return () => {
-        for (let i = 0; i < cleanups.length; i++) {
-          const cleanup = cleanups[i];
-          if (typeof cleanup == "function") {
-            cleanup();
-          } else {
-            setRef$6(refs[i], null);
-          }
-        }
-      };
-    }
-  };
-}
-function useComposedRefs$4(...refs) {
-  return reactExports.useCallback(composeRefs$6(...refs), refs);
-}
-
-// packages/react/slot/src/Slot.tsx
-var Slot$6 = reactExports.forwardRef((props, forwardedRef) => {
-  const { children, ...slotProps } = props;
-  const childrenArray = reactExports.Children.toArray(children);
-  const slottable = childrenArray.find(isSlottable$6);
-  if (slottable) {
-    const newElement = slottable.props.children;
-    const newChildren = childrenArray.map((child) => {
-      if (child === slottable) {
-        if (reactExports.Children.count(newElement) > 1) return reactExports.Children.only(null);
-        return reactExports.isValidElement(newElement) ? newElement.props.children : null;
-      } else {
-        return child;
-      }
-    });
-    return /* @__PURE__ */ jsxRuntimeExports.jsx(SlotClone$6, { ...slotProps, ref: forwardedRef, children: reactExports.isValidElement(newElement) ? reactExports.cloneElement(newElement, void 0, newChildren) : null });
-  }
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(SlotClone$6, { ...slotProps, ref: forwardedRef, children });
-});
-Slot$6.displayName = "Slot";
-var SlotClone$6 = reactExports.forwardRef((props, forwardedRef) => {
-  const { children, ...slotProps } = props;
-  if (reactExports.isValidElement(children)) {
-    const childrenRef = getElementRef$9(children);
-    return reactExports.cloneElement(children, {
-      ...mergeProps$6(slotProps, children.props),
-      // @ts-ignore
-      ref: forwardedRef ? composeRefs$6(forwardedRef, childrenRef) : childrenRef
-    });
-  }
-  return reactExports.Children.count(children) > 1 ? reactExports.Children.only(null) : null;
-});
-SlotClone$6.displayName = "SlotClone";
-var Slottable$6 = ({ children }) => {
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(jsxRuntimeExports.Fragment, { children });
-};
-function isSlottable$6(child) {
-  return reactExports.isValidElement(child) && child.type === Slottable$6;
-}
-function mergeProps$6(slotProps, childProps) {
-  const overrideProps = { ...childProps };
-  for (const propName in childProps) {
-    const slotPropValue = slotProps[propName];
-    const childPropValue = childProps[propName];
-    const isHandler = /^on[A-Z]/.test(propName);
-    if (isHandler) {
-      if (slotPropValue && childPropValue) {
-        overrideProps[propName] = (...args) => {
-          childPropValue(...args);
-          slotPropValue(...args);
-        };
-      } else if (slotPropValue) {
-        overrideProps[propName] = slotPropValue;
-      }
-    } else if (propName === "style") {
-      overrideProps[propName] = { ...slotPropValue, ...childPropValue };
-    } else if (propName === "className") {
-      overrideProps[propName] = [slotPropValue, childPropValue].filter(Boolean).join(" ");
-    }
-  }
-  return { ...slotProps, ...overrideProps };
-}
-function getElementRef$9(element) {
-  let getter = Object.getOwnPropertyDescriptor(element.props, "ref")?.get;
-  let mayWarn = getter && "isReactWarning" in getter && getter.isReactWarning;
-  if (mayWarn) {
-    return element.ref;
-  }
-  getter = Object.getOwnPropertyDescriptor(element, "ref")?.get;
-  mayWarn = getter && "isReactWarning" in getter && getter.isReactWarning;
-  if (mayWarn) {
-    return element.props.ref;
-  }
-  return element.props.ref || element.ref;
-}
-
-function createCollection(name) {
-  const PROVIDER_NAME = name + "CollectionProvider";
-  const [createCollectionContext, createCollectionScope] = createContextScope(PROVIDER_NAME);
-  const [CollectionProviderImpl, useCollectionContext] = createCollectionContext(
-    PROVIDER_NAME,
-    { collectionRef: { current: null }, itemMap: /* @__PURE__ */ new Map() }
-  );
-  const CollectionProvider = (props) => {
-    const { scope, children } = props;
-    const ref = React$1.useRef(null);
-    const itemMap = React$1.useRef(/* @__PURE__ */ new Map()).current;
-    return /* @__PURE__ */ jsxRuntimeExports.jsx(CollectionProviderImpl, { scope, itemMap, collectionRef: ref, children });
-  };
-  CollectionProvider.displayName = PROVIDER_NAME;
-  const COLLECTION_SLOT_NAME = name + "CollectionSlot";
-  const CollectionSlot = React$1.forwardRef(
-    (props, forwardedRef) => {
-      const { scope, children } = props;
-      const context = useCollectionContext(COLLECTION_SLOT_NAME, scope);
-      const composedRefs = useComposedRefs$4(forwardedRef, context.collectionRef);
-      return /* @__PURE__ */ jsxRuntimeExports.jsx(Slot$6, { ref: composedRefs, children });
-    }
-  );
-  CollectionSlot.displayName = COLLECTION_SLOT_NAME;
-  const ITEM_SLOT_NAME = name + "CollectionItemSlot";
-  const ITEM_DATA_ATTR = "data-radix-collection-item";
-  const CollectionItemSlot = React$1.forwardRef(
-    (props, forwardedRef) => {
-      const { scope, children, ...itemData } = props;
-      const ref = React$1.useRef(null);
-      const composedRefs = useComposedRefs$4(forwardedRef, ref);
-      const context = useCollectionContext(ITEM_SLOT_NAME, scope);
-      React$1.useEffect(() => {
-        context.itemMap.set(ref, { ref, ...itemData });
-        return () => void context.itemMap.delete(ref);
-      });
-      return /* @__PURE__ */ jsxRuntimeExports.jsx(Slot$6, { ...{ [ITEM_DATA_ATTR]: "" }, ref: composedRefs, children });
-    }
-  );
-  CollectionItemSlot.displayName = ITEM_SLOT_NAME;
-  function useCollection(scope) {
-    const context = useCollectionContext(name + "CollectionConsumer", scope);
-    const getItems = React$1.useCallback(() => {
-      const collectionNode = context.collectionRef.current;
-      if (!collectionNode) return [];
-      const orderedNodes = Array.from(collectionNode.querySelectorAll(`[${ITEM_DATA_ATTR}]`));
-      const items = Array.from(context.itemMap.values());
-      const orderedItems = items.sort(
-        (a, b) => orderedNodes.indexOf(a.ref.current) - orderedNodes.indexOf(b.ref.current)
-      );
-      return orderedItems;
-    }, [context.collectionRef, context.itemMap]);
-    return getItems;
-  }
-  return [
-    { Provider: CollectionProvider, Slot: CollectionSlot, ItemSlot: CollectionItemSlot },
-    useCollection,
-    createCollectionScope
-  ];
-}
-
-// packages/react/compose-refs/src/composeRefs.tsx
-function setRef$5(ref, value) {
-  if (typeof ref === "function") {
-    return ref(value);
-  } else if (ref !== null && ref !== void 0) {
-    ref.current = value;
-  }
-}
-function composeRefs$5(...refs) {
-  return (node) => {
-    let hasCleanup = false;
-    const cleanups = refs.map((ref) => {
-      const cleanup = setRef$5(ref, node);
-      if (!hasCleanup && typeof cleanup == "function") {
-        hasCleanup = true;
-      }
-      return cleanup;
-    });
-    if (hasCleanup) {
-      return () => {
-        for (let i = 0; i < cleanups.length; i++) {
-          const cleanup = cleanups[i];
-          if (typeof cleanup == "function") {
-            cleanup();
-          } else {
-            setRef$5(refs[i], null);
-          }
-        }
-      };
-    }
-  };
-}
-function useComposedRefs$3(...refs) {
-  return reactExports.useCallback(composeRefs$5(...refs), refs);
-}
-
-// packages/react/direction/src/Direction.tsx
-var DirectionContext = reactExports.createContext(void 0);
-function useDirection(localDir) {
-  const globalDir = reactExports.useContext(DirectionContext);
-  return localDir || globalDir || "ltr";
-}
-
-// packages/react/slot/src/Slot.tsx
-var Slot$5 = reactExports.forwardRef((props, forwardedRef) => {
-  const { children, ...slotProps } = props;
-  const childrenArray = reactExports.Children.toArray(children);
-  const slottable = childrenArray.find(isSlottable$5);
-  if (slottable) {
-    const newElement = slottable.props.children;
-    const newChildren = childrenArray.map((child) => {
-      if (child === slottable) {
-        if (reactExports.Children.count(newElement) > 1) return reactExports.Children.only(null);
-        return reactExports.isValidElement(newElement) ? newElement.props.children : null;
-      } else {
-        return child;
-      }
-    });
-    return /* @__PURE__ */ jsxRuntimeExports.jsx(SlotClone$5, { ...slotProps, ref: forwardedRef, children: reactExports.isValidElement(newElement) ? reactExports.cloneElement(newElement, void 0, newChildren) : null });
-  }
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(SlotClone$5, { ...slotProps, ref: forwardedRef, children });
-});
-Slot$5.displayName = "Slot";
-var SlotClone$5 = reactExports.forwardRef((props, forwardedRef) => {
-  const { children, ...slotProps } = props;
-  if (reactExports.isValidElement(children)) {
-    const childrenRef = getElementRef$8(children);
-    return reactExports.cloneElement(children, {
-      ...mergeProps$5(slotProps, children.props),
-      // @ts-ignore
-      ref: forwardedRef ? composeRefs$5(forwardedRef, childrenRef) : childrenRef
-    });
-  }
-  return reactExports.Children.count(children) > 1 ? reactExports.Children.only(null) : null;
-});
-SlotClone$5.displayName = "SlotClone";
-var Slottable$5 = ({ children }) => {
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(jsxRuntimeExports.Fragment, { children });
-};
-function isSlottable$5(child) {
-  return reactExports.isValidElement(child) && child.type === Slottable$5;
-}
-function mergeProps$5(slotProps, childProps) {
-  const overrideProps = { ...childProps };
-  for (const propName in childProps) {
-    const slotPropValue = slotProps[propName];
-    const childPropValue = childProps[propName];
-    const isHandler = /^on[A-Z]/.test(propName);
-    if (isHandler) {
-      if (slotPropValue && childPropValue) {
-        overrideProps[propName] = (...args) => {
-          childPropValue(...args);
-          slotPropValue(...args);
-        };
-      } else if (slotPropValue) {
-        overrideProps[propName] = slotPropValue;
-      }
-    } else if (propName === "style") {
-      overrideProps[propName] = { ...slotPropValue, ...childPropValue };
-    } else if (propName === "className") {
-      overrideProps[propName] = [slotPropValue, childPropValue].filter(Boolean).join(" ");
-    }
-  }
-  return { ...slotProps, ...overrideProps };
-}
-function getElementRef$8(element) {
-  let getter = Object.getOwnPropertyDescriptor(element.props, "ref")?.get;
-  let mayWarn = getter && "isReactWarning" in getter && getter.isReactWarning;
-  if (mayWarn) {
-    return element.ref;
-  }
-  getter = Object.getOwnPropertyDescriptor(element, "ref")?.get;
-  mayWarn = getter && "isReactWarning" in getter && getter.isReactWarning;
-  if (mayWarn) {
-    return element.props.ref;
-  }
-  return element.props.ref || element.ref;
-}
-
-// packages/react/primitive/src/Primitive.tsx
-var NODES$5 = [
-  "a",
-  "button",
-  "div",
-  "form",
-  "h2",
-  "h3",
-  "img",
-  "input",
-  "label",
-  "li",
-  "nav",
-  "ol",
-  "p",
-  "span",
-  "svg",
-  "ul"
-];
-var Primitive$5 = NODES$5.reduce((primitive, node) => {
-  const Node = reactExports.forwardRef((props, forwardedRef) => {
-    const { asChild, ...primitiveProps } = props;
-    const Comp = asChild ? Slot$5 : node;
+    const Comp = asChild ? Slot$6 : node;
     if (typeof window !== "undefined") {
       window[Symbol.for("radix-ui")] = true;
     }
@@ -9990,7 +10050,7 @@ var DismissableLayer$2 = reactExports.forwardRef(
     const [node, setNode] = reactExports.useState(null);
     const ownerDocument = node?.ownerDocument ?? globalThis?.document;
     const [, force] = reactExports.useState({});
-    const composedRefs = useComposedRefs$3(forwardedRef, (node2) => setNode(node2));
+    const composedRefs = useComposedRefs$4(forwardedRef, (node2) => setNode(node2));
     const layers = Array.from(context.layers);
     const [highestLayerWithOutsidePointerEventsDisabled] = [...context.layersWithOutsidePointerEventsDisabled].slice(-1);
     const highestLayerWithOutsidePointerEventsDisabledIndex = layers.indexOf(highestLayerWithOutsidePointerEventsDisabled);
@@ -10053,7 +10113,7 @@ var DismissableLayer$2 = reactExports.forwardRef(
       return () => document.removeEventListener(CONTEXT_UPDATE$2, handleUpdate);
     }, []);
     return /* @__PURE__ */ jsxRuntimeExports.jsx(
-      Primitive$5.div,
+      Primitive$6.div,
       {
         ...layerProps,
         ref: composedRefs,
@@ -10061,9 +10121,9 @@ var DismissableLayer$2 = reactExports.forwardRef(
           pointerEvents: isBodyPointerEventsDisabled ? isPointerEventsEnabled ? "auto" : "none" : void 0,
           ...props.style
         },
-        onFocusCapture: composeEventHandlers$3(props.onFocusCapture, focusOutside.onFocusCapture),
-        onBlurCapture: composeEventHandlers$3(props.onBlurCapture, focusOutside.onBlurCapture),
-        onPointerDownCapture: composeEventHandlers$3(
+        onFocusCapture: composeEventHandlers$4(props.onFocusCapture, focusOutside.onFocusCapture),
+        onBlurCapture: composeEventHandlers$4(props.onBlurCapture, focusOutside.onBlurCapture),
+        onPointerDownCapture: composeEventHandlers$4(
           props.onPointerDownCapture,
           pointerDownOutside.onPointerDownCapture
         )
@@ -10076,7 +10136,7 @@ var BRANCH_NAME$2 = "DismissableLayerBranch";
 var DismissableLayerBranch$2 = reactExports.forwardRef((props, forwardedRef) => {
   const context = reactExports.useContext(DismissableLayerContext$2);
   const ref = reactExports.useRef(null);
-  const composedRefs = useComposedRefs$3(forwardedRef, ref);
+  const composedRefs = useComposedRefs$4(forwardedRef, ref);
   reactExports.useEffect(() => {
     const node = ref.current;
     if (node) {
@@ -10086,7 +10146,7 @@ var DismissableLayerBranch$2 = reactExports.forwardRef((props, forwardedRef) => 
       };
     }
   }, [context.branches]);
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(Primitive$5.div, { ...props, ref: composedRefs });
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(Primitive$6.div, { ...props, ref: composedRefs });
 });
 DismissableLayerBranch$2.displayName = BRANCH_NAME$2;
 function usePointerDownOutside$2(onPointerDownOutside, ownerDocument = globalThis?.document) {
@@ -10209,7 +10269,7 @@ var FocusScope$1 = reactExports.forwardRef((props, forwardedRef) => {
   const onMountAutoFocus = useCallbackRef$1(onMountAutoFocusProp);
   const onUnmountAutoFocus = useCallbackRef$1(onUnmountAutoFocusProp);
   const lastFocusedElementRef = reactExports.useRef(null);
-  const composedRefs = useComposedRefs$3(forwardedRef, (node) => setContainer(node));
+  const composedRefs = useComposedRefs$4(forwardedRef, (node) => setContainer(node));
   const focusScope = reactExports.useRef({
     paused: false,
     pause() {
@@ -10310,7 +10370,7 @@ var FocusScope$1 = reactExports.forwardRef((props, forwardedRef) => {
     },
     [loop, trapped, focusScope.paused]
   );
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(Primitive$5.div, { tabIndex: -1, ...scopeProps, ref: composedRefs, onKeyDown: handleKeyDown });
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(Primitive$6.div, { tabIndex: -1, ...scopeProps, ref: composedRefs, onKeyDown: handleKeyDown });
 });
 FocusScope$1.displayName = FOCUS_SCOPE_NAME$1;
 function focusFirst$4(candidates, { select = false } = {}) {
@@ -12557,6 +12617,167 @@ const arrow = (options, deps) => ({
 });
 
 // packages/react/compose-refs/src/composeRefs.tsx
+function setRef$5(ref, value) {
+  if (typeof ref === "function") {
+    return ref(value);
+  } else if (ref !== null && ref !== void 0) {
+    ref.current = value;
+  }
+}
+function composeRefs$5(...refs) {
+  return (node) => {
+    let hasCleanup = false;
+    const cleanups = refs.map((ref) => {
+      const cleanup = setRef$5(ref, node);
+      if (!hasCleanup && typeof cleanup == "function") {
+        hasCleanup = true;
+      }
+      return cleanup;
+    });
+    if (hasCleanup) {
+      return () => {
+        for (let i = 0; i < cleanups.length; i++) {
+          const cleanup = cleanups[i];
+          if (typeof cleanup == "function") {
+            cleanup();
+          } else {
+            setRef$5(refs[i], null);
+          }
+        }
+      };
+    }
+  };
+}
+
+// packages/react/slot/src/Slot.tsx
+var Slot$5 = reactExports.forwardRef((props, forwardedRef) => {
+  const { children, ...slotProps } = props;
+  const childrenArray = reactExports.Children.toArray(children);
+  const slottable = childrenArray.find(isSlottable$5);
+  if (slottable) {
+    const newElement = slottable.props.children;
+    const newChildren = childrenArray.map((child) => {
+      if (child === slottable) {
+        if (reactExports.Children.count(newElement) > 1) return reactExports.Children.only(null);
+        return reactExports.isValidElement(newElement) ? newElement.props.children : null;
+      } else {
+        return child;
+      }
+    });
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(SlotClone$5, { ...slotProps, ref: forwardedRef, children: reactExports.isValidElement(newElement) ? reactExports.cloneElement(newElement, void 0, newChildren) : null });
+  }
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(SlotClone$5, { ...slotProps, ref: forwardedRef, children });
+});
+Slot$5.displayName = "Slot";
+var SlotClone$5 = reactExports.forwardRef((props, forwardedRef) => {
+  const { children, ...slotProps } = props;
+  if (reactExports.isValidElement(children)) {
+    const childrenRef = getElementRef$9(children);
+    return reactExports.cloneElement(children, {
+      ...mergeProps$5(slotProps, children.props),
+      // @ts-ignore
+      ref: forwardedRef ? composeRefs$5(forwardedRef, childrenRef) : childrenRef
+    });
+  }
+  return reactExports.Children.count(children) > 1 ? reactExports.Children.only(null) : null;
+});
+SlotClone$5.displayName = "SlotClone";
+var Slottable$5 = ({ children }) => {
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(jsxRuntimeExports.Fragment, { children });
+};
+function isSlottable$5(child) {
+  return reactExports.isValidElement(child) && child.type === Slottable$5;
+}
+function mergeProps$5(slotProps, childProps) {
+  const overrideProps = { ...childProps };
+  for (const propName in childProps) {
+    const slotPropValue = slotProps[propName];
+    const childPropValue = childProps[propName];
+    const isHandler = /^on[A-Z]/.test(propName);
+    if (isHandler) {
+      if (slotPropValue && childPropValue) {
+        overrideProps[propName] = (...args) => {
+          childPropValue(...args);
+          slotPropValue(...args);
+        };
+      } else if (slotPropValue) {
+        overrideProps[propName] = slotPropValue;
+      }
+    } else if (propName === "style") {
+      overrideProps[propName] = { ...slotPropValue, ...childPropValue };
+    } else if (propName === "className") {
+      overrideProps[propName] = [slotPropValue, childPropValue].filter(Boolean).join(" ");
+    }
+  }
+  return { ...slotProps, ...overrideProps };
+}
+function getElementRef$9(element) {
+  let getter = Object.getOwnPropertyDescriptor(element.props, "ref")?.get;
+  let mayWarn = getter && "isReactWarning" in getter && getter.isReactWarning;
+  if (mayWarn) {
+    return element.ref;
+  }
+  getter = Object.getOwnPropertyDescriptor(element, "ref")?.get;
+  mayWarn = getter && "isReactWarning" in getter && getter.isReactWarning;
+  if (mayWarn) {
+    return element.props.ref;
+  }
+  return element.props.ref || element.ref;
+}
+
+// packages/react/primitive/src/Primitive.tsx
+var NODES$5 = [
+  "a",
+  "button",
+  "div",
+  "form",
+  "h2",
+  "h3",
+  "img",
+  "input",
+  "label",
+  "li",
+  "nav",
+  "ol",
+  "p",
+  "span",
+  "svg",
+  "ul"
+];
+var Primitive$5 = NODES$5.reduce((primitive, node) => {
+  const Node = reactExports.forwardRef((props, forwardedRef) => {
+    const { asChild, ...primitiveProps } = props;
+    const Comp = asChild ? Slot$5 : node;
+    if (typeof window !== "undefined") {
+      window[Symbol.for("radix-ui")] = true;
+    }
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(Comp, { ...primitiveProps, ref: forwardedRef });
+  });
+  Node.displayName = `Primitive.${node}`;
+  return { ...primitive, [node]: Node };
+}, {});
+
+// packages/react/arrow/src/Arrow.tsx
+var NAME$1 = "Arrow";
+var Arrow$1 = reactExports.forwardRef((props, forwardedRef) => {
+  const { children, width = 10, height = 5, ...arrowProps } = props;
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(
+    Primitive$5.svg,
+    {
+      ...arrowProps,
+      ref: forwardedRef,
+      width,
+      height,
+      viewBox: "0 0 30 10",
+      preserveAspectRatio: "none",
+      children: props.asChild ? children : /* @__PURE__ */ jsxRuntimeExports.jsx("polygon", { points: "0,0 30,0 15,10" })
+    }
+  );
+});
+Arrow$1.displayName = NAME$1;
+var Root$3 = Arrow$1;
+
+// packages/react/compose-refs/src/composeRefs.tsx
 function setRef$4(ref, value) {
   if (typeof ref === "function") {
     return ref(value);
@@ -12588,6 +12809,9 @@ function composeRefs$4(...refs) {
     }
   };
 }
+function useComposedRefs$3(...refs) {
+  return reactExports.useCallback(composeRefs$4(...refs), refs);
+}
 
 // packages/react/slot/src/Slot.tsx
 var Slot$4 = reactExports.forwardRef((props, forwardedRef) => {
@@ -12612,7 +12836,7 @@ Slot$4.displayName = "Slot";
 var SlotClone$4 = reactExports.forwardRef((props, forwardedRef) => {
   const { children, ...slotProps } = props;
   if (reactExports.isValidElement(children)) {
-    const childrenRef = getElementRef$7(children);
+    const childrenRef = getElementRef$8(children);
     return reactExports.cloneElement(children, {
       ...mergeProps$4(slotProps, children.props),
       // @ts-ignore
@@ -12651,7 +12875,7 @@ function mergeProps$4(slotProps, childProps) {
   }
   return { ...slotProps, ...overrideProps };
 }
-function getElementRef$7(element) {
+function getElementRef$8(element) {
   let getter = Object.getOwnPropertyDescriptor(element.props, "ref")?.get;
   let mayWarn = getter && "isReactWarning" in getter && getter.isReactWarning;
   if (mayWarn) {
@@ -12697,25 +12921,451 @@ var Primitive$4 = NODES$4.reduce((primitive, node) => {
   return { ...primitive, [node]: Node };
 }, {});
 
-// packages/react/arrow/src/Arrow.tsx
-var NAME$1 = "Arrow";
-var Arrow$1 = reactExports.forwardRef((props, forwardedRef) => {
-  const { children, width = 10, height = 5, ...arrowProps } = props;
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(
-    Primitive$4.svg,
-    {
-      ...arrowProps,
-      ref: forwardedRef,
-      width,
-      height,
-      viewBox: "0 0 30 10",
-      preserveAspectRatio: "none",
-      children: props.asChild ? children : /* @__PURE__ */ jsxRuntimeExports.jsx("polygon", { points: "0,0 30,0 15,10" })
+// packages/react/use-size/src/useSize.tsx
+function useSize(element) {
+  const [size, setSize] = reactExports.useState(void 0);
+  useLayoutEffect2(() => {
+    if (element) {
+      setSize({ width: element.offsetWidth, height: element.offsetHeight });
+      const resizeObserver = new ResizeObserver((entries) => {
+        if (!Array.isArray(entries)) {
+          return;
+        }
+        if (!entries.length) {
+          return;
+        }
+        const entry = entries[0];
+        let width;
+        let height;
+        if ("borderBoxSize" in entry) {
+          const borderSizeEntry = entry["borderBoxSize"];
+          const borderSize = Array.isArray(borderSizeEntry) ? borderSizeEntry[0] : borderSizeEntry;
+          width = borderSize["inlineSize"];
+          height = borderSize["blockSize"];
+        } else {
+          width = element.offsetWidth;
+          height = element.offsetHeight;
+        }
+        setSize({ width, height });
+      });
+      resizeObserver.observe(element, { box: "border-box" });
+      return () => resizeObserver.unobserve(element);
+    } else {
+      setSize(void 0);
     }
+  }, [element]);
+  return size;
+}
+
+var POPPER_NAME = "Popper";
+var [createPopperContext, createPopperScope] = createContextScope(POPPER_NAME);
+var [PopperProvider, usePopperContext] = createPopperContext(POPPER_NAME);
+var Popper = (props) => {
+  const { __scopePopper, children } = props;
+  const [anchor, setAnchor] = reactExports.useState(null);
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(PopperProvider, { scope: __scopePopper, anchor, onAnchorChange: setAnchor, children });
+};
+Popper.displayName = POPPER_NAME;
+var ANCHOR_NAME$1 = "PopperAnchor";
+var PopperAnchor = reactExports.forwardRef(
+  (props, forwardedRef) => {
+    const { __scopePopper, virtualRef, ...anchorProps } = props;
+    const context = usePopperContext(ANCHOR_NAME$1, __scopePopper);
+    const ref = reactExports.useRef(null);
+    const composedRefs = useComposedRefs$3(forwardedRef, ref);
+    reactExports.useEffect(() => {
+      context.onAnchorChange(virtualRef?.current || ref.current);
+    });
+    return virtualRef ? null : /* @__PURE__ */ jsxRuntimeExports.jsx(Primitive$4.div, { ...anchorProps, ref: composedRefs });
+  }
+);
+PopperAnchor.displayName = ANCHOR_NAME$1;
+var CONTENT_NAME$4 = "PopperContent";
+var [PopperContentProvider, useContentContext] = createPopperContext(CONTENT_NAME$4);
+var PopperContent = reactExports.forwardRef(
+  (props, forwardedRef) => {
+    const {
+      __scopePopper,
+      side = "bottom",
+      sideOffset = 0,
+      align = "center",
+      alignOffset = 0,
+      arrowPadding = 0,
+      avoidCollisions = true,
+      collisionBoundary = [],
+      collisionPadding: collisionPaddingProp = 0,
+      sticky = "partial",
+      hideWhenDetached = false,
+      updatePositionStrategy = "optimized",
+      onPlaced,
+      ...contentProps
+    } = props;
+    const context = usePopperContext(CONTENT_NAME$4, __scopePopper);
+    const [content, setContent] = reactExports.useState(null);
+    const composedRefs = useComposedRefs$3(forwardedRef, (node) => setContent(node));
+    const [arrow$1, setArrow] = reactExports.useState(null);
+    const arrowSize = useSize(arrow$1);
+    const arrowWidth = arrowSize?.width ?? 0;
+    const arrowHeight = arrowSize?.height ?? 0;
+    const desiredPlacement = side + (align !== "center" ? "-" + align : "");
+    const collisionPadding = typeof collisionPaddingProp === "number" ? collisionPaddingProp : { top: 0, right: 0, bottom: 0, left: 0, ...collisionPaddingProp };
+    const boundary = Array.isArray(collisionBoundary) ? collisionBoundary : [collisionBoundary];
+    const hasExplicitBoundaries = boundary.length > 0;
+    const detectOverflowOptions = {
+      padding: collisionPadding,
+      boundary: boundary.filter(isNotNull),
+      // with `strategy: 'fixed'`, this is the only way to get it to respect boundaries
+      altBoundary: hasExplicitBoundaries
+    };
+    const { refs, floatingStyles, placement, isPositioned, middlewareData } = useFloating({
+      // default to `fixed` strategy so users don't have to pick and we also avoid focus scroll issues
+      strategy: "fixed",
+      placement: desiredPlacement,
+      whileElementsMounted: (...args) => {
+        const cleanup = autoUpdate(...args, {
+          animationFrame: updatePositionStrategy === "always"
+        });
+        return cleanup;
+      },
+      elements: {
+        reference: context.anchor
+      },
+      middleware: [
+        offset({ mainAxis: sideOffset + arrowHeight, alignmentAxis: alignOffset }),
+        avoidCollisions && shift({
+          mainAxis: true,
+          crossAxis: false,
+          limiter: sticky === "partial" ? limitShift() : void 0,
+          ...detectOverflowOptions
+        }),
+        avoidCollisions && flip({ ...detectOverflowOptions }),
+        size({
+          ...detectOverflowOptions,
+          apply: ({ elements, rects, availableWidth, availableHeight }) => {
+            const { width: anchorWidth, height: anchorHeight } = rects.reference;
+            const contentStyle = elements.floating.style;
+            contentStyle.setProperty("--radix-popper-available-width", `${availableWidth}px`);
+            contentStyle.setProperty("--radix-popper-available-height", `${availableHeight}px`);
+            contentStyle.setProperty("--radix-popper-anchor-width", `${anchorWidth}px`);
+            contentStyle.setProperty("--radix-popper-anchor-height", `${anchorHeight}px`);
+          }
+        }),
+        arrow$1 && arrow({ element: arrow$1, padding: arrowPadding }),
+        transformOrigin({ arrowWidth, arrowHeight }),
+        hideWhenDetached && hide({ strategy: "referenceHidden", ...detectOverflowOptions })
+      ]
+    });
+    const [placedSide, placedAlign] = getSideAndAlignFromPlacement(placement);
+    const handlePlaced = useCallbackRef$1(onPlaced);
+    useLayoutEffect2(() => {
+      if (isPositioned) {
+        handlePlaced?.();
+      }
+    }, [isPositioned, handlePlaced]);
+    const arrowX = middlewareData.arrow?.x;
+    const arrowY = middlewareData.arrow?.y;
+    const cannotCenterArrow = middlewareData.arrow?.centerOffset !== 0;
+    const [contentZIndex, setContentZIndex] = reactExports.useState();
+    useLayoutEffect2(() => {
+      if (content) setContentZIndex(window.getComputedStyle(content).zIndex);
+    }, [content]);
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(
+      "div",
+      {
+        ref: refs.setFloating,
+        "data-radix-popper-content-wrapper": "",
+        style: {
+          ...floatingStyles,
+          transform: isPositioned ? floatingStyles.transform : "translate(0, -200%)",
+          // keep off the page when measuring
+          minWidth: "max-content",
+          zIndex: contentZIndex,
+          ["--radix-popper-transform-origin"]: [
+            middlewareData.transformOrigin?.x,
+            middlewareData.transformOrigin?.y
+          ].join(" "),
+          // hide the content if using the hide middleware and should be hidden
+          // set visibility to hidden and disable pointer events so the UI behaves
+          // as if the PopperContent isn't there at all
+          ...middlewareData.hide?.referenceHidden && {
+            visibility: "hidden",
+            pointerEvents: "none"
+          }
+        },
+        dir: props.dir,
+        children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+          PopperContentProvider,
+          {
+            scope: __scopePopper,
+            placedSide,
+            onArrowChange: setArrow,
+            arrowX,
+            arrowY,
+            shouldHideArrow: cannotCenterArrow,
+            children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+              Primitive$4.div,
+              {
+                "data-side": placedSide,
+                "data-align": placedAlign,
+                ...contentProps,
+                ref: composedRefs,
+                style: {
+                  ...contentProps.style,
+                  // if the PopperContent hasn't been placed yet (not all measurements done)
+                  // we prevent animations so that users's animation don't kick in too early referring wrong sides
+                  animation: !isPositioned ? "none" : void 0
+                }
+              }
+            )
+          }
+        )
+      }
+    );
+  }
+);
+PopperContent.displayName = CONTENT_NAME$4;
+var ARROW_NAME$2 = "PopperArrow";
+var OPPOSITE_SIDE = {
+  top: "bottom",
+  right: "left",
+  bottom: "top",
+  left: "right"
+};
+var PopperArrow = reactExports.forwardRef(function PopperArrow2(props, forwardedRef) {
+  const { __scopePopper, ...arrowProps } = props;
+  const contentContext = useContentContext(ARROW_NAME$2, __scopePopper);
+  const baseSide = OPPOSITE_SIDE[contentContext.placedSide];
+  return (
+    // we have to use an extra wrapper because `ResizeObserver` (used by `useSize`)
+    // doesn't report size as we'd expect on SVG elements.
+    // it reports their bounding box which is effectively the largest path inside the SVG.
+    /* @__PURE__ */ jsxRuntimeExports.jsx(
+      "span",
+      {
+        ref: contentContext.onArrowChange,
+        style: {
+          position: "absolute",
+          left: contentContext.arrowX,
+          top: contentContext.arrowY,
+          [baseSide]: 0,
+          transformOrigin: {
+            top: "",
+            right: "0 0",
+            bottom: "center 0",
+            left: "100% 0"
+          }[contentContext.placedSide],
+          transform: {
+            top: "translateY(100%)",
+            right: "translateY(50%) rotate(90deg) translateX(-50%)",
+            bottom: `rotate(180deg)`,
+            left: "translateY(50%) rotate(-90deg) translateX(50%)"
+          }[contentContext.placedSide],
+          visibility: contentContext.shouldHideArrow ? "hidden" : void 0
+        },
+        children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+          Root$3,
+          {
+            ...arrowProps,
+            ref: forwardedRef,
+            style: {
+              ...arrowProps.style,
+              // ensures the element can be measured correctly (mostly for if SVG)
+              display: "block"
+            }
+          }
+        )
+      }
+    )
   );
 });
-Arrow$1.displayName = NAME$1;
-var Root$3 = Arrow$1;
+PopperArrow.displayName = ARROW_NAME$2;
+function isNotNull(value) {
+  return value !== null;
+}
+var transformOrigin = (options) => ({
+  name: "transformOrigin",
+  options,
+  fn(data) {
+    const { placement, rects, middlewareData } = data;
+    const cannotCenterArrow = middlewareData.arrow?.centerOffset !== 0;
+    const isArrowHidden = cannotCenterArrow;
+    const arrowWidth = isArrowHidden ? 0 : options.arrowWidth;
+    const arrowHeight = isArrowHidden ? 0 : options.arrowHeight;
+    const [placedSide, placedAlign] = getSideAndAlignFromPlacement(placement);
+    const noArrowAlign = { start: "0%", center: "50%", end: "100%" }[placedAlign];
+    const arrowXCenter = (middlewareData.arrow?.x ?? 0) + arrowWidth / 2;
+    const arrowYCenter = (middlewareData.arrow?.y ?? 0) + arrowHeight / 2;
+    let x = "";
+    let y = "";
+    if (placedSide === "bottom") {
+      x = isArrowHidden ? noArrowAlign : `${arrowXCenter}px`;
+      y = `${-arrowHeight}px`;
+    } else if (placedSide === "top") {
+      x = isArrowHidden ? noArrowAlign : `${arrowXCenter}px`;
+      y = `${rects.floating.height + arrowHeight}px`;
+    } else if (placedSide === "right") {
+      x = `${-arrowHeight}px`;
+      y = isArrowHidden ? noArrowAlign : `${arrowYCenter}px`;
+    } else if (placedSide === "left") {
+      x = `${rects.floating.width + arrowHeight}px`;
+      y = isArrowHidden ? noArrowAlign : `${arrowYCenter}px`;
+    }
+    return { data: { x, y } };
+  }
+});
+function getSideAndAlignFromPlacement(placement) {
+  const [side, align = "center"] = placement.split("-");
+  return [side, align];
+}
+var Root2$4 = Popper;
+var Anchor = PopperAnchor;
+var Content$1 = PopperContent;
+var Arrow = PopperArrow;
+
+var PORTAL_NAME$6 = "Portal";
+var Portal$4 = reactExports.forwardRef((props, forwardedRef) => {
+  const { container: containerProp, ...portalProps } = props;
+  const [mounted, setMounted] = reactExports.useState(false);
+  useLayoutEffect2(() => setMounted(true), []);
+  const container = containerProp || mounted && globalThis?.document?.body;
+  return container ? ReactDOM.createPortal(/* @__PURE__ */ jsxRuntimeExports.jsx(Primitive$6.div, { ...portalProps, ref: forwardedRef }), container) : null;
+});
+Portal$4.displayName = PORTAL_NAME$6;
+
+function useStateMachine$3(initialState, machine) {
+  return reactExports.useReducer((state, event) => {
+    const nextState = machine[state][event];
+    return nextState ?? state;
+  }, initialState);
+}
+
+// packages/react/presence/src/Presence.tsx
+var Presence$3 = (props) => {
+  const { present, children } = props;
+  const presence = usePresence$3(present);
+  const child = typeof children === "function" ? children({ present: presence.isPresent }) : reactExports.Children.only(children);
+  const ref = useComposedRefs$4(presence.ref, getElementRef$7(child));
+  const forceMount = typeof children === "function";
+  return forceMount || presence.isPresent ? reactExports.cloneElement(child, { ref }) : null;
+};
+Presence$3.displayName = "Presence";
+function usePresence$3(present) {
+  const [node, setNode] = reactExports.useState();
+  const stylesRef = reactExports.useRef({});
+  const prevPresentRef = reactExports.useRef(present);
+  const prevAnimationNameRef = reactExports.useRef("none");
+  const initialState = present ? "mounted" : "unmounted";
+  const [state, send] = useStateMachine$3(initialState, {
+    mounted: {
+      UNMOUNT: "unmounted",
+      ANIMATION_OUT: "unmountSuspended"
+    },
+    unmountSuspended: {
+      MOUNT: "mounted",
+      ANIMATION_END: "unmounted"
+    },
+    unmounted: {
+      MOUNT: "mounted"
+    }
+  });
+  reactExports.useEffect(() => {
+    const currentAnimationName = getAnimationName$3(stylesRef.current);
+    prevAnimationNameRef.current = state === "mounted" ? currentAnimationName : "none";
+  }, [state]);
+  useLayoutEffect2(() => {
+    const styles = stylesRef.current;
+    const wasPresent = prevPresentRef.current;
+    const hasPresentChanged = wasPresent !== present;
+    if (hasPresentChanged) {
+      const prevAnimationName = prevAnimationNameRef.current;
+      const currentAnimationName = getAnimationName$3(styles);
+      if (present) {
+        send("MOUNT");
+      } else if (currentAnimationName === "none" || styles?.display === "none") {
+        send("UNMOUNT");
+      } else {
+        const isAnimating = prevAnimationName !== currentAnimationName;
+        if (wasPresent && isAnimating) {
+          send("ANIMATION_OUT");
+        } else {
+          send("UNMOUNT");
+        }
+      }
+      prevPresentRef.current = present;
+    }
+  }, [present, send]);
+  useLayoutEffect2(() => {
+    if (node) {
+      let timeoutId;
+      const ownerWindow = node.ownerDocument.defaultView ?? window;
+      const handleAnimationEnd = (event) => {
+        const currentAnimationName = getAnimationName$3(stylesRef.current);
+        const isCurrentAnimation = currentAnimationName.includes(event.animationName);
+        if (event.target === node && isCurrentAnimation) {
+          send("ANIMATION_END");
+          if (!prevPresentRef.current) {
+            const currentFillMode = node.style.animationFillMode;
+            node.style.animationFillMode = "forwards";
+            timeoutId = ownerWindow.setTimeout(() => {
+              if (node.style.animationFillMode === "forwards") {
+                node.style.animationFillMode = currentFillMode;
+              }
+            });
+          }
+        }
+      };
+      const handleAnimationStart = (event) => {
+        if (event.target === node) {
+          prevAnimationNameRef.current = getAnimationName$3(stylesRef.current);
+        }
+      };
+      node.addEventListener("animationstart", handleAnimationStart);
+      node.addEventListener("animationcancel", handleAnimationEnd);
+      node.addEventListener("animationend", handleAnimationEnd);
+      return () => {
+        ownerWindow.clearTimeout(timeoutId);
+        node.removeEventListener("animationstart", handleAnimationStart);
+        node.removeEventListener("animationcancel", handleAnimationEnd);
+        node.removeEventListener("animationend", handleAnimationEnd);
+      };
+    } else {
+      send("ANIMATION_END");
+    }
+  }, [node, send]);
+  return {
+    isPresent: ["mounted", "unmountSuspended"].includes(state),
+    ref: reactExports.useCallback((node2) => {
+      if (node2) stylesRef.current = getComputedStyle(node2);
+      setNode(node2);
+    }, [])
+  };
+}
+function getAnimationName$3(styles) {
+  return styles?.animationName || "none";
+}
+function getElementRef$7(element) {
+  let getter = Object.getOwnPropertyDescriptor(element.props, "ref")?.get;
+  let mayWarn = getter && "isReactWarning" in getter && getter.isReactWarning;
+  if (mayWarn) {
+    return element.ref;
+  }
+  getter = Object.getOwnPropertyDescriptor(element, "ref")?.get;
+  mayWarn = getter && "isReactWarning" in getter && getter.isReactWarning;
+  if (mayWarn) {
+    return element.props.ref;
+  }
+  return element.props.ref || element.ref;
+}
+
+// packages/core/primitive/src/primitive.tsx
+function composeEventHandlers$3(originalEventHandler, ourEventHandler, { checkForDefaultPrevented = true } = {}) {
+  return function handleEvent(event) {
+    originalEventHandler?.(event);
+    if (checkForDefaultPrevented === false || !event.defaultPrevented) {
+      return ourEventHandler?.(event);
+    }
+  };
+}
 
 // packages/react/compose-refs/src/composeRefs.tsx
 function setRef$3(ref, value) {
@@ -12861,596 +13511,6 @@ var Primitive$3 = NODES$3.reduce((primitive, node) => {
   return { ...primitive, [node]: Node };
 }, {});
 
-// packages/react/use-size/src/useSize.tsx
-function useSize(element) {
-  const [size, setSize] = reactExports.useState(void 0);
-  useLayoutEffect2(() => {
-    if (element) {
-      setSize({ width: element.offsetWidth, height: element.offsetHeight });
-      const resizeObserver = new ResizeObserver((entries) => {
-        if (!Array.isArray(entries)) {
-          return;
-        }
-        if (!entries.length) {
-          return;
-        }
-        const entry = entries[0];
-        let width;
-        let height;
-        if ("borderBoxSize" in entry) {
-          const borderSizeEntry = entry["borderBoxSize"];
-          const borderSize = Array.isArray(borderSizeEntry) ? borderSizeEntry[0] : borderSizeEntry;
-          width = borderSize["inlineSize"];
-          height = borderSize["blockSize"];
-        } else {
-          width = element.offsetWidth;
-          height = element.offsetHeight;
-        }
-        setSize({ width, height });
-      });
-      resizeObserver.observe(element, { box: "border-box" });
-      return () => resizeObserver.unobserve(element);
-    } else {
-      setSize(void 0);
-    }
-  }, [element]);
-  return size;
-}
-
-var POPPER_NAME = "Popper";
-var [createPopperContext, createPopperScope] = createContextScope(POPPER_NAME);
-var [PopperProvider, usePopperContext] = createPopperContext(POPPER_NAME);
-var Popper = (props) => {
-  const { __scopePopper, children } = props;
-  const [anchor, setAnchor] = reactExports.useState(null);
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(PopperProvider, { scope: __scopePopper, anchor, onAnchorChange: setAnchor, children });
-};
-Popper.displayName = POPPER_NAME;
-var ANCHOR_NAME$1 = "PopperAnchor";
-var PopperAnchor = reactExports.forwardRef(
-  (props, forwardedRef) => {
-    const { __scopePopper, virtualRef, ...anchorProps } = props;
-    const context = usePopperContext(ANCHOR_NAME$1, __scopePopper);
-    const ref = reactExports.useRef(null);
-    const composedRefs = useComposedRefs$2(forwardedRef, ref);
-    reactExports.useEffect(() => {
-      context.onAnchorChange(virtualRef?.current || ref.current);
-    });
-    return virtualRef ? null : /* @__PURE__ */ jsxRuntimeExports.jsx(Primitive$3.div, { ...anchorProps, ref: composedRefs });
-  }
-);
-PopperAnchor.displayName = ANCHOR_NAME$1;
-var CONTENT_NAME$4 = "PopperContent";
-var [PopperContentProvider, useContentContext] = createPopperContext(CONTENT_NAME$4);
-var PopperContent = reactExports.forwardRef(
-  (props, forwardedRef) => {
-    const {
-      __scopePopper,
-      side = "bottom",
-      sideOffset = 0,
-      align = "center",
-      alignOffset = 0,
-      arrowPadding = 0,
-      avoidCollisions = true,
-      collisionBoundary = [],
-      collisionPadding: collisionPaddingProp = 0,
-      sticky = "partial",
-      hideWhenDetached = false,
-      updatePositionStrategy = "optimized",
-      onPlaced,
-      ...contentProps
-    } = props;
-    const context = usePopperContext(CONTENT_NAME$4, __scopePopper);
-    const [content, setContent] = reactExports.useState(null);
-    const composedRefs = useComposedRefs$2(forwardedRef, (node) => setContent(node));
-    const [arrow$1, setArrow] = reactExports.useState(null);
-    const arrowSize = useSize(arrow$1);
-    const arrowWidth = arrowSize?.width ?? 0;
-    const arrowHeight = arrowSize?.height ?? 0;
-    const desiredPlacement = side + (align !== "center" ? "-" + align : "");
-    const collisionPadding = typeof collisionPaddingProp === "number" ? collisionPaddingProp : { top: 0, right: 0, bottom: 0, left: 0, ...collisionPaddingProp };
-    const boundary = Array.isArray(collisionBoundary) ? collisionBoundary : [collisionBoundary];
-    const hasExplicitBoundaries = boundary.length > 0;
-    const detectOverflowOptions = {
-      padding: collisionPadding,
-      boundary: boundary.filter(isNotNull),
-      // with `strategy: 'fixed'`, this is the only way to get it to respect boundaries
-      altBoundary: hasExplicitBoundaries
-    };
-    const { refs, floatingStyles, placement, isPositioned, middlewareData } = useFloating({
-      // default to `fixed` strategy so users don't have to pick and we also avoid focus scroll issues
-      strategy: "fixed",
-      placement: desiredPlacement,
-      whileElementsMounted: (...args) => {
-        const cleanup = autoUpdate(...args, {
-          animationFrame: updatePositionStrategy === "always"
-        });
-        return cleanup;
-      },
-      elements: {
-        reference: context.anchor
-      },
-      middleware: [
-        offset({ mainAxis: sideOffset + arrowHeight, alignmentAxis: alignOffset }),
-        avoidCollisions && shift({
-          mainAxis: true,
-          crossAxis: false,
-          limiter: sticky === "partial" ? limitShift() : void 0,
-          ...detectOverflowOptions
-        }),
-        avoidCollisions && flip({ ...detectOverflowOptions }),
-        size({
-          ...detectOverflowOptions,
-          apply: ({ elements, rects, availableWidth, availableHeight }) => {
-            const { width: anchorWidth, height: anchorHeight } = rects.reference;
-            const contentStyle = elements.floating.style;
-            contentStyle.setProperty("--radix-popper-available-width", `${availableWidth}px`);
-            contentStyle.setProperty("--radix-popper-available-height", `${availableHeight}px`);
-            contentStyle.setProperty("--radix-popper-anchor-width", `${anchorWidth}px`);
-            contentStyle.setProperty("--radix-popper-anchor-height", `${anchorHeight}px`);
-          }
-        }),
-        arrow$1 && arrow({ element: arrow$1, padding: arrowPadding }),
-        transformOrigin({ arrowWidth, arrowHeight }),
-        hideWhenDetached && hide({ strategy: "referenceHidden", ...detectOverflowOptions })
-      ]
-    });
-    const [placedSide, placedAlign] = getSideAndAlignFromPlacement(placement);
-    const handlePlaced = useCallbackRef$1(onPlaced);
-    useLayoutEffect2(() => {
-      if (isPositioned) {
-        handlePlaced?.();
-      }
-    }, [isPositioned, handlePlaced]);
-    const arrowX = middlewareData.arrow?.x;
-    const arrowY = middlewareData.arrow?.y;
-    const cannotCenterArrow = middlewareData.arrow?.centerOffset !== 0;
-    const [contentZIndex, setContentZIndex] = reactExports.useState();
-    useLayoutEffect2(() => {
-      if (content) setContentZIndex(window.getComputedStyle(content).zIndex);
-    }, [content]);
-    return /* @__PURE__ */ jsxRuntimeExports.jsx(
-      "div",
-      {
-        ref: refs.setFloating,
-        "data-radix-popper-content-wrapper": "",
-        style: {
-          ...floatingStyles,
-          transform: isPositioned ? floatingStyles.transform : "translate(0, -200%)",
-          // keep off the page when measuring
-          minWidth: "max-content",
-          zIndex: contentZIndex,
-          ["--radix-popper-transform-origin"]: [
-            middlewareData.transformOrigin?.x,
-            middlewareData.transformOrigin?.y
-          ].join(" "),
-          // hide the content if using the hide middleware and should be hidden
-          // set visibility to hidden and disable pointer events so the UI behaves
-          // as if the PopperContent isn't there at all
-          ...middlewareData.hide?.referenceHidden && {
-            visibility: "hidden",
-            pointerEvents: "none"
-          }
-        },
-        dir: props.dir,
-        children: /* @__PURE__ */ jsxRuntimeExports.jsx(
-          PopperContentProvider,
-          {
-            scope: __scopePopper,
-            placedSide,
-            onArrowChange: setArrow,
-            arrowX,
-            arrowY,
-            shouldHideArrow: cannotCenterArrow,
-            children: /* @__PURE__ */ jsxRuntimeExports.jsx(
-              Primitive$3.div,
-              {
-                "data-side": placedSide,
-                "data-align": placedAlign,
-                ...contentProps,
-                ref: composedRefs,
-                style: {
-                  ...contentProps.style,
-                  // if the PopperContent hasn't been placed yet (not all measurements done)
-                  // we prevent animations so that users's animation don't kick in too early referring wrong sides
-                  animation: !isPositioned ? "none" : void 0
-                }
-              }
-            )
-          }
-        )
-      }
-    );
-  }
-);
-PopperContent.displayName = CONTENT_NAME$4;
-var ARROW_NAME$2 = "PopperArrow";
-var OPPOSITE_SIDE = {
-  top: "bottom",
-  right: "left",
-  bottom: "top",
-  left: "right"
-};
-var PopperArrow = reactExports.forwardRef(function PopperArrow2(props, forwardedRef) {
-  const { __scopePopper, ...arrowProps } = props;
-  const contentContext = useContentContext(ARROW_NAME$2, __scopePopper);
-  const baseSide = OPPOSITE_SIDE[contentContext.placedSide];
-  return (
-    // we have to use an extra wrapper because `ResizeObserver` (used by `useSize`)
-    // doesn't report size as we'd expect on SVG elements.
-    // it reports their bounding box which is effectively the largest path inside the SVG.
-    /* @__PURE__ */ jsxRuntimeExports.jsx(
-      "span",
-      {
-        ref: contentContext.onArrowChange,
-        style: {
-          position: "absolute",
-          left: contentContext.arrowX,
-          top: contentContext.arrowY,
-          [baseSide]: 0,
-          transformOrigin: {
-            top: "",
-            right: "0 0",
-            bottom: "center 0",
-            left: "100% 0"
-          }[contentContext.placedSide],
-          transform: {
-            top: "translateY(100%)",
-            right: "translateY(50%) rotate(90deg) translateX(-50%)",
-            bottom: `rotate(180deg)`,
-            left: "translateY(50%) rotate(-90deg) translateX(50%)"
-          }[contentContext.placedSide],
-          visibility: contentContext.shouldHideArrow ? "hidden" : void 0
-        },
-        children: /* @__PURE__ */ jsxRuntimeExports.jsx(
-          Root$3,
-          {
-            ...arrowProps,
-            ref: forwardedRef,
-            style: {
-              ...arrowProps.style,
-              // ensures the element can be measured correctly (mostly for if SVG)
-              display: "block"
-            }
-          }
-        )
-      }
-    )
-  );
-});
-PopperArrow.displayName = ARROW_NAME$2;
-function isNotNull(value) {
-  return value !== null;
-}
-var transformOrigin = (options) => ({
-  name: "transformOrigin",
-  options,
-  fn(data) {
-    const { placement, rects, middlewareData } = data;
-    const cannotCenterArrow = middlewareData.arrow?.centerOffset !== 0;
-    const isArrowHidden = cannotCenterArrow;
-    const arrowWidth = isArrowHidden ? 0 : options.arrowWidth;
-    const arrowHeight = isArrowHidden ? 0 : options.arrowHeight;
-    const [placedSide, placedAlign] = getSideAndAlignFromPlacement(placement);
-    const noArrowAlign = { start: "0%", center: "50%", end: "100%" }[placedAlign];
-    const arrowXCenter = (middlewareData.arrow?.x ?? 0) + arrowWidth / 2;
-    const arrowYCenter = (middlewareData.arrow?.y ?? 0) + arrowHeight / 2;
-    let x = "";
-    let y = "";
-    if (placedSide === "bottom") {
-      x = isArrowHidden ? noArrowAlign : `${arrowXCenter}px`;
-      y = `${-arrowHeight}px`;
-    } else if (placedSide === "top") {
-      x = isArrowHidden ? noArrowAlign : `${arrowXCenter}px`;
-      y = `${rects.floating.height + arrowHeight}px`;
-    } else if (placedSide === "right") {
-      x = `${-arrowHeight}px`;
-      y = isArrowHidden ? noArrowAlign : `${arrowYCenter}px`;
-    } else if (placedSide === "left") {
-      x = `${rects.floating.width + arrowHeight}px`;
-      y = isArrowHidden ? noArrowAlign : `${arrowYCenter}px`;
-    }
-    return { data: { x, y } };
-  }
-});
-function getSideAndAlignFromPlacement(placement) {
-  const [side, align = "center"] = placement.split("-");
-  return [side, align];
-}
-var Root2$3 = Popper;
-var Anchor = PopperAnchor;
-var Content$1 = PopperContent;
-var Arrow = PopperArrow;
-
-var PORTAL_NAME$6 = "Portal";
-var Portal$4 = reactExports.forwardRef((props, forwardedRef) => {
-  const { container: containerProp, ...portalProps } = props;
-  const [mounted, setMounted] = reactExports.useState(false);
-  useLayoutEffect2(() => setMounted(true), []);
-  const container = containerProp || mounted && globalThis?.document?.body;
-  return container ? ReactDOM.createPortal(/* @__PURE__ */ jsxRuntimeExports.jsx(Primitive$5.div, { ...portalProps, ref: forwardedRef }), container) : null;
-});
-Portal$4.displayName = PORTAL_NAME$6;
-
-function useStateMachine$2(initialState, machine) {
-  return reactExports.useReducer((state, event) => {
-    const nextState = machine[state][event];
-    return nextState ?? state;
-  }, initialState);
-}
-
-// packages/react/presence/src/Presence.tsx
-var Presence$2 = (props) => {
-  const { present, children } = props;
-  const presence = usePresence$2(present);
-  const child = typeof children === "function" ? children({ present: presence.isPresent }) : reactExports.Children.only(children);
-  const ref = useComposedRefs$3(presence.ref, getElementRef$5(child));
-  const forceMount = typeof children === "function";
-  return forceMount || presence.isPresent ? reactExports.cloneElement(child, { ref }) : null;
-};
-Presence$2.displayName = "Presence";
-function usePresence$2(present) {
-  const [node, setNode] = reactExports.useState();
-  const stylesRef = reactExports.useRef({});
-  const prevPresentRef = reactExports.useRef(present);
-  const prevAnimationNameRef = reactExports.useRef("none");
-  const initialState = present ? "mounted" : "unmounted";
-  const [state, send] = useStateMachine$2(initialState, {
-    mounted: {
-      UNMOUNT: "unmounted",
-      ANIMATION_OUT: "unmountSuspended"
-    },
-    unmountSuspended: {
-      MOUNT: "mounted",
-      ANIMATION_END: "unmounted"
-    },
-    unmounted: {
-      MOUNT: "mounted"
-    }
-  });
-  reactExports.useEffect(() => {
-    const currentAnimationName = getAnimationName$2(stylesRef.current);
-    prevAnimationNameRef.current = state === "mounted" ? currentAnimationName : "none";
-  }, [state]);
-  useLayoutEffect2(() => {
-    const styles = stylesRef.current;
-    const wasPresent = prevPresentRef.current;
-    const hasPresentChanged = wasPresent !== present;
-    if (hasPresentChanged) {
-      const prevAnimationName = prevAnimationNameRef.current;
-      const currentAnimationName = getAnimationName$2(styles);
-      if (present) {
-        send("MOUNT");
-      } else if (currentAnimationName === "none" || styles?.display === "none") {
-        send("UNMOUNT");
-      } else {
-        const isAnimating = prevAnimationName !== currentAnimationName;
-        if (wasPresent && isAnimating) {
-          send("ANIMATION_OUT");
-        } else {
-          send("UNMOUNT");
-        }
-      }
-      prevPresentRef.current = present;
-    }
-  }, [present, send]);
-  useLayoutEffect2(() => {
-    if (node) {
-      let timeoutId;
-      const ownerWindow = node.ownerDocument.defaultView ?? window;
-      const handleAnimationEnd = (event) => {
-        const currentAnimationName = getAnimationName$2(stylesRef.current);
-        const isCurrentAnimation = currentAnimationName.includes(event.animationName);
-        if (event.target === node && isCurrentAnimation) {
-          send("ANIMATION_END");
-          if (!prevPresentRef.current) {
-            const currentFillMode = node.style.animationFillMode;
-            node.style.animationFillMode = "forwards";
-            timeoutId = ownerWindow.setTimeout(() => {
-              if (node.style.animationFillMode === "forwards") {
-                node.style.animationFillMode = currentFillMode;
-              }
-            });
-          }
-        }
-      };
-      const handleAnimationStart = (event) => {
-        if (event.target === node) {
-          prevAnimationNameRef.current = getAnimationName$2(stylesRef.current);
-        }
-      };
-      node.addEventListener("animationstart", handleAnimationStart);
-      node.addEventListener("animationcancel", handleAnimationEnd);
-      node.addEventListener("animationend", handleAnimationEnd);
-      return () => {
-        ownerWindow.clearTimeout(timeoutId);
-        node.removeEventListener("animationstart", handleAnimationStart);
-        node.removeEventListener("animationcancel", handleAnimationEnd);
-        node.removeEventListener("animationend", handleAnimationEnd);
-      };
-    } else {
-      send("ANIMATION_END");
-    }
-  }, [node, send]);
-  return {
-    isPresent: ["mounted", "unmountSuspended"].includes(state),
-    ref: reactExports.useCallback((node2) => {
-      if (node2) stylesRef.current = getComputedStyle(node2);
-      setNode(node2);
-    }, [])
-  };
-}
-function getAnimationName$2(styles) {
-  return styles?.animationName || "none";
-}
-function getElementRef$5(element) {
-  let getter = Object.getOwnPropertyDescriptor(element.props, "ref")?.get;
-  let mayWarn = getter && "isReactWarning" in getter && getter.isReactWarning;
-  if (mayWarn) {
-    return element.ref;
-  }
-  getter = Object.getOwnPropertyDescriptor(element, "ref")?.get;
-  mayWarn = getter && "isReactWarning" in getter && getter.isReactWarning;
-  if (mayWarn) {
-    return element.props.ref;
-  }
-  return element.props.ref || element.ref;
-}
-
-// packages/core/primitive/src/primitive.tsx
-function composeEventHandlers$2(originalEventHandler, ourEventHandler, { checkForDefaultPrevented = true } = {}) {
-  return function handleEvent(event) {
-    originalEventHandler?.(event);
-    if (checkForDefaultPrevented === false || !event.defaultPrevented) {
-      return ourEventHandler?.(event);
-    }
-  };
-}
-
-// packages/react/compose-refs/src/composeRefs.tsx
-function setRef$2(ref, value) {
-  if (typeof ref === "function") {
-    return ref(value);
-  } else if (ref !== null && ref !== void 0) {
-    ref.current = value;
-  }
-}
-function composeRefs$2(...refs) {
-  return (node) => {
-    let hasCleanup = false;
-    const cleanups = refs.map((ref) => {
-      const cleanup = setRef$2(ref, node);
-      if (!hasCleanup && typeof cleanup == "function") {
-        hasCleanup = true;
-      }
-      return cleanup;
-    });
-    if (hasCleanup) {
-      return () => {
-        for (let i = 0; i < cleanups.length; i++) {
-          const cleanup = cleanups[i];
-          if (typeof cleanup == "function") {
-            cleanup();
-          } else {
-            setRef$2(refs[i], null);
-          }
-        }
-      };
-    }
-  };
-}
-function useComposedRefs$1(...refs) {
-  return reactExports.useCallback(composeRefs$2(...refs), refs);
-}
-
-// packages/react/slot/src/Slot.tsx
-var Slot$2 = reactExports.forwardRef((props, forwardedRef) => {
-  const { children, ...slotProps } = props;
-  const childrenArray = reactExports.Children.toArray(children);
-  const slottable = childrenArray.find(isSlottable$2);
-  if (slottable) {
-    const newElement = slottable.props.children;
-    const newChildren = childrenArray.map((child) => {
-      if (child === slottable) {
-        if (reactExports.Children.count(newElement) > 1) return reactExports.Children.only(null);
-        return reactExports.isValidElement(newElement) ? newElement.props.children : null;
-      } else {
-        return child;
-      }
-    });
-    return /* @__PURE__ */ jsxRuntimeExports.jsx(SlotClone$2, { ...slotProps, ref: forwardedRef, children: reactExports.isValidElement(newElement) ? reactExports.cloneElement(newElement, void 0, newChildren) : null });
-  }
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(SlotClone$2, { ...slotProps, ref: forwardedRef, children });
-});
-Slot$2.displayName = "Slot";
-var SlotClone$2 = reactExports.forwardRef((props, forwardedRef) => {
-  const { children, ...slotProps } = props;
-  if (reactExports.isValidElement(children)) {
-    const childrenRef = getElementRef$4(children);
-    return reactExports.cloneElement(children, {
-      ...mergeProps$2(slotProps, children.props),
-      // @ts-ignore
-      ref: forwardedRef ? composeRefs$2(forwardedRef, childrenRef) : childrenRef
-    });
-  }
-  return reactExports.Children.count(children) > 1 ? reactExports.Children.only(null) : null;
-});
-SlotClone$2.displayName = "SlotClone";
-var Slottable$2 = ({ children }) => {
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(jsxRuntimeExports.Fragment, { children });
-};
-function isSlottable$2(child) {
-  return reactExports.isValidElement(child) && child.type === Slottable$2;
-}
-function mergeProps$2(slotProps, childProps) {
-  const overrideProps = { ...childProps };
-  for (const propName in childProps) {
-    const slotPropValue = slotProps[propName];
-    const childPropValue = childProps[propName];
-    const isHandler = /^on[A-Z]/.test(propName);
-    if (isHandler) {
-      if (slotPropValue && childPropValue) {
-        overrideProps[propName] = (...args) => {
-          childPropValue(...args);
-          slotPropValue(...args);
-        };
-      } else if (slotPropValue) {
-        overrideProps[propName] = slotPropValue;
-      }
-    } else if (propName === "style") {
-      overrideProps[propName] = { ...slotPropValue, ...childPropValue };
-    } else if (propName === "className") {
-      overrideProps[propName] = [slotPropValue, childPropValue].filter(Boolean).join(" ");
-    }
-  }
-  return { ...slotProps, ...overrideProps };
-}
-function getElementRef$4(element) {
-  let getter = Object.getOwnPropertyDescriptor(element.props, "ref")?.get;
-  let mayWarn = getter && "isReactWarning" in getter && getter.isReactWarning;
-  if (mayWarn) {
-    return element.ref;
-  }
-  getter = Object.getOwnPropertyDescriptor(element, "ref")?.get;
-  mayWarn = getter && "isReactWarning" in getter && getter.isReactWarning;
-  if (mayWarn) {
-    return element.props.ref;
-  }
-  return element.props.ref || element.ref;
-}
-
-// packages/react/primitive/src/Primitive.tsx
-var NODES$2 = [
-  "a",
-  "button",
-  "div",
-  "form",
-  "h2",
-  "h3",
-  "img",
-  "input",
-  "label",
-  "li",
-  "nav",
-  "ol",
-  "p",
-  "span",
-  "svg",
-  "ul"
-];
-var Primitive$2 = NODES$2.reduce((primitive, node) => {
-  const Node = reactExports.forwardRef((props, forwardedRef) => {
-    const { asChild, ...primitiveProps } = props;
-    const Comp = asChild ? Slot$2 : node;
-    if (typeof window !== "undefined") {
-      window[Symbol.for("radix-ui")] = true;
-    }
-    return /* @__PURE__ */ jsxRuntimeExports.jsx(Comp, { ...primitiveProps, ref: forwardedRef });
-  });
-  Node.displayName = `Primitive.${node}`;
-  return { ...primitive, [node]: Node };
-}, {});
-
 var ENTRY_FOCUS = "rovingFocusGroup.onEntryFocus";
 var EVENT_OPTIONS$1 = { bubbles: false, cancelable: true };
 var GROUP_NAME$2 = "RovingFocusGroup";
@@ -13480,7 +13540,7 @@ var RovingFocusGroupImpl = reactExports.forwardRef((props, forwardedRef) => {
     ...groupProps
   } = props;
   const ref = reactExports.useRef(null);
-  const composedRefs = useComposedRefs$1(forwardedRef, ref);
+  const composedRefs = useComposedRefs$2(forwardedRef, ref);
   const direction = useDirection(dir);
   const [currentTabStopId = null, setCurrentTabStopId] = useControllableState({
     prop: currentTabStopIdProp,
@@ -13521,17 +13581,17 @@ var RovingFocusGroupImpl = reactExports.forwardRef((props, forwardedRef) => {
         []
       ),
       children: /* @__PURE__ */ jsxRuntimeExports.jsx(
-        Primitive$2.div,
+        Primitive$3.div,
         {
           tabIndex: isTabbingBackOut || focusableItemsCount === 0 ? -1 : 0,
           "data-orientation": orientation,
           ...groupProps,
           ref: composedRefs,
           style: { outline: "none", ...props.style },
-          onMouseDown: composeEventHandlers$2(props.onMouseDown, () => {
+          onMouseDown: composeEventHandlers$3(props.onMouseDown, () => {
             isClickFocusRef.current = true;
           }),
-          onFocus: composeEventHandlers$2(props.onFocus, (event) => {
+          onFocus: composeEventHandlers$3(props.onFocus, (event) => {
             const isKeyboardFocus = !isClickFocusRef.current;
             if (event.target === event.currentTarget && isKeyboardFocus && !isTabbingBackOut) {
               const entryFocusEvent = new CustomEvent(ENTRY_FOCUS, EVENT_OPTIONS$1);
@@ -13549,13 +13609,13 @@ var RovingFocusGroupImpl = reactExports.forwardRef((props, forwardedRef) => {
             }
             isClickFocusRef.current = false;
           }),
-          onBlur: composeEventHandlers$2(props.onBlur, () => setIsTabbingBackOut(false))
+          onBlur: composeEventHandlers$3(props.onBlur, () => setIsTabbingBackOut(false))
         }
       )
     }
   );
 });
-var ITEM_NAME$2 = "RovingFocusGroupItem";
+var ITEM_NAME$3 = "RovingFocusGroupItem";
 var RovingFocusGroupItem = reactExports.forwardRef(
   (props, forwardedRef) => {
     const {
@@ -13567,7 +13627,7 @@ var RovingFocusGroupItem = reactExports.forwardRef(
     } = props;
     const autoId = useId();
     const id = tabStopId || autoId;
-    const context = useRovingFocusContext(ITEM_NAME$2, __scopeRovingFocusGroup);
+    const context = useRovingFocusContext(ITEM_NAME$3, __scopeRovingFocusGroup);
     const isCurrentTabStop = context.currentTabStopId === id;
     const getItems = useCollection$2(__scopeRovingFocusGroup);
     const { onFocusableItemAdd, onFocusableItemRemove } = context;
@@ -13585,18 +13645,18 @@ var RovingFocusGroupItem = reactExports.forwardRef(
         focusable,
         active,
         children: /* @__PURE__ */ jsxRuntimeExports.jsx(
-          Primitive$2.span,
+          Primitive$3.span,
           {
             tabIndex: isCurrentTabStop ? 0 : -1,
             "data-orientation": context.orientation,
             ...itemProps,
             ref: forwardedRef,
-            onMouseDown: composeEventHandlers$2(props.onMouseDown, (event) => {
+            onMouseDown: composeEventHandlers$3(props.onMouseDown, (event) => {
               if (!focusable) event.preventDefault();
               else context.onItemFocus(id);
             }),
-            onFocus: composeEventHandlers$2(props.onFocus, () => context.onItemFocus(id)),
-            onKeyDown: composeEventHandlers$2(props.onKeyDown, (event) => {
+            onFocus: composeEventHandlers$3(props.onFocus, () => context.onItemFocus(id)),
+            onKeyDown: composeEventHandlers$3(props.onKeyDown, (event) => {
               if (event.key === "Tab" && event.shiftKey) {
                 context.onItemShiftTab();
                 return;
@@ -13623,7 +13683,7 @@ var RovingFocusGroupItem = reactExports.forwardRef(
     );
   }
 );
-RovingFocusGroupItem.displayName = ITEM_NAME$2;
+RovingFocusGroupItem.displayName = ITEM_NAME$3;
 var MAP_KEY_TO_FOCUS_INTENT = {
   ArrowLeft: "prev",
   ArrowUp: "prev",
@@ -14563,7 +14623,7 @@ var [createMenuContext, createMenuScope] = createContextScope(MENU_NAME, [
   createRovingFocusGroupScope
 ]);
 var usePopperScope = createPopperScope();
-var useRovingFocusGroupScope = createRovingFocusGroupScope();
+var useRovingFocusGroupScope$1 = createRovingFocusGroupScope();
 var [MenuProvider, useMenuContext] = createMenuContext(MENU_NAME);
 var [MenuRootProvider, useMenuRootContext] = createMenuContext(MENU_NAME);
 var Menu = (props) => {
@@ -14587,7 +14647,7 @@ var Menu = (props) => {
       document.removeEventListener("pointermove", handlePointer, { capture: true });
     };
   }, []);
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(Root2$3, { ...popperScope, children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(Root2$4, { ...popperScope, children: /* @__PURE__ */ jsxRuntimeExports.jsx(
     MenuProvider,
     {
       scope: __scopeMenu,
@@ -14626,7 +14686,7 @@ var [PortalProvider$1, usePortalContext$1] = createMenuContext(PORTAL_NAME$5, {
 var MenuPortal = (props) => {
   const { __scopeMenu, forceMount, children, container } = props;
   const context = useMenuContext(PORTAL_NAME$5, __scopeMenu);
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(PortalProvider$1, { scope: __scopeMenu, forceMount, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Presence$2, { present: forceMount || context.open, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Portal$4, { asChild: true, container, children }) }) });
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(PortalProvider$1, { scope: __scopeMenu, forceMount, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Presence$3, { present: forceMount || context.open, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Portal$4, { asChild: true, container, children }) }) });
 };
 MenuPortal.displayName = PORTAL_NAME$5;
 var CONTENT_NAME$3 = "MenuContent";
@@ -14637,14 +14697,14 @@ var MenuContent = reactExports.forwardRef(
     const { forceMount = portalContext.forceMount, ...contentProps } = props;
     const context = useMenuContext(CONTENT_NAME$3, props.__scopeMenu);
     const rootContext = useMenuRootContext(CONTENT_NAME$3, props.__scopeMenu);
-    return /* @__PURE__ */ jsxRuntimeExports.jsx(Collection$1.Provider, { scope: props.__scopeMenu, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Presence$2, { present: forceMount || context.open, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Collection$1.Slot, { scope: props.__scopeMenu, children: rootContext.modal ? /* @__PURE__ */ jsxRuntimeExports.jsx(MenuRootContentModal, { ...contentProps, ref: forwardedRef }) : /* @__PURE__ */ jsxRuntimeExports.jsx(MenuRootContentNonModal, { ...contentProps, ref: forwardedRef }) }) }) });
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(Collection$1.Provider, { scope: props.__scopeMenu, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Presence$3, { present: forceMount || context.open, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Collection$1.Slot, { scope: props.__scopeMenu, children: rootContext.modal ? /* @__PURE__ */ jsxRuntimeExports.jsx(MenuRootContentModal, { ...contentProps, ref: forwardedRef }) : /* @__PURE__ */ jsxRuntimeExports.jsx(MenuRootContentNonModal, { ...contentProps, ref: forwardedRef }) }) }) });
   }
 );
 var MenuRootContentModal = reactExports.forwardRef(
   (props, forwardedRef) => {
     const context = useMenuContext(CONTENT_NAME$3, props.__scopeMenu);
     const ref = reactExports.useRef(null);
-    const composedRefs = useComposedRefs$3(forwardedRef, ref);
+    const composedRefs = useComposedRefs$4(forwardedRef, ref);
     reactExports.useEffect(() => {
       const content = ref.current;
       if (content) return hideOthers(content);
@@ -14657,7 +14717,7 @@ var MenuRootContentModal = reactExports.forwardRef(
         trapFocus: context.open,
         disableOutsidePointerEvents: context.open,
         disableOutsideScroll: true,
-        onFocusOutside: composeEventHandlers$3(
+        onFocusOutside: composeEventHandlers$4(
           props.onFocusOutside,
           (event) => event.preventDefault(),
           { checkForDefaultPrevented: false }
@@ -14702,11 +14762,11 @@ var MenuContentImpl = reactExports.forwardRef(
     const context = useMenuContext(CONTENT_NAME$3, __scopeMenu);
     const rootContext = useMenuRootContext(CONTENT_NAME$3, __scopeMenu);
     const popperScope = usePopperScope(__scopeMenu);
-    const rovingFocusGroupScope = useRovingFocusGroupScope(__scopeMenu);
+    const rovingFocusGroupScope = useRovingFocusGroupScope$1(__scopeMenu);
     const getItems = useCollection$1(__scopeMenu);
     const [currentItemId, setCurrentItemId] = reactExports.useState(null);
     const contentRef = reactExports.useRef(null);
-    const composedRefs = useComposedRefs$3(forwardedRef, contentRef, context.onContentChange);
+    const composedRefs = useComposedRefs$4(forwardedRef, contentRef, context.onContentChange);
     const timerRef = reactExports.useRef(0);
     const searchRef = reactExports.useRef("");
     const pointerGraceTimerRef = reactExports.useRef(0);
@@ -14714,7 +14774,7 @@ var MenuContentImpl = reactExports.forwardRef(
     const pointerDirRef = reactExports.useRef("right");
     const lastPointerXRef = reactExports.useRef(0);
     const ScrollLockWrapper = disableOutsideScroll ? ReactRemoveScroll$1 : reactExports.Fragment;
-    const scrollLockWrapperProps = disableOutsideScroll ? { as: Slot$5, allowPinchZoom: true } : void 0;
+    const scrollLockWrapperProps = disableOutsideScroll ? { as: Slot$6, allowPinchZoom: true } : void 0;
     const handleTypeaheadSearch = (key) => {
       const search = searchRef.current + key;
       const items = getItems().filter((item) => !item.disabled);
@@ -14774,7 +14834,7 @@ var MenuContentImpl = reactExports.forwardRef(
           {
             asChild: true,
             trapped: trapFocus,
-            onMountAutoFocus: composeEventHandlers$3(onOpenAutoFocus, (event) => {
+            onMountAutoFocus: composeEventHandlers$4(onOpenAutoFocus, (event) => {
               event.preventDefault();
               contentRef.current?.focus({ preventScroll: true });
             }),
@@ -14799,7 +14859,7 @@ var MenuContentImpl = reactExports.forwardRef(
                     loop,
                     currentTabStopId: currentItemId,
                     onCurrentTabStopIdChange: setCurrentItemId,
-                    onEntryFocus: composeEventHandlers$3(onEntryFocus, (event) => {
+                    onEntryFocus: composeEventHandlers$4(onEntryFocus, (event) => {
                       if (!rootContext.isUsingKeyboardRef.current) event.preventDefault();
                     }),
                     preventScrollOnEntryFocus: true,
@@ -14815,7 +14875,7 @@ var MenuContentImpl = reactExports.forwardRef(
                         ...contentProps,
                         ref: composedRefs,
                         style: { outline: "none", ...contentProps.style },
-                        onKeyDown: composeEventHandlers$3(contentProps.onKeyDown, (event) => {
+                        onKeyDown: composeEventHandlers$4(contentProps.onKeyDown, (event) => {
                           const target = event.target;
                           const isKeyDownInside = target.closest("[data-radix-menu-content]") === event.currentTarget;
                           const isModifierKey = event.ctrlKey || event.altKey || event.metaKey;
@@ -14833,13 +14893,13 @@ var MenuContentImpl = reactExports.forwardRef(
                           if (LAST_KEYS.includes(event.key)) candidateNodes.reverse();
                           focusFirst$2(candidateNodes);
                         }),
-                        onBlur: composeEventHandlers$3(props.onBlur, (event) => {
+                        onBlur: composeEventHandlers$4(props.onBlur, (event) => {
                           if (!event.currentTarget.contains(event.target)) {
                             window.clearTimeout(timerRef.current);
                             searchRef.current = "";
                           }
                         }),
-                        onPointerMove: composeEventHandlers$3(
+                        onPointerMove: composeEventHandlers$4(
                           props.onPointerMove,
                           whenMouse((event) => {
                             const target = event.target;
@@ -14868,7 +14928,7 @@ var GROUP_NAME$1 = "MenuGroup";
 var MenuGroup = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeMenu, ...groupProps } = props;
-    return /* @__PURE__ */ jsxRuntimeExports.jsx(Primitive$5.div, { role: "group", ...groupProps, ref: forwardedRef });
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(Primitive$6.div, { role: "group", ...groupProps, ref: forwardedRef });
   }
 );
 MenuGroup.displayName = GROUP_NAME$1;
@@ -14876,19 +14936,19 @@ var LABEL_NAME$1 = "MenuLabel";
 var MenuLabel = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeMenu, ...labelProps } = props;
-    return /* @__PURE__ */ jsxRuntimeExports.jsx(Primitive$5.div, { ...labelProps, ref: forwardedRef });
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(Primitive$6.div, { ...labelProps, ref: forwardedRef });
   }
 );
 MenuLabel.displayName = LABEL_NAME$1;
-var ITEM_NAME$1 = "MenuItem";
+var ITEM_NAME$2 = "MenuItem";
 var ITEM_SELECT = "menu.itemSelect";
 var MenuItem = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { disabled = false, onSelect, ...itemProps } = props;
     const ref = reactExports.useRef(null);
-    const rootContext = useMenuRootContext(ITEM_NAME$1, props.__scopeMenu);
-    const contentContext = useMenuContentContext(ITEM_NAME$1, props.__scopeMenu);
-    const composedRefs = useComposedRefs$3(forwardedRef, ref);
+    const rootContext = useMenuRootContext(ITEM_NAME$2, props.__scopeMenu);
+    const contentContext = useMenuContentContext(ITEM_NAME$2, props.__scopeMenu);
+    const composedRefs = useComposedRefs$4(forwardedRef, ref);
     const isPointerDownRef = reactExports.useRef(false);
     const handleSelect = () => {
       const menuItem = ref.current;
@@ -14909,15 +14969,15 @@ var MenuItem = reactExports.forwardRef(
         ...itemProps,
         ref: composedRefs,
         disabled,
-        onClick: composeEventHandlers$3(props.onClick, handleSelect),
+        onClick: composeEventHandlers$4(props.onClick, handleSelect),
         onPointerDown: (event) => {
           props.onPointerDown?.(event);
           isPointerDownRef.current = true;
         },
-        onPointerUp: composeEventHandlers$3(props.onPointerUp, (event) => {
+        onPointerUp: composeEventHandlers$4(props.onPointerUp, (event) => {
           if (!isPointerDownRef.current) event.currentTarget?.click();
         }),
-        onKeyDown: composeEventHandlers$3(props.onKeyDown, (event) => {
+        onKeyDown: composeEventHandlers$4(props.onKeyDown, (event) => {
           const isTypingAhead = contentContext.searchRef.current !== "";
           if (disabled || isTypingAhead && event.key === " ") return;
           if (SELECTION_KEYS.includes(event.key)) {
@@ -14929,14 +14989,14 @@ var MenuItem = reactExports.forwardRef(
     );
   }
 );
-MenuItem.displayName = ITEM_NAME$1;
+MenuItem.displayName = ITEM_NAME$2;
 var MenuItemImpl = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeMenu, disabled = false, textValue, ...itemProps } = props;
-    const contentContext = useMenuContentContext(ITEM_NAME$1, __scopeMenu);
-    const rovingFocusGroupScope = useRovingFocusGroupScope(__scopeMenu);
+    const contentContext = useMenuContentContext(ITEM_NAME$2, __scopeMenu);
+    const rovingFocusGroupScope = useRovingFocusGroupScope$1(__scopeMenu);
     const ref = reactExports.useRef(null);
-    const composedRefs = useComposedRefs$3(forwardedRef, ref);
+    const composedRefs = useComposedRefs$4(forwardedRef, ref);
     const [isFocused, setIsFocused] = reactExports.useState(false);
     const [textContent, setTextContent] = reactExports.useState("");
     reactExports.useEffect(() => {
@@ -14952,7 +15012,7 @@ var MenuItemImpl = reactExports.forwardRef(
         disabled,
         textValue: textValue ?? textContent,
         children: /* @__PURE__ */ jsxRuntimeExports.jsx(Item, { asChild: true, ...rovingFocusGroupScope, focusable: !disabled, children: /* @__PURE__ */ jsxRuntimeExports.jsx(
-          Primitive$5.div,
+          Primitive$6.div,
           {
             role: "menuitem",
             "data-highlighted": isFocused ? "" : void 0,
@@ -14960,7 +15020,7 @@ var MenuItemImpl = reactExports.forwardRef(
             "data-disabled": disabled ? "" : void 0,
             ...itemProps,
             ref: composedRefs,
-            onPointerMove: composeEventHandlers$3(
+            onPointerMove: composeEventHandlers$4(
               props.onPointerMove,
               whenMouse((event) => {
                 if (disabled) {
@@ -14974,12 +15034,12 @@ var MenuItemImpl = reactExports.forwardRef(
                 }
               })
             ),
-            onPointerLeave: composeEventHandlers$3(
+            onPointerLeave: composeEventHandlers$4(
               props.onPointerLeave,
               whenMouse((event) => contentContext.onItemLeave(event))
             ),
-            onFocus: composeEventHandlers$3(props.onFocus, () => setIsFocused(true)),
-            onBlur: composeEventHandlers$3(props.onBlur, () => setIsFocused(false))
+            onFocus: composeEventHandlers$4(props.onFocus, () => setIsFocused(true)),
+            onBlur: composeEventHandlers$4(props.onBlur, () => setIsFocused(false))
           }
         ) })
       }
@@ -14998,7 +15058,7 @@ var MenuCheckboxItem = reactExports.forwardRef(
         ...checkboxItemProps,
         ref: forwardedRef,
         "data-state": getCheckedState(checked),
-        onSelect: composeEventHandlers$3(
+        onSelect: composeEventHandlers$4(
           checkboxItemProps.onSelect,
           () => onCheckedChange?.(isIndeterminate(checked) ? true : !checked),
           { checkForDefaultPrevented: false }
@@ -15008,9 +15068,9 @@ var MenuCheckboxItem = reactExports.forwardRef(
   }
 );
 MenuCheckboxItem.displayName = CHECKBOX_ITEM_NAME$1;
-var RADIO_GROUP_NAME$1 = "MenuRadioGroup";
-var [RadioGroupProvider, useRadioGroupContext] = createMenuContext(
-  RADIO_GROUP_NAME$1,
+var RADIO_GROUP_NAME$2 = "MenuRadioGroup";
+var [RadioGroupProvider$1, useRadioGroupContext$1] = createMenuContext(
+  RADIO_GROUP_NAME$2,
   { value: void 0, onValueChange: () => {
   } }
 );
@@ -15018,15 +15078,15 @@ var MenuRadioGroup = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { value, onValueChange, ...groupProps } = props;
     const handleValueChange = useCallbackRef$1(onValueChange);
-    return /* @__PURE__ */ jsxRuntimeExports.jsx(RadioGroupProvider, { scope: props.__scopeMenu, value, onValueChange: handleValueChange, children: /* @__PURE__ */ jsxRuntimeExports.jsx(MenuGroup, { ...groupProps, ref: forwardedRef }) });
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(RadioGroupProvider$1, { scope: props.__scopeMenu, value, onValueChange: handleValueChange, children: /* @__PURE__ */ jsxRuntimeExports.jsx(MenuGroup, { ...groupProps, ref: forwardedRef }) });
   }
 );
-MenuRadioGroup.displayName = RADIO_GROUP_NAME$1;
+MenuRadioGroup.displayName = RADIO_GROUP_NAME$2;
 var RADIO_ITEM_NAME$1 = "MenuRadioItem";
 var MenuRadioItem = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { value, ...radioItemProps } = props;
-    const context = useRadioGroupContext(RADIO_ITEM_NAME$1, props.__scopeMenu);
+    const context = useRadioGroupContext$1(RADIO_ITEM_NAME$1, props.__scopeMenu);
     const checked = value === context.value;
     return /* @__PURE__ */ jsxRuntimeExports.jsx(ItemIndicatorProvider, { scope: props.__scopeMenu, checked, children: /* @__PURE__ */ jsxRuntimeExports.jsx(
       MenuItem,
@@ -15036,7 +15096,7 @@ var MenuRadioItem = reactExports.forwardRef(
         ...radioItemProps,
         ref: forwardedRef,
         "data-state": getCheckedState(checked),
-        onSelect: composeEventHandlers$3(
+        onSelect: composeEventHandlers$4(
           radioItemProps.onSelect,
           () => context.onValueChange?.(value),
           { checkForDefaultPrevented: false }
@@ -15056,11 +15116,11 @@ var MenuItemIndicator = reactExports.forwardRef(
     const { __scopeMenu, forceMount, ...itemIndicatorProps } = props;
     const indicatorContext = useItemIndicatorContext(ITEM_INDICATOR_NAME, __scopeMenu);
     return /* @__PURE__ */ jsxRuntimeExports.jsx(
-      Presence$2,
+      Presence$3,
       {
         present: forceMount || isIndeterminate(indicatorContext.checked) || indicatorContext.checked === true,
         children: /* @__PURE__ */ jsxRuntimeExports.jsx(
-          Primitive$5.span,
+          Primitive$6.span,
           {
             ...itemIndicatorProps,
             ref: forwardedRef,
@@ -15077,7 +15137,7 @@ var MenuSeparator = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeMenu, ...separatorProps } = props;
     return /* @__PURE__ */ jsxRuntimeExports.jsx(
-      Primitive$5.div,
+      Primitive$6.div,
       {
         role: "separator",
         "aria-orientation": "horizontal",
@@ -15130,14 +15190,14 @@ var MenuSubTrigger = reactExports.forwardRef(
         "aria-controls": subContext.contentId,
         "data-state": getOpenState(context.open),
         ...props,
-        ref: composeRefs$5(forwardedRef, subContext.onTriggerChange),
+        ref: composeRefs$6(forwardedRef, subContext.onTriggerChange),
         onClick: (event) => {
           props.onClick?.(event);
           if (props.disabled || event.defaultPrevented) return;
           event.currentTarget.focus();
           if (!context.open) context.onOpenChange(true);
         },
-        onPointerMove: composeEventHandlers$3(
+        onPointerMove: composeEventHandlers$4(
           props.onPointerMove,
           whenMouse((event) => {
             contentContext.onItemEnter(event);
@@ -15151,7 +15211,7 @@ var MenuSubTrigger = reactExports.forwardRef(
             }
           })
         ),
-        onPointerLeave: composeEventHandlers$3(
+        onPointerLeave: composeEventHandlers$4(
           props.onPointerLeave,
           whenMouse((event) => {
             clearOpenTimer();
@@ -15186,7 +15246,7 @@ var MenuSubTrigger = reactExports.forwardRef(
             }
           })
         ),
-        onKeyDown: composeEventHandlers$3(props.onKeyDown, (event) => {
+        onKeyDown: composeEventHandlers$4(props.onKeyDown, (event) => {
           const isTypingAhead = contentContext.searchRef.current !== "";
           if (props.disabled || isTypingAhead && event.key === " ") return;
           if (SUB_OPEN_KEYS[rootContext.dir].includes(event.key)) {
@@ -15209,8 +15269,8 @@ var MenuSubContent = reactExports.forwardRef(
     const rootContext = useMenuRootContext(CONTENT_NAME$3, props.__scopeMenu);
     const subContext = useMenuSubContext(SUB_CONTENT_NAME$1, props.__scopeMenu);
     const ref = reactExports.useRef(null);
-    const composedRefs = useComposedRefs$3(forwardedRef, ref);
-    return /* @__PURE__ */ jsxRuntimeExports.jsx(Collection$1.Provider, { scope: props.__scopeMenu, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Presence$2, { present: forceMount || context.open, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Collection$1.Slot, { scope: props.__scopeMenu, children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+    const composedRefs = useComposedRefs$4(forwardedRef, ref);
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(Collection$1.Provider, { scope: props.__scopeMenu, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Presence$3, { present: forceMount || context.open, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Collection$1.Slot, { scope: props.__scopeMenu, children: /* @__PURE__ */ jsxRuntimeExports.jsx(
       MenuContentImpl,
       {
         id: subContext.contentId,
@@ -15227,14 +15287,14 @@ var MenuSubContent = reactExports.forwardRef(
           event.preventDefault();
         },
         onCloseAutoFocus: (event) => event.preventDefault(),
-        onFocusOutside: composeEventHandlers$3(props.onFocusOutside, (event) => {
+        onFocusOutside: composeEventHandlers$4(props.onFocusOutside, (event) => {
           if (event.target !== subContext.trigger) context.onOpenChange(false);
         }),
-        onEscapeKeyDown: composeEventHandlers$3(props.onEscapeKeyDown, (event) => {
+        onEscapeKeyDown: composeEventHandlers$4(props.onEscapeKeyDown, (event) => {
           rootContext.onClose();
           event.preventDefault();
         }),
-        onKeyDown: composeEventHandlers$3(props.onKeyDown, (event) => {
+        onKeyDown: composeEventHandlers$4(props.onKeyDown, (event) => {
           const isKeyDownInside = event.currentTarget.contains(event.target);
           const isCloseKey = SUB_CLOSE_KEYS[rootContext.dir].includes(event.key);
           if (isKeyDownInside && isCloseKey) {
@@ -15307,9 +15367,9 @@ var Portal$3 = MenuPortal;
 var Content2$2 = MenuContent;
 var Group = MenuGroup;
 var Label = MenuLabel;
-var Item2$1 = MenuItem;
+var Item2$2 = MenuItem;
 var CheckboxItem = MenuCheckboxItem;
-var RadioGroup = MenuRadioGroup;
+var RadioGroup$2 = MenuRadioGroup;
 var RadioItem = MenuRadioItem;
 var ItemIndicator = MenuItemIndicator;
 var Separator = MenuSeparator;
@@ -15364,7 +15424,7 @@ var DropdownMenuTrigger$1 = reactExports.forwardRef(
     const context = useDropdownMenuContext(TRIGGER_NAME$2, __scopeDropdownMenu);
     const menuScope = useMenuScope(__scopeDropdownMenu);
     return /* @__PURE__ */ jsxRuntimeExports.jsx(Anchor2, { asChild: true, ...menuScope, children: /* @__PURE__ */ jsxRuntimeExports.jsx(
-      Primitive$6.button,
+      Primitive$7.button,
       {
         type: "button",
         id: context.triggerId,
@@ -15375,14 +15435,14 @@ var DropdownMenuTrigger$1 = reactExports.forwardRef(
         "data-disabled": disabled ? "" : void 0,
         disabled,
         ...triggerProps,
-        ref: composeRefs$7(forwardedRef, context.triggerRef),
-        onPointerDown: composeEventHandlers$4(props.onPointerDown, (event) => {
+        ref: composeRefs$8(forwardedRef, context.triggerRef),
+        onPointerDown: composeEventHandlers$5(props.onPointerDown, (event) => {
           if (!disabled && event.button === 0 && event.ctrlKey === false) {
             context.onOpenToggle();
             if (!context.open) event.preventDefault();
           }
         }),
-        onKeyDown: composeEventHandlers$4(props.onKeyDown, (event) => {
+        onKeyDown: composeEventHandlers$5(props.onKeyDown, (event) => {
           if (disabled) return;
           if (["Enter", " "].includes(event.key)) context.onOpenToggle();
           if (event.key === "ArrowDown") context.onOpenChange(true);
@@ -15415,12 +15475,12 @@ var DropdownMenuContent$1 = reactExports.forwardRef(
         ...menuScope,
         ...contentProps,
         ref: forwardedRef,
-        onCloseAutoFocus: composeEventHandlers$4(props.onCloseAutoFocus, (event) => {
+        onCloseAutoFocus: composeEventHandlers$5(props.onCloseAutoFocus, (event) => {
           if (!hasInteractedOutsideRef.current) context.triggerRef.current?.focus();
           hasInteractedOutsideRef.current = false;
           event.preventDefault();
         }),
-        onInteractOutside: composeEventHandlers$4(props.onInteractOutside, (event) => {
+        onInteractOutside: composeEventHandlers$5(props.onInteractOutside, (event) => {
           const originalEvent = event.detail.originalEvent;
           const ctrlLeftClick = originalEvent.button === 0 && originalEvent.ctrlKey === true;
           const isRightClick = originalEvent.button === 2 || ctrlLeftClick;
@@ -15460,15 +15520,15 @@ var DropdownMenuLabel$1 = reactExports.forwardRef(
   }
 );
 DropdownMenuLabel$1.displayName = LABEL_NAME;
-var ITEM_NAME = "DropdownMenuItem";
+var ITEM_NAME$1 = "DropdownMenuItem";
 var DropdownMenuItem$1 = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeDropdownMenu, ...itemProps } = props;
     const menuScope = useMenuScope(__scopeDropdownMenu);
-    return /* @__PURE__ */ jsxRuntimeExports.jsx(Item2$1, { ...menuScope, ...itemProps, ref: forwardedRef });
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(Item2$2, { ...menuScope, ...itemProps, ref: forwardedRef });
   }
 );
-DropdownMenuItem$1.displayName = ITEM_NAME;
+DropdownMenuItem$1.displayName = ITEM_NAME$1;
 var CHECKBOX_ITEM_NAME = "DropdownMenuCheckboxItem";
 var DropdownMenuCheckboxItem$1 = reactExports.forwardRef((props, forwardedRef) => {
   const { __scopeDropdownMenu, ...checkboxItemProps } = props;
@@ -15476,13 +15536,13 @@ var DropdownMenuCheckboxItem$1 = reactExports.forwardRef((props, forwardedRef) =
   return /* @__PURE__ */ jsxRuntimeExports.jsx(CheckboxItem, { ...menuScope, ...checkboxItemProps, ref: forwardedRef });
 });
 DropdownMenuCheckboxItem$1.displayName = CHECKBOX_ITEM_NAME;
-var RADIO_GROUP_NAME = "DropdownMenuRadioGroup";
+var RADIO_GROUP_NAME$1 = "DropdownMenuRadioGroup";
 var DropdownMenuRadioGroup = reactExports.forwardRef((props, forwardedRef) => {
   const { __scopeDropdownMenu, ...radioGroupProps } = props;
   const menuScope = useMenuScope(__scopeDropdownMenu);
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(RadioGroup, { ...menuScope, ...radioGroupProps, ref: forwardedRef });
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(RadioGroup$2, { ...menuScope, ...radioGroupProps, ref: forwardedRef });
 });
-DropdownMenuRadioGroup.displayName = RADIO_GROUP_NAME;
+DropdownMenuRadioGroup.displayName = RADIO_GROUP_NAME$1;
 var RADIO_ITEM_NAME = "DropdownMenuRadioItem";
 var DropdownMenuRadioItem$1 = reactExports.forwardRef((props, forwardedRef) => {
   const { __scopeDropdownMenu, ...radioItemProps } = props;
@@ -15490,13 +15550,13 @@ var DropdownMenuRadioItem$1 = reactExports.forwardRef((props, forwardedRef) => {
   return /* @__PURE__ */ jsxRuntimeExports.jsx(RadioItem, { ...menuScope, ...radioItemProps, ref: forwardedRef });
 });
 DropdownMenuRadioItem$1.displayName = RADIO_ITEM_NAME;
-var INDICATOR_NAME = "DropdownMenuItemIndicator";
+var INDICATOR_NAME$1 = "DropdownMenuItemIndicator";
 var DropdownMenuItemIndicator = reactExports.forwardRef((props, forwardedRef) => {
   const { __scopeDropdownMenu, ...itemIndicatorProps } = props;
   const menuScope = useMenuScope(__scopeDropdownMenu);
   return /* @__PURE__ */ jsxRuntimeExports.jsx(ItemIndicator, { ...menuScope, ...itemIndicatorProps, ref: forwardedRef });
 });
-DropdownMenuItemIndicator.displayName = INDICATOR_NAME;
+DropdownMenuItemIndicator.displayName = INDICATOR_NAME$1;
 var SEPARATOR_NAME = "DropdownMenuSeparator";
 var DropdownMenuSeparator$1 = reactExports.forwardRef((props, forwardedRef) => {
   const { __scopeDropdownMenu, ...separatorProps } = props;
@@ -15545,12 +15605,12 @@ var DropdownMenuSubContent$1 = reactExports.forwardRef((props, forwardedRef) => 
   );
 });
 DropdownMenuSubContent$1.displayName = SUB_CONTENT_NAME;
-var Root2$2 = DropdownMenu$1;
+var Root2$3 = DropdownMenu$1;
 var Trigger$1 = DropdownMenuTrigger$1;
 var Portal2$1 = DropdownMenuPortal;
 var Content2$1 = DropdownMenuContent$1;
 var Label2 = DropdownMenuLabel$1;
-var Item2 = DropdownMenuItem$1;
+var Item2$1 = DropdownMenuItem$1;
 var CheckboxItem2 = DropdownMenuCheckboxItem$1;
 var RadioItem2 = DropdownMenuRadioItem$1;
 var ItemIndicator2 = DropdownMenuItemIndicator;
@@ -15558,14 +15618,14 @@ var Separator2 = DropdownMenuSeparator$1;
 var SubTrigger2 = DropdownMenuSubTrigger$1;
 var SubContent2 = DropdownMenuSubContent$1;
 
-const DropdownMenu = Root2$2;
+const DropdownMenu = Root2$3;
 const DropdownMenuTrigger = Trigger$1;
 const DropdownMenuSubTrigger = reactExports.forwardRef(({ className, inset, children, ...props }, ref) => /* @__PURE__ */ jsxRuntimeExports.jsxs(
   SubTrigger2,
   {
     ref,
     className: cn(
-      "flex cursor-default gap-2 select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none focus:bg-accent data-[state=open]:bg-accent [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+      "flex cursor-default gap-2 select-backend-none items-center rounded-sm px-2 py-1.5 text-sm outline-none focus:bg-accent data-[state=open]:bg-accent [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
       inset && "pl-8",
       className
     ),
@@ -15603,24 +15663,24 @@ const DropdownMenuContent = reactExports.forwardRef(({ className, sideOffset = 4
 ) }));
 DropdownMenuContent.displayName = Content2$1.displayName;
 const DropdownMenuItem = reactExports.forwardRef(({ className, inset, ...props }, ref) => /* @__PURE__ */ jsxRuntimeExports.jsx(
-  Item2,
+  Item2$1,
   {
     ref,
     className: cn(
-      "relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+      "relative flex cursor-default select-backend-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
       inset && "pl-8",
       className
     ),
     ...props
   }
 ));
-DropdownMenuItem.displayName = Item2.displayName;
+DropdownMenuItem.displayName = Item2$1.displayName;
 const DropdownMenuCheckboxItem = reactExports.forwardRef(({ className, children, checked, ...props }, ref) => /* @__PURE__ */ jsxRuntimeExports.jsxs(
   CheckboxItem2,
   {
     ref,
     className: cn(
-      "relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+      "relative flex cursor-default select-backend-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
       className
     ),
     checked,
@@ -15637,7 +15697,7 @@ const DropdownMenuRadioItem = reactExports.forwardRef(({ className, children, ..
   {
     ref,
     className: cn(
-      "relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+      "relative flex cursor-default select-backend-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
       className
     ),
     ...props,
@@ -15817,7 +15877,7 @@ function TopBar({
 }
 
 // packages/core/primitive/src/primitive.tsx
-function composeEventHandlers$1(originalEventHandler, ourEventHandler, { checkForDefaultPrevented = true } = {}) {
+function composeEventHandlers$2(originalEventHandler, ourEventHandler, { checkForDefaultPrevented = true } = {}) {
   return function handleEvent(event) {
     originalEventHandler?.(event);
     if (checkForDefaultPrevented === false || !event.defaultPrevented) {
@@ -15851,7 +15911,7 @@ var DismissableLayer$1 = reactExports.forwardRef(
     const [node, setNode] = reactExports.useState(null);
     const ownerDocument = node?.ownerDocument ?? globalThis?.document;
     const [, force] = reactExports.useState({});
-    const composedRefs = useComposedRefs$5(forwardedRef, (node2) => setNode(node2));
+    const composedRefs = useComposedRefs$6(forwardedRef, (node2) => setNode(node2));
     const layers = Array.from(context.layers);
     const [highestLayerWithOutsidePointerEventsDisabled] = [...context.layersWithOutsidePointerEventsDisabled].slice(-1);
     const highestLayerWithOutsidePointerEventsDisabledIndex = layers.indexOf(highestLayerWithOutsidePointerEventsDisabled);
@@ -15914,7 +15974,7 @@ var DismissableLayer$1 = reactExports.forwardRef(
       return () => document.removeEventListener(CONTEXT_UPDATE$1, handleUpdate);
     }, []);
     return /* @__PURE__ */ jsxRuntimeExports.jsx(
-      Primitive$7.div,
+      Primitive$8.div,
       {
         ...layerProps,
         ref: composedRefs,
@@ -15922,9 +15982,9 @@ var DismissableLayer$1 = reactExports.forwardRef(
           pointerEvents: isBodyPointerEventsDisabled ? isPointerEventsEnabled ? "auto" : "none" : void 0,
           ...props.style
         },
-        onFocusCapture: composeEventHandlers$1(props.onFocusCapture, focusOutside.onFocusCapture),
-        onBlurCapture: composeEventHandlers$1(props.onBlurCapture, focusOutside.onBlurCapture),
-        onPointerDownCapture: composeEventHandlers$1(
+        onFocusCapture: composeEventHandlers$2(props.onFocusCapture, focusOutside.onFocusCapture),
+        onBlurCapture: composeEventHandlers$2(props.onBlurCapture, focusOutside.onBlurCapture),
+        onPointerDownCapture: composeEventHandlers$2(
           props.onPointerDownCapture,
           pointerDownOutside.onPointerDownCapture
         )
@@ -15937,7 +15997,7 @@ var BRANCH_NAME$1 = "DismissableLayerBranch";
 var DismissableLayerBranch$1 = reactExports.forwardRef((props, forwardedRef) => {
   const context = reactExports.useContext(DismissableLayerContext$1);
   const ref = reactExports.useRef(null);
-  const composedRefs = useComposedRefs$5(forwardedRef, ref);
+  const composedRefs = useComposedRefs$6(forwardedRef, ref);
   reactExports.useEffect(() => {
     const node = ref.current;
     if (node) {
@@ -15947,7 +16007,7 @@ var DismissableLayerBranch$1 = reactExports.forwardRef((props, forwardedRef) => 
       };
     }
   }, [context.branches]);
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(Primitive$7.div, { ...props, ref: composedRefs });
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(Primitive$8.div, { ...props, ref: composedRefs });
 });
 DismissableLayerBranch$1.displayName = BRANCH_NAME$1;
 function usePointerDownOutside$1(onPointerDownOutside, ownerDocument = globalThis?.document) {
@@ -16044,7 +16104,7 @@ var FocusScope = reactExports.forwardRef((props, forwardedRef) => {
   const onMountAutoFocus = useCallbackRef$1(onMountAutoFocusProp);
   const onUnmountAutoFocus = useCallbackRef$1(onUnmountAutoFocusProp);
   const lastFocusedElementRef = reactExports.useRef(null);
-  const composedRefs = useComposedRefs$5(forwardedRef, (node) => setContainer(node));
+  const composedRefs = useComposedRefs$6(forwardedRef, (node) => setContainer(node));
   const focusScope = reactExports.useRef({
     paused: false,
     pause() {
@@ -16145,7 +16205,7 @@ var FocusScope = reactExports.forwardRef((props, forwardedRef) => {
     },
     [loop, trapped, focusScope.paused]
   );
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(Primitive$7.div, { tabIndex: -1, ...scopeProps, ref: composedRefs, onKeyDown: handleKeyDown });
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(Primitive$8.div, { tabIndex: -1, ...scopeProps, ref: composedRefs, onKeyDown: handleKeyDown });
 });
 FocusScope.displayName = FOCUS_SCOPE_NAME;
 function focusFirst$1(candidates, { select = false } = {}) {
@@ -16234,11 +16294,11 @@ var Portal$2 = reactExports.forwardRef((props, forwardedRef) => {
   const [mounted, setMounted] = reactExports.useState(false);
   useLayoutEffect2(() => setMounted(true), []);
   const container = containerProp || mounted && globalThis?.document?.body;
-  return container ? ReactDOM.createPortal(/* @__PURE__ */ jsxRuntimeExports.jsx(Primitive$7.div, { ...portalProps, ref: forwardedRef }), container) : null;
+  return container ? ReactDOM.createPortal(/* @__PURE__ */ jsxRuntimeExports.jsx(Primitive$8.div, { ...portalProps, ref: forwardedRef }), container) : null;
 });
 Portal$2.displayName = PORTAL_NAME$3;
 
-function useStateMachine$1(initialState, machine) {
+function useStateMachine$2(initialState, machine) {
   return reactExports.useReducer((state, event) => {
     const nextState = machine[state][event];
     return nextState ?? state;
@@ -16246,22 +16306,22 @@ function useStateMachine$1(initialState, machine) {
 }
 
 // packages/react/presence/src/Presence.tsx
-var Presence$1 = (props) => {
+var Presence$2 = (props) => {
   const { present, children } = props;
-  const presence = usePresence$1(present);
+  const presence = usePresence$2(present);
   const child = typeof children === "function" ? children({ present: presence.isPresent }) : reactExports.Children.only(children);
-  const ref = useComposedRefs$5(presence.ref, getElementRef$3(child));
+  const ref = useComposedRefs$6(presence.ref, getElementRef$5(child));
   const forceMount = typeof children === "function";
   return forceMount || presence.isPresent ? reactExports.cloneElement(child, { ref }) : null;
 };
-Presence$1.displayName = "Presence";
-function usePresence$1(present) {
+Presence$2.displayName = "Presence";
+function usePresence$2(present) {
   const [node, setNode] = reactExports.useState();
   const stylesRef = reactExports.useRef({});
   const prevPresentRef = reactExports.useRef(present);
   const prevAnimationNameRef = reactExports.useRef("none");
   const initialState = present ? "mounted" : "unmounted";
-  const [state, send] = useStateMachine$1(initialState, {
+  const [state, send] = useStateMachine$2(initialState, {
     mounted: {
       UNMOUNT: "unmounted",
       ANIMATION_OUT: "unmountSuspended"
@@ -16275,7 +16335,7 @@ function usePresence$1(present) {
     }
   });
   reactExports.useEffect(() => {
-    const currentAnimationName = getAnimationName$1(stylesRef.current);
+    const currentAnimationName = getAnimationName$2(stylesRef.current);
     prevAnimationNameRef.current = state === "mounted" ? currentAnimationName : "none";
   }, [state]);
   useLayoutEffect2(() => {
@@ -16284,7 +16344,7 @@ function usePresence$1(present) {
     const hasPresentChanged = wasPresent !== present;
     if (hasPresentChanged) {
       const prevAnimationName = prevAnimationNameRef.current;
-      const currentAnimationName = getAnimationName$1(styles);
+      const currentAnimationName = getAnimationName$2(styles);
       if (present) {
         send("MOUNT");
       } else if (currentAnimationName === "none" || styles?.display === "none") {
@@ -16305,7 +16365,7 @@ function usePresence$1(present) {
       let timeoutId;
       const ownerWindow = node.ownerDocument.defaultView ?? window;
       const handleAnimationEnd = (event) => {
-        const currentAnimationName = getAnimationName$1(stylesRef.current);
+        const currentAnimationName = getAnimationName$2(stylesRef.current);
         const isCurrentAnimation = currentAnimationName.includes(event.animationName);
         if (event.target === node && isCurrentAnimation) {
           send("ANIMATION_END");
@@ -16322,7 +16382,7 @@ function usePresence$1(present) {
       };
       const handleAnimationStart = (event) => {
         if (event.target === node) {
-          prevAnimationNameRef.current = getAnimationName$1(stylesRef.current);
+          prevAnimationNameRef.current = getAnimationName$2(stylesRef.current);
         }
       };
       node.addEventListener("animationstart", handleAnimationStart);
@@ -16346,10 +16406,10 @@ function usePresence$1(present) {
     }, [])
   };
 }
-function getAnimationName$1(styles) {
+function getAnimationName$2(styles) {
   return styles?.animationName || "none";
 }
-function getElementRef$3(element) {
+function getElementRef$5(element) {
   let getter = Object.getOwnPropertyDescriptor(element.props, "ref")?.get;
   let mayWarn = getter && "isReactWarning" in getter && getter.isReactWarning;
   if (mayWarn) {
@@ -16723,18 +16783,18 @@ var DialogTrigger = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeDialog, ...triggerProps } = props;
     const context = useDialogContext(TRIGGER_NAME$1, __scopeDialog);
-    const composedTriggerRef = useComposedRefs$5(forwardedRef, context.triggerRef);
+    const composedTriggerRef = useComposedRefs$6(forwardedRef, context.triggerRef);
     return /* @__PURE__ */ jsxRuntimeExports.jsx(
-      Primitive$7.button,
+      Primitive$8.button,
       {
         type: "button",
         "aria-haspopup": "dialog",
         "aria-expanded": context.open,
         "aria-controls": context.contentId,
-        "data-state": getState(context.open),
+        "data-state": getState$1(context.open),
         ...triggerProps,
         ref: composedTriggerRef,
-        onClick: composeEventHandlers$1(props.onClick, context.onOpenToggle)
+        onClick: composeEventHandlers$2(props.onClick, context.onOpenToggle)
       }
     );
   }
@@ -16747,7 +16807,7 @@ var [PortalProvider, usePortalContext] = createDialogContext(PORTAL_NAME$2, {
 var DialogPortal = (props) => {
   const { __scopeDialog, forceMount, children, container } = props;
   const context = useDialogContext(PORTAL_NAME$2, __scopeDialog);
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(PortalProvider, { scope: __scopeDialog, forceMount, children: reactExports.Children.map(children, (child) => /* @__PURE__ */ jsxRuntimeExports.jsx(Presence$1, { present: forceMount || context.open, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Portal$2, { asChild: true, container, children: child }) })) });
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(PortalProvider, { scope: __scopeDialog, forceMount, children: reactExports.Children.map(children, (child) => /* @__PURE__ */ jsxRuntimeExports.jsx(Presence$2, { present: forceMount || context.open, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Portal$2, { asChild: true, container, children: child }) })) });
 };
 DialogPortal.displayName = PORTAL_NAME$2;
 var OVERLAY_NAME$1 = "DialogOverlay";
@@ -16756,7 +16816,7 @@ var DialogOverlay = reactExports.forwardRef(
     const portalContext = usePortalContext(OVERLAY_NAME$1, props.__scopeDialog);
     const { forceMount = portalContext.forceMount, ...overlayProps } = props;
     const context = useDialogContext(OVERLAY_NAME$1, props.__scopeDialog);
-    return context.modal ? /* @__PURE__ */ jsxRuntimeExports.jsx(Presence$1, { present: forceMount || context.open, children: /* @__PURE__ */ jsxRuntimeExports.jsx(DialogOverlayImpl, { ...overlayProps, ref: forwardedRef }) }) : null;
+    return context.modal ? /* @__PURE__ */ jsxRuntimeExports.jsx(Presence$2, { present: forceMount || context.open, children: /* @__PURE__ */ jsxRuntimeExports.jsx(DialogOverlayImpl, { ...overlayProps, ref: forwardedRef }) }) : null;
   }
 );
 DialogOverlay.displayName = OVERLAY_NAME$1;
@@ -16767,10 +16827,10 @@ var DialogOverlayImpl = reactExports.forwardRef(
     return (
       // Make sure `Content` is scrollable even when it doesn't live inside `RemoveScroll`
       // ie. when `Overlay` and `Content` are siblings
-      /* @__PURE__ */ jsxRuntimeExports.jsx(ReactRemoveScroll, { as: Slot$8, allowPinchZoom: true, shards: [context.contentRef], children: /* @__PURE__ */ jsxRuntimeExports.jsx(
-        Primitive$7.div,
+      /* @__PURE__ */ jsxRuntimeExports.jsx(ReactRemoveScroll, { as: Slot$9, allowPinchZoom: true, shards: [context.contentRef], children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+        Primitive$8.div,
         {
-          "data-state": getState(context.open),
+          "data-state": getState$1(context.open),
           ...overlayProps,
           ref: forwardedRef,
           style: { pointerEvents: "auto", ...overlayProps.style }
@@ -16785,7 +16845,7 @@ var DialogContent = reactExports.forwardRef(
     const portalContext = usePortalContext(CONTENT_NAME$1, props.__scopeDialog);
     const { forceMount = portalContext.forceMount, ...contentProps } = props;
     const context = useDialogContext(CONTENT_NAME$1, props.__scopeDialog);
-    return /* @__PURE__ */ jsxRuntimeExports.jsx(Presence$1, { present: forceMount || context.open, children: context.modal ? /* @__PURE__ */ jsxRuntimeExports.jsx(DialogContentModal, { ...contentProps, ref: forwardedRef }) : /* @__PURE__ */ jsxRuntimeExports.jsx(DialogContentNonModal, { ...contentProps, ref: forwardedRef }) });
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(Presence$2, { present: forceMount || context.open, children: context.modal ? /* @__PURE__ */ jsxRuntimeExports.jsx(DialogContentModal, { ...contentProps, ref: forwardedRef }) : /* @__PURE__ */ jsxRuntimeExports.jsx(DialogContentNonModal, { ...contentProps, ref: forwardedRef }) });
   }
 );
 DialogContent.displayName = CONTENT_NAME$1;
@@ -16793,7 +16853,7 @@ var DialogContentModal = reactExports.forwardRef(
   (props, forwardedRef) => {
     const context = useDialogContext(CONTENT_NAME$1, props.__scopeDialog);
     const contentRef = reactExports.useRef(null);
-    const composedRefs = useComposedRefs$5(forwardedRef, context.contentRef, contentRef);
+    const composedRefs = useComposedRefs$6(forwardedRef, context.contentRef, contentRef);
     reactExports.useEffect(() => {
       const content = contentRef.current;
       if (content) return hideOthers(content);
@@ -16805,17 +16865,17 @@ var DialogContentModal = reactExports.forwardRef(
         ref: composedRefs,
         trapFocus: context.open,
         disableOutsidePointerEvents: true,
-        onCloseAutoFocus: composeEventHandlers$1(props.onCloseAutoFocus, (event) => {
+        onCloseAutoFocus: composeEventHandlers$2(props.onCloseAutoFocus, (event) => {
           event.preventDefault();
           context.triggerRef.current?.focus();
         }),
-        onPointerDownOutside: composeEventHandlers$1(props.onPointerDownOutside, (event) => {
+        onPointerDownOutside: composeEventHandlers$2(props.onPointerDownOutside, (event) => {
           const originalEvent = event.detail.originalEvent;
           const ctrlLeftClick = originalEvent.button === 0 && originalEvent.ctrlKey === true;
           const isRightClick = originalEvent.button === 2 || ctrlLeftClick;
           if (isRightClick) event.preventDefault();
         }),
-        onFocusOutside: composeEventHandlers$1(
+        onFocusOutside: composeEventHandlers$2(
           props.onFocusOutside,
           (event) => event.preventDefault()
         )
@@ -16868,7 +16928,7 @@ var DialogContentImpl = reactExports.forwardRef(
     const { __scopeDialog, trapFocus, onOpenAutoFocus, onCloseAutoFocus, ...contentProps } = props;
     const context = useDialogContext(CONTENT_NAME$1, __scopeDialog);
     const contentRef = reactExports.useRef(null);
-    const composedRefs = useComposedRefs$5(forwardedRef, contentRef);
+    const composedRefs = useComposedRefs$6(forwardedRef, contentRef);
     useFocusGuards();
     return /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
       /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -16886,7 +16946,7 @@ var DialogContentImpl = reactExports.forwardRef(
               id: context.contentId,
               "aria-describedby": context.descriptionId,
               "aria-labelledby": context.titleId,
-              "data-state": getState(context.open),
+              "data-state": getState$1(context.open),
               ...contentProps,
               ref: composedRefs,
               onDismiss: () => context.onOpenChange(false)
@@ -16906,7 +16966,7 @@ var DialogTitle = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeDialog, ...titleProps } = props;
     const context = useDialogContext(TITLE_NAME$2, __scopeDialog);
-    return /* @__PURE__ */ jsxRuntimeExports.jsx(Primitive$7.h2, { id: context.titleId, ...titleProps, ref: forwardedRef });
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(Primitive$8.h2, { id: context.titleId, ...titleProps, ref: forwardedRef });
   }
 );
 DialogTitle.displayName = TITLE_NAME$2;
@@ -16915,7 +16975,7 @@ var DialogDescription = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeDialog, ...descriptionProps } = props;
     const context = useDialogContext(DESCRIPTION_NAME$2, __scopeDialog);
-    return /* @__PURE__ */ jsxRuntimeExports.jsx(Primitive$7.p, { id: context.descriptionId, ...descriptionProps, ref: forwardedRef });
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(Primitive$8.p, { id: context.descriptionId, ...descriptionProps, ref: forwardedRef });
   }
 );
 DialogDescription.displayName = DESCRIPTION_NAME$2;
@@ -16925,18 +16985,18 @@ var DialogClose = reactExports.forwardRef(
     const { __scopeDialog, ...closeProps } = props;
     const context = useDialogContext(CLOSE_NAME$1, __scopeDialog);
     return /* @__PURE__ */ jsxRuntimeExports.jsx(
-      Primitive$7.button,
+      Primitive$8.button,
       {
         type: "button",
         ...closeProps,
         ref: forwardedRef,
-        onClick: composeEventHandlers$1(props.onClick, () => context.onOpenChange(false))
+        onClick: composeEventHandlers$2(props.onClick, () => context.onOpenChange(false))
       }
     );
   }
 );
 DialogClose.displayName = CLOSE_NAME$1;
-function getState(open) {
+function getState$1(open) {
   return open ? "open" : "closed";
 }
 var TITLE_WARNING_NAME = "DialogTitleWarning";
@@ -17025,7 +17085,7 @@ var AlertDialogContent$1 = reactExports.forwardRef(
     const { __scopeAlertDialog, children, ...contentProps } = props;
     const dialogScope = useDialogScope(__scopeAlertDialog);
     const contentRef = reactExports.useRef(null);
-    const composedRefs = useComposedRefs$5(forwardedRef, contentRef);
+    const composedRefs = useComposedRefs$6(forwardedRef, contentRef);
     const cancelRef = reactExports.useRef(null);
     return /* @__PURE__ */ jsxRuntimeExports.jsx(
       WarningProvider,
@@ -17040,14 +17100,14 @@ var AlertDialogContent$1 = reactExports.forwardRef(
             ...dialogScope,
             ...contentProps,
             ref: composedRefs,
-            onOpenAutoFocus: composeEventHandlers$1(contentProps.onOpenAutoFocus, (event) => {
+            onOpenAutoFocus: composeEventHandlers$2(contentProps.onOpenAutoFocus, (event) => {
               event.preventDefault();
               cancelRef.current?.focus({ preventScroll: true });
             }),
             onPointerDownOutside: (event) => event.preventDefault(),
             onInteractOutside: (event) => event.preventDefault(),
             children: [
-              /* @__PURE__ */ jsxRuntimeExports.jsx(Slottable$8, { children }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(Slottable$9, { children }),
               /* @__PURE__ */ jsxRuntimeExports.jsx(DescriptionWarning, { contentRef })
             ]
           }
@@ -17088,7 +17148,7 @@ var AlertDialogCancel$1 = reactExports.forwardRef(
     const { __scopeAlertDialog, ...cancelProps } = props;
     const { cancelRef } = useAlertDialogContentContext(CANCEL_NAME, __scopeAlertDialog);
     const dialogScope = useDialogScope(__scopeAlertDialog);
-    const ref = useComposedRefs$5(forwardedRef, cancelRef);
+    const ref = useComposedRefs$6(forwardedRef, cancelRef);
     return /* @__PURE__ */ jsxRuntimeExports.jsx(Close$1, { ...dialogScope, ...cancelProps, ref });
   }
 );
@@ -17109,7 +17169,7 @@ For more information, see https://radix-ui.com/primitives/docs/components/alert-
   }, [MESSAGE, contentRef]);
   return null;
 };
-var Root2$1 = AlertDialog$1;
+var Root2$2 = AlertDialog$1;
 var Portal2 = AlertDialogPortal$1;
 var Overlay2 = AlertDialogOverlay$1;
 var Content2 = AlertDialogContent$1;
@@ -17118,7 +17178,7 @@ var Cancel = AlertDialogCancel$1;
 var Title2 = AlertDialogTitle$1;
 var Description2 = AlertDialogDescription$1;
 
-const AlertDialog = Root2$1;
+const AlertDialog = Root2$2;
 const AlertDialogPortal = Portal2;
 const AlertDialogOverlay = reactExports.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsxRuntimeExports.jsx(
   Overlay2,
@@ -17216,7 +17276,7 @@ const AlertDialogCancel = reactExports.forwardRef(({ className, ...props }, ref)
 ));
 AlertDialogCancel.displayName = Cancel.displayName;
 
-function CreateChatContent({ title, setTitle, create, cancel }) {
+function CreateChatContent({ title, setTitle, create, cancel, BackendSelector }) {
   const titleRef = reactExports.useRef(null);
   reactExports.useEffect(() => {
     const current = titleRef.current;
@@ -17245,6 +17305,7 @@ function CreateChatContent({ title, setTitle, create, cancel }) {
       /* @__PURE__ */ jsxRuntimeExports.jsx(AlertDialogDescription, { children: "Enter chat title and start chatting right away" })
     ] }),
     /* @__PURE__ */ jsxRuntimeExports.jsx(Input, { ref: titleRef, enterKeyHint: "done", placeholder: "Title", onChange: (e) => setTitle(e.target.value), autoFocus: true }),
+    /* @__PURE__ */ jsxRuntimeExports.jsx(BackendSelector, {}),
     /* @__PURE__ */ jsxRuntimeExports.jsxs(AlertDialogFooter, { children: [
       /* @__PURE__ */ jsxRuntimeExports.jsx(AlertDialogCancel, { onClick: cancel, children: "Cancel" }),
       /* @__PURE__ */ jsxRuntimeExports.jsx(AlertDialogAction, { onClick: create, children: "Create" })
@@ -17252,7 +17313,671 @@ function CreateChatContent({ title, setTitle, create, cancel }) {
   ] }) });
 }
 
-function CreateChat({ events, getTitle, setTitle, create, cancel }) {
+// packages/core/primitive/src/primitive.tsx
+function composeEventHandlers$1(originalEventHandler, ourEventHandler, { checkForDefaultPrevented = true } = {}) {
+  return function handleEvent(event) {
+    originalEventHandler?.(event);
+    if (checkForDefaultPrevented === false || !event.defaultPrevented) {
+      return ourEventHandler?.(event);
+    }
+  };
+}
+
+// packages/react/compose-refs/src/composeRefs.tsx
+function setRef$2(ref, value) {
+  if (typeof ref === "function") {
+    return ref(value);
+  } else if (ref !== null && ref !== void 0) {
+    ref.current = value;
+  }
+}
+function composeRefs$2(...refs) {
+  return (node) => {
+    let hasCleanup = false;
+    const cleanups = refs.map((ref) => {
+      const cleanup = setRef$2(ref, node);
+      if (!hasCleanup && typeof cleanup == "function") {
+        hasCleanup = true;
+      }
+      return cleanup;
+    });
+    if (hasCleanup) {
+      return () => {
+        for (let i = 0; i < cleanups.length; i++) {
+          const cleanup = cleanups[i];
+          if (typeof cleanup == "function") {
+            cleanup();
+          } else {
+            setRef$2(refs[i], null);
+          }
+        }
+      };
+    }
+  };
+}
+function useComposedRefs$1(...refs) {
+  return reactExports.useCallback(composeRefs$2(...refs), refs);
+}
+
+// packages/react/slot/src/Slot.tsx
+var Slot$2 = reactExports.forwardRef((props, forwardedRef) => {
+  const { children, ...slotProps } = props;
+  const childrenArray = reactExports.Children.toArray(children);
+  const slottable = childrenArray.find(isSlottable$2);
+  if (slottable) {
+    const newElement = slottable.props.children;
+    const newChildren = childrenArray.map((child) => {
+      if (child === slottable) {
+        if (reactExports.Children.count(newElement) > 1) return reactExports.Children.only(null);
+        return reactExports.isValidElement(newElement) ? newElement.props.children : null;
+      } else {
+        return child;
+      }
+    });
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(SlotClone$2, { ...slotProps, ref: forwardedRef, children: reactExports.isValidElement(newElement) ? reactExports.cloneElement(newElement, void 0, newChildren) : null });
+  }
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(SlotClone$2, { ...slotProps, ref: forwardedRef, children });
+});
+Slot$2.displayName = "Slot";
+var SlotClone$2 = reactExports.forwardRef((props, forwardedRef) => {
+  const { children, ...slotProps } = props;
+  if (reactExports.isValidElement(children)) {
+    const childrenRef = getElementRef$4(children);
+    return reactExports.cloneElement(children, {
+      ...mergeProps$2(slotProps, children.props),
+      // @ts-ignore
+      ref: forwardedRef ? composeRefs$2(forwardedRef, childrenRef) : childrenRef
+    });
+  }
+  return reactExports.Children.count(children) > 1 ? reactExports.Children.only(null) : null;
+});
+SlotClone$2.displayName = "SlotClone";
+var Slottable$2 = ({ children }) => {
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(jsxRuntimeExports.Fragment, { children });
+};
+function isSlottable$2(child) {
+  return reactExports.isValidElement(child) && child.type === Slottable$2;
+}
+function mergeProps$2(slotProps, childProps) {
+  const overrideProps = { ...childProps };
+  for (const propName in childProps) {
+    const slotPropValue = slotProps[propName];
+    const childPropValue = childProps[propName];
+    const isHandler = /^on[A-Z]/.test(propName);
+    if (isHandler) {
+      if (slotPropValue && childPropValue) {
+        overrideProps[propName] = (...args) => {
+          childPropValue(...args);
+          slotPropValue(...args);
+        };
+      } else if (slotPropValue) {
+        overrideProps[propName] = slotPropValue;
+      }
+    } else if (propName === "style") {
+      overrideProps[propName] = { ...slotPropValue, ...childPropValue };
+    } else if (propName === "className") {
+      overrideProps[propName] = [slotPropValue, childPropValue].filter(Boolean).join(" ");
+    }
+  }
+  return { ...slotProps, ...overrideProps };
+}
+function getElementRef$4(element) {
+  let getter = Object.getOwnPropertyDescriptor(element.props, "ref")?.get;
+  let mayWarn = getter && "isReactWarning" in getter && getter.isReactWarning;
+  if (mayWarn) {
+    return element.ref;
+  }
+  getter = Object.getOwnPropertyDescriptor(element, "ref")?.get;
+  mayWarn = getter && "isReactWarning" in getter && getter.isReactWarning;
+  if (mayWarn) {
+    return element.props.ref;
+  }
+  return element.props.ref || element.ref;
+}
+
+// packages/react/primitive/src/Primitive.tsx
+var NODES$2 = [
+  "a",
+  "button",
+  "div",
+  "form",
+  "h2",
+  "h3",
+  "img",
+  "input",
+  "label",
+  "li",
+  "nav",
+  "ol",
+  "p",
+  "span",
+  "svg",
+  "ul"
+];
+var Primitive$2 = NODES$2.reduce((primitive, node) => {
+  const Node = reactExports.forwardRef((props, forwardedRef) => {
+    const { asChild, ...primitiveProps } = props;
+    const Comp = asChild ? Slot$2 : node;
+    if (typeof window !== "undefined") {
+      window[Symbol.for("radix-ui")] = true;
+    }
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(Comp, { ...primitiveProps, ref: forwardedRef });
+  });
+  Node.displayName = `Primitive.${node}`;
+  return { ...primitive, [node]: Node };
+}, {});
+
+// packages/react/use-previous/src/usePrevious.tsx
+function usePrevious(value) {
+  const ref = reactExports.useRef({ value, previous: value });
+  return reactExports.useMemo(() => {
+    if (ref.current.value !== value) {
+      ref.current.previous = ref.current.value;
+      ref.current.value = value;
+    }
+    return ref.current.previous;
+  }, [value]);
+}
+
+function useStateMachine$1(initialState, machine) {
+  return reactExports.useReducer((state, event) => {
+    const nextState = machine[state][event];
+    return nextState ?? state;
+  }, initialState);
+}
+
+// packages/react/presence/src/Presence.tsx
+var Presence$1 = (props) => {
+  const { present, children } = props;
+  const presence = usePresence$1(present);
+  const child = typeof children === "function" ? children({ present: presence.isPresent }) : reactExports.Children.only(children);
+  const ref = useComposedRefs$1(presence.ref, getElementRef$3(child));
+  const forceMount = typeof children === "function";
+  return forceMount || presence.isPresent ? reactExports.cloneElement(child, { ref }) : null;
+};
+Presence$1.displayName = "Presence";
+function usePresence$1(present) {
+  const [node, setNode] = reactExports.useState();
+  const stylesRef = reactExports.useRef({});
+  const prevPresentRef = reactExports.useRef(present);
+  const prevAnimationNameRef = reactExports.useRef("none");
+  const initialState = present ? "mounted" : "unmounted";
+  const [state, send] = useStateMachine$1(initialState, {
+    mounted: {
+      UNMOUNT: "unmounted",
+      ANIMATION_OUT: "unmountSuspended"
+    },
+    unmountSuspended: {
+      MOUNT: "mounted",
+      ANIMATION_END: "unmounted"
+    },
+    unmounted: {
+      MOUNT: "mounted"
+    }
+  });
+  reactExports.useEffect(() => {
+    const currentAnimationName = getAnimationName$1(stylesRef.current);
+    prevAnimationNameRef.current = state === "mounted" ? currentAnimationName : "none";
+  }, [state]);
+  useLayoutEffect2(() => {
+    const styles = stylesRef.current;
+    const wasPresent = prevPresentRef.current;
+    const hasPresentChanged = wasPresent !== present;
+    if (hasPresentChanged) {
+      const prevAnimationName = prevAnimationNameRef.current;
+      const currentAnimationName = getAnimationName$1(styles);
+      if (present) {
+        send("MOUNT");
+      } else if (currentAnimationName === "none" || styles?.display === "none") {
+        send("UNMOUNT");
+      } else {
+        const isAnimating = prevAnimationName !== currentAnimationName;
+        if (wasPresent && isAnimating) {
+          send("ANIMATION_OUT");
+        } else {
+          send("UNMOUNT");
+        }
+      }
+      prevPresentRef.current = present;
+    }
+  }, [present, send]);
+  useLayoutEffect2(() => {
+    if (node) {
+      let timeoutId;
+      const ownerWindow = node.ownerDocument.defaultView ?? window;
+      const handleAnimationEnd = (event) => {
+        const currentAnimationName = getAnimationName$1(stylesRef.current);
+        const isCurrentAnimation = currentAnimationName.includes(event.animationName);
+        if (event.target === node && isCurrentAnimation) {
+          send("ANIMATION_END");
+          if (!prevPresentRef.current) {
+            const currentFillMode = node.style.animationFillMode;
+            node.style.animationFillMode = "forwards";
+            timeoutId = ownerWindow.setTimeout(() => {
+              if (node.style.animationFillMode === "forwards") {
+                node.style.animationFillMode = currentFillMode;
+              }
+            });
+          }
+        }
+      };
+      const handleAnimationStart = (event) => {
+        if (event.target === node) {
+          prevAnimationNameRef.current = getAnimationName$1(stylesRef.current);
+        }
+      };
+      node.addEventListener("animationstart", handleAnimationStart);
+      node.addEventListener("animationcancel", handleAnimationEnd);
+      node.addEventListener("animationend", handleAnimationEnd);
+      return () => {
+        ownerWindow.clearTimeout(timeoutId);
+        node.removeEventListener("animationstart", handleAnimationStart);
+        node.removeEventListener("animationcancel", handleAnimationEnd);
+        node.removeEventListener("animationend", handleAnimationEnd);
+      };
+    } else {
+      send("ANIMATION_END");
+    }
+  }, [node, send]);
+  return {
+    isPresent: ["mounted", "unmountSuspended"].includes(state),
+    ref: reactExports.useCallback((node2) => {
+      if (node2) stylesRef.current = getComputedStyle(node2);
+      setNode(node2);
+    }, [])
+  };
+}
+function getAnimationName$1(styles) {
+  return styles?.animationName || "none";
+}
+function getElementRef$3(element) {
+  let getter = Object.getOwnPropertyDescriptor(element.props, "ref")?.get;
+  let mayWarn = getter && "isReactWarning" in getter && getter.isReactWarning;
+  if (mayWarn) {
+    return element.ref;
+  }
+  getter = Object.getOwnPropertyDescriptor(element, "ref")?.get;
+  mayWarn = getter && "isReactWarning" in getter && getter.isReactWarning;
+  if (mayWarn) {
+    return element.props.ref;
+  }
+  return element.props.ref || element.ref;
+}
+
+var RADIO_NAME = "Radio";
+var [createRadioContext, createRadioScope] = createContextScope(RADIO_NAME);
+var [RadioProvider, useRadioContext] = createRadioContext(RADIO_NAME);
+var Radio = reactExports.forwardRef(
+  (props, forwardedRef) => {
+    const {
+      __scopeRadio,
+      name,
+      checked = false,
+      required,
+      disabled,
+      value = "on",
+      onCheck,
+      form,
+      ...radioProps
+    } = props;
+    const [button, setButton] = reactExports.useState(null);
+    const composedRefs = useComposedRefs$1(forwardedRef, (node) => setButton(node));
+    const hasConsumerStoppedPropagationRef = reactExports.useRef(false);
+    const isFormControl = button ? form || !!button.closest("form") : true;
+    return /* @__PURE__ */ jsxRuntimeExports.jsxs(RadioProvider, { scope: __scopeRadio, checked, disabled, children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx(
+        Primitive$2.button,
+        {
+          type: "button",
+          role: "radio",
+          "aria-checked": checked,
+          "data-state": getState(checked),
+          "data-disabled": disabled ? "" : void 0,
+          disabled,
+          value,
+          ...radioProps,
+          ref: composedRefs,
+          onClick: composeEventHandlers$1(props.onClick, (event) => {
+            if (!checked) onCheck?.();
+            if (isFormControl) {
+              hasConsumerStoppedPropagationRef.current = event.isPropagationStopped();
+              if (!hasConsumerStoppedPropagationRef.current) event.stopPropagation();
+            }
+          })
+        }
+      ),
+      isFormControl && /* @__PURE__ */ jsxRuntimeExports.jsx(
+        BubbleInput,
+        {
+          control: button,
+          bubbles: !hasConsumerStoppedPropagationRef.current,
+          name,
+          value,
+          checked,
+          required,
+          disabled,
+          form,
+          style: { transform: "translateX(-100%)" }
+        }
+      )
+    ] });
+  }
+);
+Radio.displayName = RADIO_NAME;
+var INDICATOR_NAME = "RadioIndicator";
+var RadioIndicator = reactExports.forwardRef(
+  (props, forwardedRef) => {
+    const { __scopeRadio, forceMount, ...indicatorProps } = props;
+    const context = useRadioContext(INDICATOR_NAME, __scopeRadio);
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(Presence$1, { present: forceMount || context.checked, children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+      Primitive$2.span,
+      {
+        "data-state": getState(context.checked),
+        "data-disabled": context.disabled ? "" : void 0,
+        ...indicatorProps,
+        ref: forwardedRef
+      }
+    ) });
+  }
+);
+RadioIndicator.displayName = INDICATOR_NAME;
+var BubbleInput = (props) => {
+  const { control, checked, bubbles = true, ...inputProps } = props;
+  const ref = reactExports.useRef(null);
+  const prevChecked = usePrevious(checked);
+  const controlSize = useSize(control);
+  reactExports.useEffect(() => {
+    const input = ref.current;
+    const inputProto = window.HTMLInputElement.prototype;
+    const descriptor = Object.getOwnPropertyDescriptor(inputProto, "checked");
+    const setChecked = descriptor.set;
+    if (prevChecked !== checked && setChecked) {
+      const event = new Event("click", { bubbles });
+      setChecked.call(input, checked);
+      input.dispatchEvent(event);
+    }
+  }, [prevChecked, checked, bubbles]);
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(
+    "input",
+    {
+      type: "radio",
+      "aria-hidden": true,
+      defaultChecked: checked,
+      ...inputProps,
+      tabIndex: -1,
+      ref,
+      style: {
+        ...props.style,
+        ...controlSize,
+        position: "absolute",
+        pointerEvents: "none",
+        opacity: 0,
+        margin: 0
+      }
+    }
+  );
+};
+function getState(checked) {
+  return checked ? "checked" : "unchecked";
+}
+var ARROW_KEYS = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"];
+var RADIO_GROUP_NAME = "RadioGroup";
+var [createRadioGroupContext, createRadioGroupScope] = createContextScope(RADIO_GROUP_NAME, [
+  createRovingFocusGroupScope,
+  createRadioScope
+]);
+var useRovingFocusGroupScope = createRovingFocusGroupScope();
+var useRadioScope = createRadioScope();
+var [RadioGroupProvider, useRadioGroupContext] = createRadioGroupContext(RADIO_GROUP_NAME);
+var RadioGroup$1 = reactExports.forwardRef(
+  (props, forwardedRef) => {
+    const {
+      __scopeRadioGroup,
+      name,
+      defaultValue,
+      value: valueProp,
+      required = false,
+      disabled = false,
+      orientation,
+      dir,
+      loop = true,
+      onValueChange,
+      ...groupProps
+    } = props;
+    const rovingFocusGroupScope = useRovingFocusGroupScope(__scopeRadioGroup);
+    const direction = useDirection(dir);
+    const [value, setValue] = useControllableState({
+      prop: valueProp,
+      defaultProp: defaultValue,
+      onChange: onValueChange
+    });
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(
+      RadioGroupProvider,
+      {
+        scope: __scopeRadioGroup,
+        name,
+        required,
+        disabled,
+        value,
+        onValueChange: setValue,
+        children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+          Root$2,
+          {
+            asChild: true,
+            ...rovingFocusGroupScope,
+            orientation,
+            dir: direction,
+            loop,
+            children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+              Primitive$2.div,
+              {
+                role: "radiogroup",
+                "aria-required": required,
+                "aria-orientation": orientation,
+                "data-disabled": disabled ? "" : void 0,
+                dir: direction,
+                ...groupProps,
+                ref: forwardedRef
+              }
+            )
+          }
+        )
+      }
+    );
+  }
+);
+RadioGroup$1.displayName = RADIO_GROUP_NAME;
+var ITEM_NAME = "RadioGroupItem";
+var RadioGroupItem$1 = reactExports.forwardRef(
+  (props, forwardedRef) => {
+    const { __scopeRadioGroup, disabled, ...itemProps } = props;
+    const context = useRadioGroupContext(ITEM_NAME, __scopeRadioGroup);
+    const isDisabled = context.disabled || disabled;
+    const rovingFocusGroupScope = useRovingFocusGroupScope(__scopeRadioGroup);
+    const radioScope = useRadioScope(__scopeRadioGroup);
+    const ref = reactExports.useRef(null);
+    const composedRefs = useComposedRefs$1(forwardedRef, ref);
+    const checked = context.value === itemProps.value;
+    const isArrowKeyPressedRef = reactExports.useRef(false);
+    reactExports.useEffect(() => {
+      const handleKeyDown = (event) => {
+        if (ARROW_KEYS.includes(event.key)) {
+          isArrowKeyPressedRef.current = true;
+        }
+      };
+      const handleKeyUp = () => isArrowKeyPressedRef.current = false;
+      document.addEventListener("keydown", handleKeyDown);
+      document.addEventListener("keyup", handleKeyUp);
+      return () => {
+        document.removeEventListener("keydown", handleKeyDown);
+        document.removeEventListener("keyup", handleKeyUp);
+      };
+    }, []);
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(
+      Item,
+      {
+        asChild: true,
+        ...rovingFocusGroupScope,
+        focusable: !isDisabled,
+        active: checked,
+        children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+          Radio,
+          {
+            disabled: isDisabled,
+            required: context.required,
+            checked,
+            ...radioScope,
+            ...itemProps,
+            name: context.name,
+            ref: composedRefs,
+            onCheck: () => context.onValueChange(itemProps.value),
+            onKeyDown: composeEventHandlers$1((event) => {
+              if (event.key === "Enter") event.preventDefault();
+            }),
+            onFocus: composeEventHandlers$1(itemProps.onFocus, () => {
+              if (isArrowKeyPressedRef.current) ref.current?.click();
+            })
+          }
+        )
+      }
+    );
+  }
+);
+RadioGroupItem$1.displayName = ITEM_NAME;
+var INDICATOR_NAME2 = "RadioGroupIndicator";
+var RadioGroupIndicator = reactExports.forwardRef(
+  (props, forwardedRef) => {
+    const { __scopeRadioGroup, ...indicatorProps } = props;
+    const radioScope = useRadioScope(__scopeRadioGroup);
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(RadioIndicator, { ...radioScope, ...indicatorProps, ref: forwardedRef });
+  }
+);
+RadioGroupIndicator.displayName = INDICATOR_NAME2;
+var Root2$1 = RadioGroup$1;
+var Item2 = RadioGroupItem$1;
+var Indicator = RadioGroupIndicator;
+
+const RadioGroup = reactExports.forwardRef(({ className, ...props }, ref) => {
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(
+    Root2$1,
+    {
+      className: cn("grid gap-2", className),
+      ...props,
+      ref
+    }
+  );
+});
+RadioGroup.displayName = Root2$1.displayName;
+const RadioGroupItem = reactExports.forwardRef(({ className, ...props }, ref) => {
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(
+    Item2,
+    {
+      ref,
+      className: cn(
+        "aspect-square h-4 w-4 rounded-full border border-primary text-primary ring-offset-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+        className
+      ),
+      ...props,
+      children: /* @__PURE__ */ jsxRuntimeExports.jsx(Indicator, { className: "flex items-center justify-center", children: /* @__PURE__ */ jsxRuntimeExports.jsx(Circle, { className: "h-2.5 w-2.5 fill-current text-current" }) })
+    }
+  );
+});
+RadioGroupItem.displayName = Item2.displayName;
+
+function CustomSelect({ options, selectedOption, setOption }) {
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "relative w-full max-w-md", children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsx(RadioGroup, { defaultValue: selectedOption.type, onValueChange: setOption, children: options.map((option) => /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center space-x-2", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx(RadioGroupItem, { value: option.type, id: option.type }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx(Label$1, { htmlFor: option.type, children: option.display })
+    ] }, option.type)) }),
+    selectedOption.custom && CustomSelectOptionContent(selectedOption)
+  ] });
+}
+function CustomSelectOptionContent({ useValue }) {
+  const [value, updateValue] = useValue();
+  const inputRef = reactExports.useRef(null);
+  reactExports.useEffect(() => {
+    if (inputRef.current.value != value) {
+      inputRef.current.value = value;
+    }
+  }, [value]);
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mt-2", children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsx("label", { className: "block text-sm font-medium text-gray-700", children: "Enter custom backend:" }),
+    /* @__PURE__ */ jsxRuntimeExports.jsx(
+      Input,
+      {
+        ref: inputRef,
+        onChange: (event) => updateValue(event.target.value),
+        type: "text",
+        placeholder: "Server url",
+        className: "block w-full px-4 py-2 mt-1"
+      }
+    )
+  ] });
+}
+function BackendSelectorContent({ option, setOption }) {
+  const options = [
+    {
+      type: "go",
+      display: "Go Server"
+    },
+    {
+      type: "kt",
+      display: "Kotlin Server"
+    },
+    {
+      type: "custom",
+      display: "Custom"
+    }
+  ];
+  const customSelectedOption = reactExports.useMemo(() => {
+    const selectedOption = options.find(({ type }) => type === option.type);
+    switch (option.type) {
+      case "go":
+      case "kt":
+        return { custom: false, ...selectedOption };
+      case "custom":
+        return { custom: true, ...selectedOption, ...option };
+    }
+  }, [option.type]);
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(CustomSelect, { options, selectedOption: customSelectedOption, setOption });
+}
+
+function BackendSelector({ events, getOption, setOption }) {
+  const [option, updateOption] = reactExports.useState(() => createBackendOption(getOption()));
+  useEach(events, (event) => {
+    switch (event.type) {
+      case "option":
+        updateOption(createBackendOption(event.value));
+        break;
+    }
+  });
+  return BackendSelectorContent({ option, setOption });
+}
+function createBackendOption(logic) {
+  switch (logic.type) {
+    case "go":
+    case "kt":
+      return logic;
+    case "custom":
+      return {
+        type: "custom",
+        useValue() {
+          const [value, updateValue] = reactExports.useState(logic.getValue);
+          useEach(logic.events, (event) => {
+            switch (event.type) {
+              case "value":
+                updateValue(event.value);
+                break;
+            }
+          });
+          return [value, logic.setValue];
+        }
+      };
+  }
+}
+
+function CreateChat({ events, getTitle, setTitle, create, cancel, selector }) {
   const [, navigate] = useLocation();
   const [title, updateTitle] = reactExports.useState(getTitle);
   useEach(events, (event) => {
@@ -17265,7 +17990,13 @@ function CreateChat({ events, getTitle, setTitle, create, cancel }) {
         break;
     }
   });
-  return CreateChatContent({ title, setTitle, create, cancel });
+  return CreateChatContent({
+    title,
+    setTitle,
+    create,
+    cancel,
+    BackendSelector: () => BackendSelector(selector)
+  });
 }
 
 var qrCodeStyling = {exports: {}};
@@ -18989,7 +19720,7 @@ function Toaster() {
 function App({ logic }) {
   const main = reactExports.useMemo(() => logic.createMain(), [logic]);
   const [, navigate] = useLocation();
-  const [, importChat] = useRoute("/import/:title/:chatId/:chatKey/:nonce");
+  const [, importChat] = useRoute("/import/:title/:chatId/:chatKey/:nonce/:serverUrl");
   reactExports.useEffect(() => {
     if (!importChat) return;
     logic.importChat({
@@ -18998,7 +19729,8 @@ function App({ logic }) {
       initialKey: decodeURIComponent(importChat.chatKey),
       initialNonce: +decodeURIComponent(importChat.nonce),
       lastMessageDate: /* @__PURE__ */ new Date(),
-      unreadCount: 0
+      unreadCount: 0,
+      serverUrl: decodeURIComponent(importChat.serverUrl)
     });
   }, [importChat]);
   useEach(logic.events, (event) => {
@@ -19069,4 +19801,4 @@ const logic = await createLogic();
 createRoot(document.getElementById("root")).render(
   /* @__PURE__ */ jsxRuntimeExports.jsx(reactExports.StrictMode, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(Router, { hook: useHashLocation, children: /* @__PURE__ */ jsxRuntimeExports.jsx(App, { logic }) }) })
 );
-//# sourceMappingURL=724dd386284017b4aa725.js.map
+//# sourceMappingURL=589a944dc7a0e3e9b5b86.js.map
