@@ -5,6 +5,10 @@ import {randomAESKey} from "@/sdk/crypto/subtle-crypto.ts";
 import {WorkerStateHandle} from "@/modules/umbrella/logic/worker-state-handle.ts";
 import {NewStateHandle} from "@/modules/main/logic/new-state-handle.ts";
 import {ChatListStateHandle} from "@/modules/main/chat-list/logic/chat-list-state-handle.ts";
+import {
+  BackendSelectorLogic, BackendSelectorOptionLogic,
+  createBackendSelectorLogic
+} from "@/modules/main/new/select-backend/logic/backend-selector-logic.ts";
 
 export type NewEvent = {
   type: "title";
@@ -16,6 +20,8 @@ export type NewEvent = {
 
 export interface NewLogic {
   events: Observable<NewEvent>;
+
+  selector: BackendSelectorLogic;
 
   getTitle(): string;
   setTitle(value: string): void;
@@ -34,6 +40,8 @@ export function createNewLogic(
 ): NewLogic {
   const events: Observable<NewEvent> = createObservable();
 
+  const selector = createBackendSelectorLogic();
+
   let title = "";
   let blocked = false;
 
@@ -45,13 +53,17 @@ export function createNewLogic(
   return {
     events,
 
+    selector,
+
     getTitle: () => title, setTitle,
 
     create() {
       if (blocked) return;
+      if (title.trim().length == 0) return;
+      const option = selector.getOption();
+      if (option.type === "custom" && getServerUrl(option).trim().length == 0) return;
       blocked = true;
       launch(async () => {
-        if (title.trim().length == 0) return;
         const privateKey = await randomAESKey();
         const chatId = await randomAESKey();
         const chat = {
@@ -61,6 +73,7 @@ export function createNewLogic(
           initialNonce: 0,
           lastMessageDate: new Date(),
           unreadCount: 0,
+          serverUrl: getServerUrl(option)
         };
         await persistence.chat.put(chat);
         events.emit({ type: "openChat", chatId });
@@ -76,4 +89,15 @@ export function createNewLogic(
       newStateHandle.setShown(false);
     }
   };
+}
+
+function getServerUrl(option: BackendSelectorOptionLogic): string {
+  switch (option.type) {
+    case "go":
+      return "https://meetacy.app/seed-go"
+    case "kt":
+      return "https://meetacy.app/seed-kt"
+    case "custom":
+      return option.getValue();
+  }
 }

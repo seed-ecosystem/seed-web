@@ -1,10 +1,11 @@
 import {CreateChatContent} from "@/modules/main/new/component/create-chat-content.tsx";
 import {NewLogic} from "@/modules/main/new/logic/new-logic.ts";
-import {useState} from "react";
+import React, {useState} from "react";
 import {useLocation} from "wouter";
 import {useEach} from "@/coroutines/observable.ts";
+import {BackendSelector} from "@/modules/main/new/select-backend/component/backend-selector.tsx";
 
-export function CreateChat({events, getTitle, setTitle, create, cancel}: NewLogic) {
+export function CreateChat({events, getTitle, setTitle, create, cancel, selector}: NewLogic) {
   const [, navigate] = useLocation();
   const [title, updateTitle] = useState(getTitle);
 
@@ -19,5 +20,9 @@ export function CreateChat({events, getTitle, setTitle, create, cancel}: NewLogi
     }
   });
 
-  return CreateChatContent({ title, setTitle, create, cancel });
+  return CreateChatContent({
+    title, setTitle,
+    create, cancel,
+    BackendSelector: () => BackendSelector(selector)
+  });
 }

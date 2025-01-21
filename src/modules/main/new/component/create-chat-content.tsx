@@ -8,16 +8,19 @@ import {
   AlertDialogTitle
 } from "@/modules/core/components/alert-dialog.tsx";
 import {Input} from "@/modules/core/components/input.tsx";
-import {useEffect, useRef} from "react";
+import {ReactNode, useEffect, useRef} from "react";
 
 export type CreateChatContentProps = {
   title: string;
   setTitle: (value: string) => void;
+
   create(): void;
   cancel(): void;
+
+  BackendSelector(): ReactNode;
 }
 
-export function CreateChatContent({title, setTitle, create, cancel}: CreateChatContentProps) {
+export function CreateChatContent({title, setTitle, create, cancel, BackendSelector}: CreateChatContentProps) {
   const titleRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -52,6 +55,7 @@ export function CreateChatContent({title, setTitle, create, cancel}: CreateChatC
           <AlertDialogDescription>Enter chat title and start chatting right away</AlertDialogDescription>
         </AlertDialogHeader>
         <Input ref={titleRef} enterKeyHint="done" placeholder="Title" onChange={(e) => setTitle(e.target.value)} autoFocus />
+        <BackendSelector />
         <AlertDialogFooter>
           <AlertDialogCancel onClick={cancel}>Cancel</AlertDialogCancel>
           <AlertDialogAction onClick={create}>Create</AlertDialogAction>

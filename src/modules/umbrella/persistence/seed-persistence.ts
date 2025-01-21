@@ -20,7 +20,7 @@ export interface SeedPersistence {
 }
 
 export async function createPersistence(): Promise<SeedPersistence> {
-  const db = await openDB("persistence", 8, {
+  const db = await openDB("persistence", 9, {
     async upgrade(db, version, _, transaction) {
       // Full schema creation
       if (version == 0) {
@@ -57,6 +57,15 @@ export async function createPersistence(): Promise<SeedPersistence> {
         const cursor = await chatStore.openCursor();
         for await (const {value: chat} of cursor!) {
           chat.unreadCount = 0;
+          await chatStore.put(chat);
+        }
+      }
+      if (version <= 8) {
+        const chatStore = transaction.objectStore("chat");
+
+        const cursor = await chatStore.openCursor();
+        for await (const {value: chat} of cursor!) {
+          chat.serverUrl = "https://meetacy.app/seed-go";
           await chatStore.put(chat);
         }
       }

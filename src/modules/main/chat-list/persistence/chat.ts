@@ -5,4 +5,5 @@ export interface Chat {
   initialNonce: number;
   lastMessageDate: Date;
   unreadCount: number;
+  serverUrl: string;
 }
