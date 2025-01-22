@@ -1179,7 +1179,11 @@ function createSeedSocket(url) {
         if (!request)
           throw new Error("Got response without any request");
         console.log("<< ws: response", data);
-        request.resolve(data);
+        if (data.response) {
+          request.resolve(data.response);
+        } else {
+          request.resolve(data);
+        }
       }
       if (data.type == "event") {
         console.log("<< ws: message", data);
@@ -19801,4 +19805,4 @@ const logic = await createLogic();
 createRoot(document.getElementById("root")).render(
   /* @__PURE__ */ jsxRuntimeExports.jsx(reactExports.StrictMode, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(Router, { hook: useHashLocation, children: /* @__PURE__ */ jsxRuntimeExports.jsx(App, { logic }) }) })
 );
-//# sourceMappingURL=589a944dc7a0e3e9b5b86.js.map
+//# sourceMappingURL=b6570993d319ab28a8cbc.js.map
