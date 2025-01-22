@@ -1,8 +1,8 @@
 # Seed
 
-> Private Messaging Platform
+First Messaging Platform that does not identify you.
 
-First Messaging Platform that does not identify you
+Read more about how our protocol works [here](https://github.com/seed-ecosystem/seed-whitepaper).
 
 ## Private by Design
 

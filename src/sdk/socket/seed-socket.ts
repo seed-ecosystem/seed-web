@@ -106,7 +106,11 @@ export function createSeedSocket(url: string): SeedSocket {
         const request = queuedRequests.shift();
         if (!request) throw new Error("Got response without any request");
         console.log("<< ws: response", data);
-        request.resolve(data);
+        if (data.response) {
+          request.resolve(data.response);
+        } else {
+          request.resolve(data);
+        }
       }
 
       if (data.type == "event") {
