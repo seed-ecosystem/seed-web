@@ -1116,8 +1116,10 @@ function createSeedSocket(url) {
           resolve(data);
         }
       });
-      if (ws.readyState == WebSocket.OPEN) {
-        console.log(">> ws: execute", request);
+      if (ws.readyState === WebSocket.OPEN) {
+        if (request.type !== "ping") {
+          console.log(">> ws: execute", request);
+        }
         ws.send(JSON.stringify(request));
       }
     });
@@ -1139,14 +1141,13 @@ function createSeedSocket(url) {
       isConnected = true;
       events.emit({ type: "connected", value: isConnected });
       intervalId = window.setInterval(() => {
-        console.log("<< ws: ping");
-        queuedRequests.push({
-          request: { type: "ping" },
-          relaunch: false,
-          resolve() {
-          }
-        });
-        ws.send(JSON.stringify({ type: "ping" }));
+        console.log(">> ws: ping");
+        launch(() => execute({
+          request: {
+            type: "ping"
+          },
+          relaunch: false
+        }));
       }, PING_TIMEOUT);
       queuedRequests = queuedRequests.filter(({ relaunch }) => relaunch);
       for (const { request } of queuedRequests) {
@@ -1179,7 +1180,9 @@ function createSeedSocket(url) {
         const request = queuedRequests.shift();
         if (!request)
           throw new Error("Got response without any request");
-        console.log("<< ws: response", data);
+        if (request.request.type !== "ping") {
+          console.log("<< ws: response", data);
+        }
         if (data.response) {
           request.resolve(data.response);
         } else {
@@ -19827,4 +19830,4 @@ const logic = await createLogic();
 createRoot(document.getElementById("root")).render(
   /* @__PURE__ */ jsxRuntimeExports.jsx(reactExports.StrictMode, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(Router, { hook: useHashLocation, children: /* @__PURE__ */ jsxRuntimeExports.jsx(App, { logic }) }) })
 );
-//# sourceMappingURL=a1ba0d29b507959ebd7f9.js.map
+//# sourceMappingURL=ce2f51ee5625c7cb71c02.js.map
