@@ -2,6 +2,7 @@ import {SocketRequest} from "@/sdk/socket/socket-request.ts";
 import typia from "typia";
 import {SocketMessage} from "@/sdk/socket/socket-message.ts";
 import {createObservable, Observable} from "@/coroutines/observable.ts";
+import {launch} from "@/coroutines/launch.ts";
 
 export type SocketEvent = {
   type: "server";
@@ -43,8 +44,10 @@ export function createSeedSocket(url: string): SeedSocket {
           resolve(data as T);
         }
       });
-      if (ws.readyState == WebSocket.OPEN) {
-        console.log(">> ws: execute", request);
+      if (ws.readyState === WebSocket.OPEN) {
+        if (request.type !== "ping") {
+          console.log(">> ws: execute", request);
+        }
         ws.send(JSON.stringify(request));
       }
     })
@@ -72,13 +75,13 @@ export function createSeedSocket(url: string): SeedSocket {
 
       intervalId = window.setInterval(
         () => {
-          console.log("<< ws: ping");
-          queuedRequests.push({
-            request: { type: "ping" },
-            relaunch: false,
-            resolve(): void {}
-          });
-          ws.send(JSON.stringify({type: "ping"}));
+          console.log(">> ws: ping");
+          launch(() => execute({
+            request: {
+              type: "ping"
+            },
+            relaunch: false
+          }));
         },
         PING_TIMEOUT
       );
@@ -105,7 +108,9 @@ export function createSeedSocket(url: string): SeedSocket {
       if (data.type == "response") {
         const request = queuedRequests.shift();
         if (!request) throw new Error("Got response without any request");
-        console.log("<< ws: response", data);
+        if (request.request.type !== "ping") {
+          console.log("<< ws: response", data);
+        }
         if (data.response) {
           request.resolve(data.response);
         } else {
