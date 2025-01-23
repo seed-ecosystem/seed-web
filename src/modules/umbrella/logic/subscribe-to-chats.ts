@@ -23,7 +23,7 @@ export function subscribeToChats(
       } else {
         nonce = chat.initialNonce;
       }
-      launch(async () => worker.subscribe({ chatId: chat.id, nonce }));
+      launch(async () => worker.subscribe({ queueId: chat.id, nonce }));
     }
   });
 }

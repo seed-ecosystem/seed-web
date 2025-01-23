@@ -36,7 +36,7 @@ export async function createLogic(): Promise<Logic> {
   const chatListStateHandle = createChatListStateHandle({persistence, chatStateHandle});
 
   await pickRandomNickname({persistence});
-  subscribeToChats({persistence, worker});
+  subscribeToChats({persistence, worker: workerStateHandle});
 
   return {
     events,
@@ -47,7 +47,7 @@ export async function createLogic(): Promise<Logic> {
           events.emit({ type: "open", chatId: chat.id });
           return;
         }
-        await worker.subscribe({ chatId: chat.id, nonce: chat.initialNonce });
+        await worker.subscribe({ queueId: chat.id, nonce: chat.initialNonce });
         await persistence.chat.put(chat);
         chatListStateHandle.unshift(chat);
         events.emit({ type: "open", chatId: chat.id });
@@ -65,31 +65,31 @@ type CreateSeedWorkerOptions = {
 function createSeedWorker({client, persistence}: CreateSeedWorkerOptions): SeedWorker {
 
   const keyPersistence: KeyPersistence = {
-    async add({chatId, keys}: AddKeyOptions): Promise<void> {
+    async add({queueId, keys}: AddKeyOptions): Promise<void> {
       await persistence.key.add(keys.map(key => {
         return {
-          chatId,
+          chatId: queueId,
           nonce: key.nonce,
           key: key.key
         };
       }))
     },
 
-    async getInitialKey({chatId}): Promise<IndexedKey> {
-      const data = (await persistence.chat.get(chatId))!;
+    async getInitialKey({queueId}): Promise<IndexedKey> {
+      const data = (await persistence.chat.get(queueId))!;
       return {
         key: data.initialKey,
         nonce: data.initialNonce
       };
     },
 
-    async getKeyAt({chatId, nonce}): Promise<string | undefined> {
-      const data = await persistence.key.get({chatId, nonce});
+    async getKeyAt({queueId, nonce}): Promise<string | undefined> {
+      const data = await persistence.key.get({chatId: queueId, nonce});
       return data?.key;
     },
 
-    async getLastKey({chatId}): Promise<IndexedKey | undefined> {
-      const data = await persistence.key.lastKey({chatId});
+    async getLastKey({queueId}): Promise<IndexedKey | undefined> {
+      const data = await persistence.key.lastKey({chatId: queueId});
       if (!data) return;
       return {
         key: data.key,

@@ -38,7 +38,7 @@ export function createChatTopBarLogic(
   worker.events.subscribe(event => {
     switch (event.type) {
       case "waiting":
-        if (chatId != event.chatId) return;
+        if (chatId != event.queueId) return;
         events.emit({ type: "waiting", value: event.value });
         break;
     }

@@ -4,7 +4,7 @@ import {sanitizeContent} from "@/modules/umbrella/logic/sanitize-messages.ts";
 import {ChatListStateHandle} from "@/modules/main/chat-list/logic/chat-list-state-handle.ts";
 
 export type SendMessageOptions = {
-  chatId: string;
+  queueId: string;
   nickname: string;
   text: string;
   setText(value: string): void;
@@ -21,7 +21,7 @@ export type SendMessageOptions = {
 
 export function sendMessage(
   {
-    chatId, text, setText, nickname,
+    queueId, text, setText, nickname,
     getLocalNonce, setLocalNonce,
     getServerNonce, setServerNonce,
     getMessages, setMessages,
@@ -53,7 +53,7 @@ export function sendMessage(
 
   setMessages([message, ...getMessages()]);
 
-  chatListStateHandle.popUp(chatId, content, 0);
+  chatListStateHandle.popUp(queueId, content, 0);
 
   let messageSent: boolean;
 
@@ -62,7 +62,7 @@ export function sendMessage(
     editMessage({ ...message, loading: true });
   }, 300);
 
-  worker.sendMessage({ chatId, content }).then(serverNonce => {
+  worker.sendMessage({ queueId: queueId, content }).then(serverNonce => {
     messageSent = true;
     if (serverNonce != null) {
       editMessage({

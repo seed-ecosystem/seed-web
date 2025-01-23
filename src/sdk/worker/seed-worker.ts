@@ -11,24 +11,24 @@ import {IndexedKey} from "@/sdk/worker/indexed-key.ts";
 
 export type SeedWorkerEvent = {
   type: "new";
-  chatId: string;
+  queueId: string;
   messages: Message[];
 } | {
   type: "connected";
   value: boolean;
 } | {
   type: "waiting";
-  chatId: string;
+  queueId: string;
   value: boolean;
 };
 
 export type SendMessageOptions = {
-  chatId: string;
+  queueId: string;
   content: MessageContent;
 }
 
 export type SubscribeOptions = {
-  chatId: string;
+  queueId: string;
   nonce: number;
 }
 
@@ -52,39 +52,43 @@ export function createSeedWorker(
 ): SeedWorker {
   const events = createObservable<SeedWorkerEvent>();
   let accumulated: Record<string, (ClientEvent & { type: "new" })[]> = {};
-  let waitingChatIds: string[] = [];
-  let subscribedChatIds: string[] = [];
+  let waitingQueueIds: string[] = [];
+  let subscribedQueueIds: string[] = [];
+
+  let queueId;
 
   client.events.subscribeAsChannel().onEach(async (event) => {
     switch (event.type) {
       case "new":
-        if (waitingChatIds.includes(event.message.chatId)) {
-          const decrypted = await decryptNewEvents(persistence, event.message.chatId, [event]);
+        queueId = "chatId" in event.message ? event.message.chatId : event.message.queueId;
+        if (waitingQueueIds.includes(queueId)) {
+          const decrypted = await decryptNewEvents(persistence, queueId, [event]);
           events.emit(decrypted);
         } else {
-          if (!(event.message.chatId in accumulated)) {
-            accumulated[event.message.chatId] = [];
+          if (!(queueId in accumulated)) {
+            accumulated[queueId] = [];
           }
-          accumulated[event.message.chatId]!.push(event);
+          accumulated[queueId]!.push(event);
         }
         break;
       case "wait":
-        waitingChatIds.push(event.chatId);
-        if (event.chatId in accumulated) {
-          const decrypted = await decryptNewEvents(persistence, event.chatId, accumulated[event.chatId]);
-          delete accumulated[event.chatId];
+        queueId = "chatId" in event ? event.chatId : event.queueId;
+        waitingQueueIds.push(queueId);
+        if (queueId in accumulated) {
+          const decrypted = await decryptNewEvents(persistence, queueId, accumulated[queueId]);
+          delete accumulated[queueId];
           events.emit(decrypted);
         }
-        events.emit({ type: "waiting", chatId: event.chatId, value: true });
+        events.emit({ type: "waiting", queueId: queueId, value: true });
         break;
       case "connected":
         if (!event.value) {
-          for (const chatId of waitingChatIds) {
-            events.emit({type: "waiting", chatId, value: false});
+          for (const chatId of waitingQueueIds) {
+            events.emit({type: "waiting", queueId: chatId, value: false});
           }
           accumulated = {};
-          waitingChatIds = [];
-          subscribedChatIds = [];
+          waitingQueueIds = [];
+          subscribedQueueIds = [];
         }
         events.emit(event);
         break;
@@ -98,17 +102,17 @@ export function createSeedWorker(
       return client.isConnected();
     },
     isWaiting(chatId: string): boolean {
-      return waitingChatIds.includes(chatId);
+      return waitingQueueIds.includes(chatId);
     },
-    async sendMessage({ content, chatId }): Promise<number | undefined> {
+    async sendMessage({ content, queueId }): Promise<number | undefined> {
       for (let i = 0; i < SEND_MESSAGE_ATTEMPTS; i++) {
-        const {key, nonce} = await generateNewKey({chatId, persistence, cache: []});
+        const {key, nonce} = await generateNewKey({queueId, persistence, cache: []});
 
         const encrypted = await encryptContent({content, key});
 
         const status = await client.sendMessage({
           message: {
-            nonce, chatId,
+            nonce, queueId,
             ...encrypted
           }
         });
@@ -117,10 +121,10 @@ export function createSeedWorker(
       }
     },
 
-    async subscribe({ chatId, nonce }): Promise<void> {
-      if (subscribedChatIds.includes(chatId)) return;
-      subscribedChatIds.push(chatId);
-      return client.subscribe({chatId, nonce});
+    async subscribe({ queueId, nonce }): Promise<void> {
+      if (subscribedQueueIds.includes(queueId)) return;
+      subscribedQueueIds.push(queueId);
+      return client.subscribe({queueId: queueId, nonce});
     },
   };
 }
@@ -134,7 +138,7 @@ async function decryptNewEvents(
   const cache: IndexedKey[] = [];
 
   for (const event of events) {
-    const {chatId, nonce, signature, content, contentIV} = event.message;
+    const {nonce, signature, content, contentIV} = event.message;
     const key = await generateKeyAt({chatId, nonce, persistence, cache});
     const decrypted = await decryptContent({content, contentIV, signature, key});
 
@@ -146,6 +150,6 @@ async function decryptNewEvents(
     messages.push(message);
   }
 
-  await persistence.add({ chatId, keys: cache });
-  return { type: "new", chatId, messages };
+  await persistence.add({ queueId: chatId, keys: cache });
+  return { type: "new", queueId: chatId, messages };
 }

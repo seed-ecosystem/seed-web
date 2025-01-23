@@ -6,24 +6,24 @@ import {SeedPersistence} from "@/modules/umbrella/persistence/seed-persistence.t
 
 export type WorkStateHandleEvent = {
   type: "new";
-  chatId: string;
+  queueId: string;
   messages: Message[];
 } | {
   type: "connected";
   value: boolean;
 } | {
   type: "waiting";
-  chatId: string;
+  queueId: string;
   value: boolean;
 }
 
 export type SendMessageOptions = {
-  chatId: string;
+  queueId: string;
   content: MessageContent;
 }
 
 export type SubscribeOptions = {
-  chatId: string;
+  queueId: string;
   nonce: number;
 }
 
@@ -68,8 +68,8 @@ export function createWorkerStateHandle(
     events,
     isConnected: worker.isConnected,
     isWaiting: worker.isWaiting,
-    sendMessage: ({chatId, content}) =>
-      worker.sendMessage({chatId, content: sanitizeContent(content)}),
+    sendMessage: ({queueId, content}) =>
+      worker.sendMessage({queueId: queueId, content: sanitizeContent(content)}),
     subscribe: worker.subscribe
   };
 }

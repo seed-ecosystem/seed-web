@@ -115,7 +115,7 @@ export function createChatLogic(
     },
     sendMessage() {
       sendMessage({
-        chatId,
+        queueId: chatId,
         nickname: nicknameStateHandle.get(),
         text, setText,
         getLocalNonce: () => localNonce,

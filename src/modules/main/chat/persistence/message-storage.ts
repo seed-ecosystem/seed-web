@@ -30,6 +30,7 @@ export function createMessageStorage(db: IDBPDatabase): MessageStorage {
     },
 
     async add(messages: ChatMessage[]): Promise<void> {
+      console.log("SAVED!", messages);
       const transaction = db.transaction("message", "readwrite");
       await Promise.all([
         ...messages.map(message => transaction.store.put(message)),

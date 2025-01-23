@@ -11,7 +11,7 @@ export interface SendMessageOptions {
 }
 
 export interface SubscribeOptions {
-  chatId: string;
+  queueId: string;
   nonce: number;
 }
 
@@ -49,18 +49,24 @@ export function createSeedClient(
     },
 
     async sendMessage({message}): Promise<boolean> {
+      const chatId = "chatId" in message ? message.chatId : message.queueId;
       let request: SendMessageRequest = {
         type: "send",
-        message: message
+        message: {
+          ...message,
+          queueId: chatId,
+          chatId: chatId,
+        },
       };
       const response: SendMessageResponse = await socket.execute(request);
       return response.status;
     },
 
-    async subscribe({chatId, nonce}): Promise<void> {
+    async subscribe({queueId, nonce}): Promise<void> {
       let request: SubscribeRequest = {
         type: "subscribe",
-        chatId: chatId,
+        chatId: queueId,
+        queueId: queueId,
         nonce: nonce
       };
       return socket.execute(request);

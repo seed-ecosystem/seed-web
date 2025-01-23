@@ -77,7 +77,7 @@ export function createNewLogic(
         };
         await persistence.chat.put(chat);
         events.emit({ type: "openChat", chatId });
-        worker.subscribe({ chatId, nonce: 0 });
+        worker.subscribe({ queueId: chatId, nonce: 0 });
         chatListStateHandle.unshift(chat);
         newStateHandle.setShown(false);
       });

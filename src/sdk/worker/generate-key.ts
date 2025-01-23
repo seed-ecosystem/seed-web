@@ -4,15 +4,15 @@ import {KeyPersistence} from "@/sdk/worker/key-persistence.ts";
 import {randomAESKey} from "@/sdk/crypto/subtle-crypto.ts";
 
 export type GenerateNewKeyOptions = {
-  chatId: string;
+  queueId: string;
   persistence: KeyPersistence;
   cache: IndexedKey[];
 }
 
 export async function generateNewKey(
-  {chatId, persistence, cache}: GenerateNewKeyOptions
+  {queueId, persistence, cache}: GenerateNewKeyOptions
 ): Promise<IndexedKey> {
-  let last = await persistence.getLastKey({ chatId });
+  let last = await persistence.getLastKey({ queueId });
 
   if (cache.length > 0) {
     const cachedKey = cache[cache.length - 1];
@@ -28,7 +28,7 @@ export async function generateNewKey(
     newKey = await deriveNextKey({ key: last.key });
     newNonce = last.nonce + 1;
   } else {
-    const {key, nonce} = await persistence.getInitialKey({ chatId });
+    const {key, nonce} = await persistence.getInitialKey({ queueId: queueId });
     newKey = key;
     newNonce = nonce;
   }
@@ -47,12 +47,12 @@ export type GenerateKeyAtOptions = {
 }
 
 export async function generateKeyAt({chatId, nonce, persistence, cache}: GenerateKeyAtOptions): Promise<string> {
-  let existing = await persistence.getKeyAt({ chatId, nonce });
+  let existing = await persistence.getKeyAt({ queueId: chatId, nonce });
   if (existing) return existing;
   existing = cache.find(value => value.nonce == nonce)?.key;
   if (existing) return existing;
 
-  let {nonce: lastNonce, key: lastKey} = await generateNewKey({ chatId, persistence, cache });
+  let {nonce: lastNonce, key: lastKey} = await generateNewKey({ queueId: chatId, persistence, cache });
 
   if (lastNonce > nonce) {
     // TODO: some bug is hidden here. Sometimes it can't generate key when it should

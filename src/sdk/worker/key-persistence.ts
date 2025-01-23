@@ -1,21 +1,21 @@
 import {IndexedKey} from "@/sdk/worker/indexed-key.ts";
 
 export type AddKeyOptions = {
-  chatId: string;
+  queueId: string;
   keys: IndexedKey[];
 }
 
 export type GetKeyAt = {
-  chatId: string;
+  queueId: string;
   nonce: number;
 }
 
 export type GetLastKeyOptions = {
-  chatId: string;
+  queueId: string;
 }
 
 export type GetInitialKeyOptions = {
-  chatId: string;
+  queueId: string;
 }
 
 export interface KeyPersistence {

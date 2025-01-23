@@ -28,7 +28,7 @@ export function listenWorkerEvents(
   return worker.events.subscribe(event => {
     switch (event.type) {
       case "new":
-        if (event.chatId != chatId) return;
+        if (event.queueId != chatId) return;
 
         const messages: Message[] = [];
 
@@ -68,7 +68,7 @@ export function listenWorkerEvents(
         setMessages([...messages, ...getMessages()]);
         break;
       case "waiting":
-        if (event.chatId != chatId) break;
+        if (event.queueId != chatId) break;
         setUpdating(!event.value)
         break;
     }
