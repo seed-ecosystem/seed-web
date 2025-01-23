@@ -482,6 +482,7 @@ function createMessageStorage(db) {
       return cursor.value;
     },
     async add(messages) {
+      console.log("SAVED!", messages);
       const transaction = db.transaction("message", "readwrite");
       await Promise.all([
         ...messages.map((message) => transaction.store.put(message)),
@@ -1270,7 +1271,7 @@ function listenWorkerEvents({
   return worker.events.subscribe((event) => {
     switch (event.type) {
       case "new":
-        if (event.chatId != chatId) return;
+        if (event.queueId != chatId) return;
         const messages = [];
         for (let eventMessage of event.messages) {
           if (getServerNonce() >= eventMessage.nonce) {
@@ -1301,7 +1302,7 @@ function listenWorkerEvents({
         setMessages([...messages, ...getMessages()]);
         break;
       case "waiting":
-        if (event.chatId != chatId) break;
+        if (event.queueId != chatId) break;
         setUpdating(!event.value);
         break;
     }
@@ -1322,7 +1323,7 @@ function sanitizeContent(content) {
 }
 
 function sendMessage({
-  chatId,
+  queueId,
   text,
   setText,
   nickname,
@@ -1357,13 +1358,13 @@ function sendMessage({
     serverNonce: null
   };
   setMessages([message, ...getMessages()]);
-  chatListStateHandle.popUp(chatId, content, 0);
+  chatListStateHandle.popUp(queueId, content, 0);
   let messageSent;
   setTimeout(() => {
     if (messageSent) return;
     editMessage({ ...message, loading: true });
   }, 300);
-  worker.sendMessage({ chatId, content }).then((serverNonce) => {
+  worker.sendMessage({ queueId, content }).then((serverNonce) => {
     messageSent = true;
     if (serverNonce != null) {
       editMessage({
@@ -1493,7 +1494,7 @@ function createChatLogic({
     },
     sendMessage() {
       sendMessage({
-        chatId,
+        queueId: chatId,
         nickname: nicknameStateHandle.get(),
         text,
         setText,
@@ -1601,7 +1602,7 @@ function createChatTopBarLogic({ worker, chatStateHandle, chatId, title, shareSt
   worker.events.subscribe((event) => {
     switch (event.type) {
       case "waiting":
-        if (chatId != event.chatId) return;
+        if (chatId != event.queueId) return;
         events.emit({ type: "waiting", value: event.value });
         break;
     }
@@ -1815,7 +1816,7 @@ function createNewLogic({ persistence, worker, newStateHandle, chatListStateHand
         };
         await persistence.chat.put(chat);
         events.emit({ type: "openChat", chatId });
-        worker.subscribe({ chatId, nonce: 0 });
+        worker.subscribe({ queueId: chatId, nonce: 0 });
         chatListStateHandle.unshift(chat);
         newStateHandle.setShown(false);
       });
@@ -2064,21 +2065,33 @@ function createSeedClient({ socket }) {
         break;
       case "server":
         if (!(/* @__PURE__ */ (() => {
-          const $io0 = (input) => "new" === input.type && ("object" === typeof input.message && null !== input.message && $io1(input.message));
-          const $io1 = (input) => "string" === typeof input.chatId && "number" === typeof input.nonce && "string" === typeof input.signature && "string" === typeof input.content && "string" === typeof input.contentIV;
-          const $io2 = (input) => "wait" === input.type && "string" === typeof input.chatId;
-          const $io3 = (input) => "connected" === input.type && "boolean" === typeof input.value;
+          const $io0 = (input) => "new" === input.type && ("object" === typeof input.message && null !== input.message && $iu0(input.message));
+          const $io1 = (input) => "number" === typeof input.nonce && "string" === typeof input.signature && "string" === typeof input.content && "string" === typeof input.contentIV && "string" === typeof input.chatId;
+          const $io2 = (input) => "number" === typeof input.nonce && "string" === typeof input.signature && "string" === typeof input.content && "string" === typeof input.contentIV && "string" === typeof input.queueId;
+          const $io3 = (input) => "wait" === input.type && "string" === typeof input.chatId;
+          const $io4 = (input) => "wait" === input.type && "string" === typeof input.queueId;
+          const $io5 = (input) => "connected" === input.type && "boolean" === typeof input.value;
           const $iu0 = (input) => (() => {
-            if ("new" === input.type)
-              return $io0(input);
-            else if ("wait" === input.type)
+            if (void 0 !== input.chatId)
+              return $io1(input);
+            else if (void 0 !== input.queueId)
               return $io2(input);
-            else if ("connected" === input.type)
-              return $io3(input);
             else
               return false;
           })();
-          return (input) => "object" === typeof input && null !== input && $iu0(input);
+          const $iu1 = (input) => (() => {
+            if ("new" === input.type)
+              return $io0(input);
+            else if (void 0 !== input.chatId)
+              return $io3(input);
+            else if (void 0 !== input.queueId)
+              return $io4(input);
+            else if ("connected" === input.type)
+              return $io5(input);
+            else
+              return false;
+          })();
+          return (input) => "object" === typeof input && null !== input && $iu1(input);
         })())(event.value))
           break;
         events.emit(event.value);
@@ -2091,17 +2104,23 @@ function createSeedClient({ socket }) {
       return socket.isConnected();
     },
     async sendMessage({ message }) {
+      const chatId = "chatId" in message ? message.chatId : message.queueId;
       let request = {
         type: "send",
-        message
+        message: {
+          ...message,
+          queueId: chatId,
+          chatId
+        }
       };
       const response = await socket.execute(request);
       return response.status;
     },
-    async subscribe({ chatId, nonce }) {
+    async subscribe({ queueId, nonce }) {
       let request = {
         type: "subscribe",
-        chatId,
+        chatId: queueId,
+        queueId,
         nonce
       };
       return socket.execute(request);
@@ -2109,8 +2128,8 @@ function createSeedClient({ socket }) {
   };
 }
 
-async function generateNewKey({ chatId, persistence, cache }) {
-  let last = await persistence.getLastKey({ chatId });
+async function generateNewKey({ queueId, persistence, cache }) {
+  let last = await persistence.getLastKey({ queueId });
   if (cache.length > 0) {
     const cachedKey = cache[cache.length - 1];
     if (!last || last.nonce < cachedKey.nonce) {
@@ -2123,7 +2142,7 @@ async function generateNewKey({ chatId, persistence, cache }) {
     newKey = await deriveNextKey({ key: last.key });
     newNonce = last.nonce + 1;
   } else {
-    const { key, nonce } = await persistence.getInitialKey({ chatId });
+    const { key, nonce } = await persistence.getInitialKey({ queueId });
     newKey = key;
     newNonce = nonce;
   }
@@ -2133,11 +2152,11 @@ async function generateNewKey({ chatId, persistence, cache }) {
   };
 }
 async function generateKeyAt({ chatId, nonce, persistence, cache }) {
-  let existing = await persistence.getKeyAt({ chatId, nonce });
+  let existing = await persistence.getKeyAt({ queueId: chatId, nonce });
   if (existing) return existing;
   existing = cache.find((value) => value.nonce == nonce)?.key;
   if (existing) return existing;
-  let { nonce: lastNonce, key: lastKey } = await generateNewKey({ chatId, persistence, cache });
+  let { nonce: lastNonce, key: lastKey } = await generateNewKey({ queueId: chatId, persistence, cache });
   if (lastNonce > nonce) {
     console.error("Cannot generate key backwards: from " + lastNonce + " to " + nonce);
     return await randomAESKey();
@@ -2192,38 +2211,41 @@ const SEND_MESSAGE_ATTEMPTS = 20;
 function createSeedWorker$1({ client, persistence }) {
   const events = createObservable();
   let accumulated = {};
-  let waitingChatIds = [];
-  let subscribedChatIds = [];
+  let waitingQueueIds = [];
+  let subscribedQueueIds = [];
+  let queueId;
   client.events.subscribeAsChannel().onEach(async (event) => {
     switch (event.type) {
       case "new":
-        if (waitingChatIds.includes(event.message.chatId)) {
-          const decrypted = await decryptNewEvents(persistence, event.message.chatId, [event]);
+        queueId = "chatId" in event.message ? event.message.chatId : event.message.queueId;
+        if (waitingQueueIds.includes(queueId)) {
+          const decrypted = await decryptNewEvents(persistence, queueId, [event]);
           events.emit(decrypted);
         } else {
-          if (!(event.message.chatId in accumulated)) {
-            accumulated[event.message.chatId] = [];
+          if (!(queueId in accumulated)) {
+            accumulated[queueId] = [];
           }
-          accumulated[event.message.chatId].push(event);
+          accumulated[queueId].push(event);
         }
         break;
       case "wait":
-        waitingChatIds.push(event.chatId);
-        if (event.chatId in accumulated) {
-          const decrypted = await decryptNewEvents(persistence, event.chatId, accumulated[event.chatId]);
-          delete accumulated[event.chatId];
+        queueId = "chatId" in event ? event.chatId : event.queueId;
+        waitingQueueIds.push(queueId);
+        if (queueId in accumulated) {
+          const decrypted = await decryptNewEvents(persistence, queueId, accumulated[queueId]);
+          delete accumulated[queueId];
           events.emit(decrypted);
         }
-        events.emit({ type: "waiting", chatId: event.chatId, value: true });
+        events.emit({ type: "waiting", queueId, value: true });
         break;
       case "connected":
         if (!event.value) {
-          for (const chatId of waitingChatIds) {
-            events.emit({ type: "waiting", chatId, value: false });
+          for (const chatId of waitingQueueIds) {
+            events.emit({ type: "waiting", queueId: chatId, value: false });
           }
           accumulated = {};
-          waitingChatIds = [];
-          subscribedChatIds = [];
+          waitingQueueIds = [];
+          subscribedQueueIds = [];
         }
         events.emit(event);
         break;
@@ -2235,16 +2257,16 @@ function createSeedWorker$1({ client, persistence }) {
       return client.isConnected();
     },
     isWaiting(chatId) {
-      return waitingChatIds.includes(chatId);
+      return waitingQueueIds.includes(chatId);
     },
-    async sendMessage({ content, chatId }) {
+    async sendMessage({ content, queueId: queueId2 }) {
       for (let i = 0; i < SEND_MESSAGE_ATTEMPTS; i++) {
-        const { key, nonce } = await generateNewKey({ chatId, persistence, cache: [] });
+        const { key, nonce } = await generateNewKey({ queueId: queueId2, persistence, cache: [] });
         const encrypted = await encryptContent({ content, key });
         const status = await client.sendMessage({
           message: {
             nonce,
-            chatId,
+            queueId: queueId2,
             ...encrypted
           }
         });
@@ -2252,11 +2274,11 @@ function createSeedWorker$1({ client, persistence }) {
           return nonce;
       }
     },
-    async subscribe({ chatId, nonce }) {
-      if (subscribedChatIds.includes(chatId))
+    async subscribe({ queueId: queueId2, nonce }) {
+      if (subscribedQueueIds.includes(queueId2))
         return;
-      subscribedChatIds.push(chatId);
-      return client.subscribe({ chatId, nonce });
+      subscribedQueueIds.push(queueId2);
+      return client.subscribe({ queueId: queueId2, nonce });
     }
   };
 }
@@ -2264,12 +2286,12 @@ async function decryptNewEvents(persistence, chatId, events) {
   const messages = [];
   const cache = [];
   for (const event of events) {
-    const { chatId: chatId2, nonce, signature, content, contentIV } = event.message;
-    const key = await generateKeyAt({ chatId: chatId2, nonce, persistence, cache });
+    const { nonce, signature, content, contentIV } = event.message;
+    const key = await generateKeyAt({ chatId, nonce, persistence, cache });
     const decrypted = await decryptContent({ content, contentIV, signature, key });
     const message = {
       key,
-      chatId: chatId2,
+      chatId,
       nonce,
       content: (/* @__PURE__ */ (() => {
         const $io0 = (input) => "regular" === input.type && "string" === typeof input.title && "string" === typeof input.text;
@@ -2287,8 +2309,8 @@ async function decryptNewEvents(persistence, chatId, events) {
     };
     messages.push(message);
   }
-  await persistence.add({ chatId, keys: cache });
-  return { type: "new", chatId, messages };
+  await persistence.add({ queueId: chatId, keys: cache });
+  return { type: "new", queueId: chatId, messages };
 }
 
 function subscribeToChats({ persistence, worker }) {
@@ -2304,7 +2326,7 @@ function subscribeToChats({ persistence, worker }) {
       } else {
         nonce = chat.initialNonce;
       }
-      launch(async () => worker.subscribe({ chatId: chat.id, nonce }));
+      launch(async () => worker.subscribe({ queueId: chat.id, nonce }));
     }
   });
 }
@@ -2333,7 +2355,7 @@ function createWorkerStateHandle({ worker, persistence }) {
     events,
     isConnected: worker.isConnected,
     isWaiting: worker.isWaiting,
-    sendMessage: ({ chatId, content }) => worker.sendMessage({ chatId, content: sanitizeContent(content) }),
+    sendMessage: ({ queueId, content }) => worker.sendMessage({ queueId, content: sanitizeContent(content) }),
     subscribe: worker.subscribe
   };
 }
@@ -2462,7 +2484,7 @@ async function createLogic() {
   const chatStateHandle = createChatStateHandle();
   const chatListStateHandle = createChatListStateHandle({ persistence, chatStateHandle });
   await pickRandomNickname({ persistence });
-  subscribeToChats({ persistence, worker });
+  subscribeToChats({ persistence, worker: workerStateHandle });
   return {
     events,
     importChat(chat) {
@@ -2472,7 +2494,7 @@ async function createLogic() {
           events.emit({ type: "open", chatId: chat.id });
           return;
         }
-        await worker.subscribe({ chatId: chat.id, nonce: chat.initialNonce });
+        await worker.subscribe({ queueId: chat.id, nonce: chat.initialNonce });
         await persistence.chat.put(chat);
         chatListStateHandle.unshift(chat);
         events.emit({ type: "open", chatId: chat.id });
@@ -2483,28 +2505,28 @@ async function createLogic() {
 }
 function createSeedWorker({ client, persistence }) {
   const keyPersistence = {
-    async add({ chatId, keys }) {
+    async add({ queueId, keys }) {
       await persistence.key.add(keys.map((key) => {
         return {
-          chatId,
+          chatId: queueId,
           nonce: key.nonce,
           key: key.key
         };
       }));
     },
-    async getInitialKey({ chatId }) {
-      const data = await persistence.chat.get(chatId);
+    async getInitialKey({ queueId }) {
+      const data = await persistence.chat.get(queueId);
       return {
         key: data.initialKey,
         nonce: data.initialNonce
       };
     },
-    async getKeyAt({ chatId, nonce }) {
-      const data = await persistence.key.get({ chatId, nonce });
+    async getKeyAt({ queueId, nonce }) {
+      const data = await persistence.key.get({ chatId: queueId, nonce });
       return data?.key;
     },
-    async getLastKey({ chatId }) {
-      const data = await persistence.key.lastKey({ chatId });
+    async getLastKey({ queueId }) {
+      const data = await persistence.key.lastKey({ chatId: queueId });
       if (!data) return;
       return {
         key: data.key,
@@ -19805,4 +19827,4 @@ const logic = await createLogic();
 createRoot(document.getElementById("root")).render(
   /* @__PURE__ */ jsxRuntimeExports.jsx(reactExports.StrictMode, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(Router, { hook: useHashLocation, children: /* @__PURE__ */ jsxRuntimeExports.jsx(App, { logic }) }) })
 );
-//# sourceMappingURL=b6570993d319ab28a8cbc.js.map
+//# sourceMappingURL=a1ba0d29b507959ebd7f9.js.map
