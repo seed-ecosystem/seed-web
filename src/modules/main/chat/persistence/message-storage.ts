@@ -1,7 +1,5 @@
 import {ChatMessage} from "@/modules/main/chat/persistence/chat-message.ts";
 import {IDBPDatabase} from "idb";
-import {RandomRanger} from "typia/lib/programmers/helpers/RandomRanger";
-import number = RandomRanger.number;
 
 export interface MessageStorage {
   lastMessage(options: {chatId: string}): Promise<ChatMessage | undefined>
@@ -30,7 +28,6 @@ export function createMessageStorage(db: IDBPDatabase): MessageStorage {
     },
 
     async add(messages: ChatMessage[]): Promise<void> {
-      console.log("SAVED!", messages);
       const transaction = db.transaction("message", "readwrite");
       await Promise.all([
         ...messages.map(message => transaction.store.put(message)),

@@ -1,8 +1,8 @@
-import {EncryptedMessage} from "@/sdk/client/encrypted-message.ts";
+import {EncryptedMessageResponse} from "@/sdk/client/encrypted-message-response.ts";
 
 export type ClientEvent = {
   type: "new";
-  message: EncryptedMessage;
+  message: EncryptedMessageResponse;
 } | ClientEventWait | {
   type: "connected";
   value: boolean;

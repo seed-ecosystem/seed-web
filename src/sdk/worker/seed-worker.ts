@@ -112,7 +112,9 @@ export function createSeedWorker(
 
         const status = await client.sendMessage({
           message: {
-            nonce, queueId,
+            nonce,
+            queueId: queueId,
+            chatId: queueId,
             ...encrypted
           }
         });
