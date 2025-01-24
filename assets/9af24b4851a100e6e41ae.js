@@ -477,12 +477,10 @@ function createMessageStorage(db) {
   return {
     async lastMessage({ chatId }) {
       const cursor = await db.transaction("message").objectStore("message").index("chatId").openCursor(IDBKeyRange.only(chatId), "prev");
-      if (!cursor)
-        return;
+      if (!cursor) return;
       return cursor.value;
     },
     async add(messages) {
-      console.log("SAVED!", messages);
       const transaction = db.transaction("message", "readwrite");
       await Promise.all([
         ...messages.map((message) => transaction.store.put(message)),
@@ -494,8 +492,7 @@ function createMessageStorage(db) {
     },
     async list({ chatId }) {
       const cursor = await db.transaction("message").objectStore("message").index("chatId").openCursor(IDBKeyRange.only(chatId), "prev");
-      if (!cursor)
-        return [];
+      if (!cursor) return [];
       const result = [];
       for await (const message of cursor) {
         result.push(message.value);
@@ -2107,14 +2104,9 @@ function createSeedClient({ socket }) {
       return socket.isConnected();
     },
     async sendMessage({ message }) {
-      const chatId = "chatId" in message ? message.chatId : message.queueId;
       let request = {
         type: "send",
-        message: {
-          ...message,
-          queueId: chatId,
-          chatId
-        }
+        message
       };
       const response = await socket.execute(request);
       return response.status;
@@ -2270,6 +2262,7 @@ function createSeedWorker$1({ client, persistence }) {
           message: {
             nonce,
             queueId: queueId2,
+            chatId: queueId2,
             ...encrypted
           }
         });
@@ -19830,4 +19823,4 @@ const logic = await createLogic();
 createRoot(document.getElementById("root")).render(
   /* @__PURE__ */ jsxRuntimeExports.jsx(reactExports.StrictMode, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(Router, { hook: useHashLocation, children: /* @__PURE__ */ jsxRuntimeExports.jsx(App, { logic }) }) })
 );
-//# sourceMappingURL=ce2f51ee5625c7cb71c02.js.map
+//# sourceMappingURL=9af24b4851a100e6e41ae.js.map
