@@ -1,8 +1,7 @@
-import {Link} from "wouter";
-import {LoadingSpinner} from "@/modules/core/components/loading-spinner.tsx";
-import {ReactElement} from "react";
-import {Button} from "@/modules/core/components/button.tsx";
-import {MediaVisibleMD} from "@/modules/responsive/media-query.tsx";
+import { Link } from "wouter";
+import { LoadingSpinner } from "@/modules/core/components/loading-spinner.tsx";
+import { ReactElement } from "react";
+import { MediaVisibleMD } from "@/modules/responsive/media-query.tsx";
 
 export type TopBarProps = {
   loading: boolean;
@@ -21,7 +20,7 @@ export type ChatListTopBar = {
   Content: () => ReactElement;
 }
 
-export function TopBarContent({loading, chat, chatList}: TopBarProps) {
+export function TopBarContent({ loading, chat, chatList }: TopBarProps) {
   return (
     <div className="flex h-14 w-full border-b border-border/40 bg-background/95 items-center px-4 gap-2">
       <Logo />
@@ -33,8 +32,8 @@ export function TopBarContent({loading, chat, chatList}: TopBarProps) {
             : <chat.Content />}
       </div>
       {chat === undefined
-        ? <chatList.Create/>
-        : <chat.Menu/>
+        ? <chatList.Create />
+        : <chat.Menu />
       }
     </div>
   );
@@ -42,7 +41,7 @@ export function TopBarContent({loading, chat, chatList}: TopBarProps) {
 
 function Connecting() {
   return <div className="w-full h-full flex justify-center items-center"><p
-    className="overflow-hidden text-ellipsis">Connecting...</p><LoadingSpinner className="size-4"/>
+    className="overflow-hidden text-ellipsis">Connecting...</p><LoadingSpinner className="size-4" />
   </div>;
 }
 
@@ -54,7 +53,7 @@ function Logo() {
         <a className="mx-3" href="https://github.com/seed-ecosystem/seed-web" target="_blank">
           <img
             src="https://img.shields.io/github/stars/seed-ecosystem/seed-web"
-            alt="Source code on GitHub"/>
+            alt="Source code on GitHub" />
         </a>
       </MediaVisibleMD>
     </>
