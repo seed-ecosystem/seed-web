@@ -23,7 +23,9 @@ export default tseslint.config(
         'warn',
         { allowConstantExport: true },
       ],
-        '@typescript-eslint/ no-unused-var': ['warn']
+      'semi': [2, 'always'],
+      "quotes": ["error", "double", { "avoidEscape": true }],
+      "comma-dangle": ["error", "always-multiline"],
     },
   },
 )
