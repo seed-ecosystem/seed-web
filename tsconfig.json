@@ -15,8 +15,7 @@
         "./src/*"
       ]
     },
-    "strictNullChecks": true,
-    "strict": true,
+    /* Linting */
     "plugins": [
       {
         "transform": "typia/lib/transform"

@@ -21,11 +21,11 @@ export default defineConfig({
           {
             src: "icon.svg",
             type: "image/svg+xml",
-            sizes: "any"
-          }
-        ]
+            sizes: "any",
+          },
+        ],
       },
-    })
+    }),
   ],
   base: "/seed-web/",
   resolve: {
@@ -35,15 +35,15 @@ export default defineConfig({
   },
   server: {
     watch: {
-      usePolling: true
-    }
+      usePolling: true,
+    },
   },
   build: {
     minify: false,
     sourcemap: true,
     target: "esnext",
     modulePreload: {
-      polyfill: false
+      polyfill: false,
     },
     rollupOptions: {
       output: {
@@ -51,9 +51,9 @@ export default defineConfig({
         entryFileNames: "assets/[hash:21].js",
         chunkFileNames: "assets/[hash:21].js",
         assetFileNames: "assets/[hash:21].[ext]",
-        hashCharacters: "hex"
-      }
+        hashCharacters: "hex",
+      },
     },
-    assetsInlineLimit: Number.MAX_SAFE_INTEGER
+    assetsInlineLimit: Number.MAX_SAFE_INTEGER,
   },
 });

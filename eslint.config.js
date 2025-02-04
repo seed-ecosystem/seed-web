@@ -1,17 +1,21 @@
-import js from '@eslint/js'
+import eslint from '@eslint/js'
 import globals from 'globals'
 import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
 
 export default tseslint.config(
-  { ignores: ['dist'] },
+  eslint.configs.recommended,
+  tseslint.configs.strictTypeChecked,
   {
-    extends: [js.configs.recommended, ...tseslint.configs.recommended],
-    files: ['**/*.{ts,tsx}'],
+    files: ['src/**/*.{ts,tsx}'],
     languageOptions: {
       ecmaVersion: 2020,
       globals: globals.browser,
+      parserOptions: {
+        project: './tsconfig.app.json',
+        tsconfigRootDir: import.meta.dirname,
+      },
     },
     plugins: {
       'react-hooks': reactHooks,
@@ -24,8 +28,19 @@ export default tseslint.config(
         { allowConstantExport: true },
       ],
       'semi': [2, 'always'],
-      "quotes": ["error", "double", { "avoidEscape": true }],
-      "comma-dangle": ["error", "always-multiline"],
+      "quotes": ["warn", "double", { "avoidEscape": true }],
+      "comma-dangle": ["warn", "always-multiline"],
+      "require-await": "warn",
+      "@typescript-eslint/no-floating-promises": "warn",
+      'no-unused-vars': 'off',
+      '@typescript-eslint/no-unused-vars': [
+        'warn',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_'
+        }
+      ],
     },
   },
 )

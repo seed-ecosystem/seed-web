@@ -1,13 +1,16 @@
-import { Cancellation } from "@/coroutines/cancellation";
+import { launch } from "@/coroutines/launch";
 import { createObservable, Observable } from "@/coroutines/observable";
 import typia from "typia";
 
 export type SeedEngineEvent = {
+  type: "ready";
+  ready: boolean;
+} | {
+  type: "connected";
   url: string;
-  payload: unknown;
-}
-
-export type SeedEngineExecuteOptions = {
+  connected: boolean;
+} | {
+  type: "server"
   url: string;
   payload: unknown;
 }
@@ -47,7 +50,7 @@ type SeedEngineRawReceivedMessage = {
   event: unknown;
 }
 
-type SeedEngineSentMessage = unknown | {
+type SeedEngineSentMessage = {
   type: "forward";
   url: string;
   request: unknown;
@@ -59,87 +62,138 @@ type SeedEnginePendingRequest = {
   reject: () => void;
 }
 
+/**
+ * SeedEngine should encapsulate the existence of
+ * multiple servers.
+ *
+ * It may be ready or not, which
+ * indicates whether to show 'connecting...' in UI
+ * or not. 
+ *
+ * Any endpoint (even mainUrl) must be connected first.
+ * That way we can easily change mainServer without
+ * changing any logic on how we connected to other
+ * servers.
+ *
+ * In case of mainUrl disconnection all urls receive disconnected
+ * events and readyEvents receive false.
+ * If any other server disconnects, only that server receives a
+ * disconnected event.
+ */
 export interface SeedEngine {
   events: Observable<SeedEngineEvent>;
 
-  connectedEvents: Observable<boolean>;
-  getConnected(): void;
-
-  disconnectedUrlEvents: Observable<string>;
-  connectUrl(url: string): Promise<void>;
+  getReady(): boolean;
+  getConnected(url: string): boolean;
+  connectUrl(url: string): void;
 
   /**
    * @throws SeedEngineDisconnected if request was not successful due to
    *  network conditions
    */
-  executeOrThrow(request: SeedEngineExecuteOptions): Promise<unknown>;
+  executeOrThrow(url: string, payload: unknown): Promise<unknown>;
 
-  init(init: SeedEngineInitOptions): Cancellation;
-
-  start(): void;
-  stop(): void;
+  open(): void;
 }
 
 export function createSeedEngine(mainUrl: string): SeedEngine {
   const events: Observable<SeedEngineEvent> = createObservable();
 
-  const connectedEvents: Observable<boolean> = createObservable();
-  let connected = false;
-
-  function setConnected(value: boolean) {
-    connected = value;
-    connectedEvents.emit(value);
-  }
-
-  const disconnectedUrlEvents: Observable<string> = createObservable();
-
   let ws: WebSocket | undefined;
-  let requests: SeedEnginePendingRequest[] = [];
-  let connectedUrls: string[] = [];
+  const requests: SeedEnginePendingRequest[] = [];
 
-  async function connectUrl(url: string) {
-    // It is fine to call connectUrl with mainUrl,
-    // but it will just do nothing
-    if (url === mainUrl) {
-      connectedUrls.push(url);
-      return;
+  let ready: boolean = false;
+
+  function setReady(value: boolean) {
+    ready = value;
+    events.emit({
+      type: "ready",
+      ready: value,
+    });
+    if (ready) return;
+    while (connectedUrls.size) {
+      const [url] = connectedUrls;
+      setConnectedUrl(url, false);
     }
-    const payload: ConnectRequest = {
-      type: "connect",
-      url,
-    };
-
-    try {
-      await executeOrThrow({
-        url: mainUrl,
-        payload,
-      }, false);
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (_) {
-      disconnectedUrlEvents.emit(url);
-    }
-
-    connectedUrls.push(url);
   }
 
-  async function executeOrThrow(
-    { url, payload }: SeedEngineExecuteOptions,
+  function getReady() {
+    return ready;
+  }
+
+  const connectedUrls: Set<string> = new Set();
+
+  function setConnectedUrl(url: string, connected: boolean) {
+    if (connected) {
+      connectedUrls.add(url);
+    } else {
+      connectedUrls.delete(url);
+      requests
+        .filter(({ url: requestUrl }) => requestUrl === url)
+        .forEach((request) => {
+          const index = requests.indexOf(request);
+          requests.splice(index, 1);
+          request.reject();
+        });
+    }
+    events.emit({
+      type: "connected",
+      url, connected,
+    });
+  }
+
+  function getConnected(url: string) {
+    return connectedUrls.has(url);
+  }
+
+  function connectUrl(url: string) {
+    launch(async () => {
+      // Don't actually execute any requests
+      // since we are already connected to this url
+      if (url === mainUrl) {
+        setConnectedUrl(url, getReady());
+        return;
+      }
+
+      const payload: ConnectRequest = { type: "connect", url };
+
+      try {
+        await executeOrThrow(mainUrl, payload, false);
+        setConnectedUrl(url, true);
+      } catch (error) {
+        setConnectedUrl(url, false);
+        if (error instanceof SeedEngineDisconnected) return;
+        throw error;
+      }
+    });
+  }
+
+  /**
+   * Without [checkConnection] param it would be impossible to
+   * execute any `connect` requests since they are used to establish
+   * connection with other servers, so this check will always fail
+   * without this flag.
+   */
+  function executeOrThrow(
+    url: string,
+    payload: unknown,
     checkConnection: boolean = true,
   ) {
     console.log(`>> execute\nServer: ${url}\nRequest:`, payload);
     return new Promise((resolve, reject) => {
-      if (!ws || ws.readyState !== WebSocket.OPEN) {
-        reject(new SeedEngineDisconnected());
-        return;
-      }
-      if (checkConnection && !connectedUrls.includes(url)) {
-        reject(new SeedEngineDisconnected());
-        return;
+      if (!ready) throw new SeedEngineDisconnected();
+      if (checkConnection && !connectedUrls.has(url)) {
+        throw new SeedEngineDisconnected();
       }
 
-      requests.push({ url, resolve, reject });
+      requests.push({
+        url, resolve,
+        reject: () => {
+          reject(new SeedEngineDisconnected());
+        },
+      });
 
-      let message: SeedEngineSentMessage;
+      let message: unknown;
 
       if (url === mainUrl) {
         message = payload;
@@ -148,23 +202,24 @@ export function createSeedEngine(mainUrl: string): SeedEngine {
           type: "forward",
           url,
           request: payload,
-        };
+        } satisfies SeedEngineSentMessage;
       }
 
-      ws.send(JSON.stringify(message));
+      ws?.send(JSON.stringify(message));
     });
   }
 
-  function start() {
+  function open() {
     ws = new WebSocket(mainUrl);
 
     ws.onopen = () => {
       console.log("<< ws: onopen");
-      setConnected(true);
+      setReady(true);
     };
 
     ws.onmessage = (message) => {
-      const data: SeedEngineReceivedMessage = JSON.parse(message.data);
+      console.log("<<< debug", message.data);
+      const data = JSON.parse(message.data as string) as SeedEngineReceivedMessage;
       if (!typia.is<SeedEngineReceivedMessage>(data)) {
         return;
       }
@@ -179,50 +234,42 @@ export function createSeedEngine(mainUrl: string): SeedEngine {
         };
       }
       console.log(`<< message\nServer: ${forward.url}\nPayload:`, forward.forward);
-      const index = requests.findIndex((request) => request.url === forward.url);
-      if (index === -1) {
-        console.warn("Got response without any request");
-        return;
+      if (forward.forward.type === "response") {
+        const index = requests.findIndex((request) => request.url === forward.url);
+        if (index === -1) {
+          console.warn("Got response without any request");
+          return;
+        }
+        const { resolve } = requests[index];
+        requests.splice(index, 1);
+        console.log("FORWARD", forward);
+        if (forward.forward.response) {
+          resolve(forward.forward.response);
+        } else {
+          resolve(forward.forward);
+        }
+      } else {
+        events.emit({
+          type: "server",
+          url: forward.url,
+          payload: forward.forward.event,
+        });
       }
-      const { resolve } = requests[index];
-      requests.splice(index, 1);
-      resolve(forward.forward);
     };
 
     ws.onclose = () => {
       console.log("<< ws: onclose");
-      setConnected(false);
-      for (const { reject } of requests) {
-        reject();
-      }
-      requests = [];
-      for (const url of connectedUrls) {
-        disconnectedUrlEvents.emit(url);
-      }
-      connectedUrls = [];
+      setReady(false);
     };
-  }
-
-  function stop() {
-    if (!ws || ws.readyState !== WebSocket.OPEN) {
-      console.warn("SeedEngine.close() called while socket is closed");
-    }
-    ws?.close();
   }
 
   return {
     events,
-
-    connectedEvents,
-    getConnected: () => connected,
-
-    disconnectedUrlEvents,
+    getReady,
+    getConnected,
     connectUrl,
-
     executeOrThrow,
-
-    start,
-    stop,
+    open,
   };
 }
 

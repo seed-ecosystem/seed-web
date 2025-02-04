@@ -1,10 +1,10 @@
-import {SeedSocket} from "@/sdk/socket/seed-socket.ts";
-import {EncryptedMessageRequest} from "@/sdk/client/encrypted-message-response.ts";
-import {SendMessageRequest, SendMessageResponse} from "@/sdk/client/send-message-request.ts";
-import {SubscribeRequest} from "@/sdk/client/subscribe-request.ts";
-import {ClientEvent} from "@/sdk/client/client-event.ts";
+import { SeedSocket } from "@/sdk/socket/seed-socket.ts";
+import { EncryptedMessageRequest } from "@/sdk/client/encrypted-message-response.ts";
+import { SendMessageRequest, SendMessageResponse } from "@/sdk/client/send-message-request.ts";
+import { SubscribeRequest } from "@/sdk/client/subscribe-request.ts";
+import { ClientEvent } from "@/sdk/client/client-event.ts";
 import typia from "typia";
-import {createObservable, Observable} from "@/coroutines/observable.ts";
+import { createObservable, Observable } from "@/coroutines/observable.ts";
 
 export interface SendMessageOptions {
   message: EncryptedMessageRequest;
@@ -25,7 +25,7 @@ export interface SeedClient {
 }
 
 export function createSeedClient(
-  {socket}: { socket: SeedSocket }
+  { socket }: { socket: SeedSocket },
 ): SeedClient {
   const events = createObservable<ClientEvent>();
 
@@ -48,8 +48,8 @@ export function createSeedClient(
       return socket.isConnected();
     },
 
-    async sendMessage({message}): Promise<boolean> {
-      let request: SendMessageRequest = {
+    async sendMessage({ message }): Promise<boolean> {
+      const request: SendMessageRequest = {
         type: "send",
         message,
       };
@@ -57,12 +57,12 @@ export function createSeedClient(
       return response.status;
     },
 
-    async subscribe({queueId, nonce}): Promise<void> {
-      let request: SubscribeRequest = {
+    async subscribe({ queueId, nonce }): Promise<void> {
+      const request: SubscribeRequest = {
         type: "subscribe",
         chatId: queueId,
         queueId: queueId,
-        nonce: nonce
+        nonce: nonce,
       };
       return socket.execute(request);
     },

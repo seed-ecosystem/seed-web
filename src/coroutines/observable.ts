@@ -1,7 +1,7 @@
-import {Channel, createChannel} from "@/coroutines/channel.ts";
-import {launch} from "@/coroutines/launch.ts";
-import {useEffect} from "react";
-import {Cancellation} from "@/coroutines/cancellation.ts";
+import { Channel, createChannel } from "@/coroutines/channel.ts";
+import { launch } from "@/coroutines/launch.ts";
+import { useEffect } from "react";
+import { Cancellation } from "@/coroutines/cancellation.ts";
 
 export interface Observable<T = unknown> {
   // Essential methods
@@ -21,10 +21,11 @@ export interface Observer<T> {
 
 export function useEach<T>(
   observable: Observable<T>,
-  block: (element: T) => void
+  block: (element: T) => void,
 ) {
   useEffect(() => {
     return observable.subscribe(block);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 }
 
@@ -47,9 +48,11 @@ export function createObservable<T>(): Observable<T> {
     },
     subscribeAsChannel(): Channel<T> {
       const channel = createChannel<T>();
-      const cancellation = this.subscribe(event => launch(async () => {
-        if (!channel.send(event)) cancellation();
-      }));
+      const cancellation = this.subscribe(event => {
+        launch(async () => {
+          if (!(await channel.send(event))) cancellation();
+        });
+      });
       return channel;
     },
     drop(n: number): Observable<T> {
@@ -60,12 +63,12 @@ export function createObservable<T>(): Observable<T> {
         } else {
           n--;
         }
-      })
+      });
       return observable;
     },
     map<R>(block: (value: T) => R): Observable<R> {
       const observable = createObservable<R>();
-      this.subscribe((value) => observable.emit(block(value)));
+      this.subscribe((value) => { observable.emit(block(value)); });
       return observable;
     },
     mapNotNull<R>(block: (value: T) => R | undefined | null): Observable<R> {
