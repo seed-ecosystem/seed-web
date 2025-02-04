@@ -57,7 +57,7 @@ export function createSeedClient(
       return response.status;
     },
 
-    async subscribe({ queueId, nonce }): Promise<void> {
+    subscribe({ queueId, nonce }): Promise<void> {
       const request: SubscribeRequest = {
         type: "subscribe",
         chatId: queueId,

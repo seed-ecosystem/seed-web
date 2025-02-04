@@ -32,6 +32,11 @@ type ConnectRequest = {
   url: string;
 }
 
+type DisconnectedEvent = {
+  type: "disconnected";
+  url: string;
+}
+
 type SeedEngineReceivedMessage =
   SeedEngineForwardReceivedMessage |
   SeedEngineRawReceivedMessage
@@ -218,7 +223,6 @@ export function createSeedEngine(mainUrl: string): SeedEngine {
     };
 
     ws.onmessage = (message) => {
-      console.log("<<< debug", message.data);
       const data = JSON.parse(message.data as string) as SeedEngineReceivedMessage;
       if (!typia.is<SeedEngineReceivedMessage>(data)) {
         return;
@@ -242,13 +246,16 @@ export function createSeedEngine(mainUrl: string): SeedEngine {
         }
         const { resolve } = requests[index];
         requests.splice(index, 1);
-        console.log("FORWARD", forward);
         if (forward.forward.response) {
           resolve(forward.forward.response);
         } else {
           resolve(forward.forward);
         }
       } else {
+        if (typia.is<DisconnectedEvent>(forward.forward.event)) {
+          setConnectedUrl(forward.forward.event.url, false);
+          return;
+        }
         events.emit({
           type: "server",
           url: forward.url,

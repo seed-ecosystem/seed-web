@@ -8,7 +8,11 @@ export type SeedClientEvent = {
 } | {
   type: "new";
   url: string;
-  payload: SeedClientMessage;
+  message: SeedClientMessage;
+} | {
+  type: "wait";
+  url: string;
+  queueId: string;
 }
 
 export type SeedClientMessage = {
@@ -27,6 +31,11 @@ export type SeedClientSendOptions = {
   queueId: string;
 }
 
+export type SeedClientSubscribeOptions = {
+  queueId: string;
+  nonce: number;
+}
+
 /**
  * SeedClient hides all network errors and makes it seem 
  * to the consumer like if the connection was just slow. So no retries
@@ -38,8 +47,10 @@ export interface SeedClient {
   events: Observable<SeedClientEvent>;
 
   getConnected(): boolean;
+
   send(url: string, options: SeedClientSendOptions): Promise<boolean>;
-  subscribe(): Promise<void>;
+
+  subscribe(url: string, options: SeedClientSubscribeOptions): void;
 
   /**
    * SeedClient automatically manages connections
@@ -63,6 +74,14 @@ export interface CreateSeedClientOptions {
   };
 }
 
+type ServerEvent = {
+  type: "new";
+  message: SeedClientMessage;
+} | {
+  type: "wait";
+  queueId: string;
+}
+
 type SendRequest = {
   type: "send";
   message: SeedClientSendOptions;
@@ -72,6 +91,12 @@ type SendResponse = {
   status: boolean
 }
 
+type SubscribeRequest = {
+  type: "subscribe";
+  queueId: string;
+  nonce: number;
+}
+
 export function createSeedClient(
   { engine: engineOptions }: CreateSeedClientOptions,
 ): SeedClient {
@@ -79,6 +104,24 @@ export function createSeedClient(
   const events: Observable<SeedClientEvent> = createObservable();
 
   const engine = createSeedEngine(engineOptions.mainUrl);
+  const subscribeChatIds: Set<string> = new Set();
+
+  engine.events.subscribe(event => {
+    switch (event.type) {
+      case "connected":
+        events.emit(event);
+        break;
+      case "server":
+        if (!typia.is<ServerEvent>(event.payload)) break;
+        events.emit({
+          url: event.url,
+          ...event.payload,
+        });
+        break;
+      default:
+        event.type satisfies "ready";
+    }
+  });
 
   function getConnected() {
     return engine.getReady();
@@ -99,6 +142,25 @@ export function createSeedClient(
     return response.status;
   }
 
+  function subscribe(url: string, { queueId, nonce }: SeedClientSubscribeOptions) {
+    if (subscribeChatIds.has(url)) {
+      throw new Error(`Already subscribed to this chat id ${queueId}`);
+    }
+    subscribeChatIds.add(url);
+    const request: SubscribeRequest = {
+      type: "subscribe",
+      queueId, nonce,
+    };
+    if (engine.getConnected(url)) {
+      void engine.executeOrThrow(url, request);
+    }
+    engine.events.subscribe(event => {
+      if (event.type !== "connected") return;
+      if (event.url !== url) return;
+      void engine.executeOrThrow(url, request);
+    });
+  }
+
   const servers: Set<string> = new Set();
 
   function addServer(url: string) {
@@ -112,7 +174,6 @@ export function createSeedClient(
       if (event.connected) {
         // TODO: Do initial subscribes, etc.
       } else {
-        console.log("CONNECT SAFELY", event);
         connectUrlSafely(engine, url);
       }
     });
@@ -143,6 +204,7 @@ export function createSeedClient(
     events,
     getConnected,
     send,
+    subscribe,
     addServer,
     setForeground,
   };
