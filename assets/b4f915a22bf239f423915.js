@@ -17785,9 +17785,9 @@ function createNewLogic({ persistence, worker, newStateHandle, chatListStateHand
 function getServerUrl(option) {
   switch (option.type) {
     case "go":
-      return "https://meetacy.app/seed-go";
+      return "wss://meetacy.app/seed-go";
     case "kt":
-      return "https://meetacy.app/seed-kt";
+      return "wss://meetacy.app/seed-kt";
     case "custom":
       return option.getValue();
   }
@@ -33902,4 +33902,4 @@ const logic = await createLogic();
 clientExports.createRoot(document.getElementById("root")).render(
   /* @__PURE__ */ jsxRuntimeExports.jsx(reactExports.StrictMode, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(Router, { hook: useHashLocation, children: /* @__PURE__ */ jsxRuntimeExports.jsx(App, { logic }) }) })
 );
-//# sourceMappingURL=e509030a577ab6543f46f.js.map
+//# sourceMappingURL=b4f915a22bf239f423915.js.map
