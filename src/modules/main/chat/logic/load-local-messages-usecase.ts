@@ -1,31 +1,32 @@
-import {Message} from "@/modules/main/chat/logic/message.ts";
-import {SeedPersistence} from "@/modules/umbrella/persistence/seed-persistence.ts";
-import {launch} from "@/coroutines/launch.ts";
-import {NicknameStateHandle} from "@/modules/main/logic/nickname-state-handle.ts";
+import { Message } from "@/modules/main/chat/logic/message.ts";
+import { SeedPersistence } from "@/modules/umbrella/persistence/seed-persistence.ts";
+import { launch } from "@/coroutines/launch.ts";
+import { NicknameStateHandle } from "@/modules/main/logic/nickname-state-handle.ts";
 
 export type LoadLocalMessagesOptions = {
-  chatId: string;
+  url: string;
+  queueId: string;
   nickname: NicknameStateHandle;
   serverNonce: number;
-  setServerNonce(value: number): void;
+  setServerNonce: (value: number) => void;
   localNonce: number;
-  setLocalNonce(value: number): void;
-  setMessages(values: Message[]): void;
-  setUpdating(): void;
+  setLocalNonce: (value: number) => void;
+  setMessages: (values: Message[]) => void;
+  setUpdating: () => void;
   persistence: SeedPersistence;
 }
 
 export function loadLocalMessages(
   {
-    chatId, nickname,
+    url, queueId, nickname,
     serverNonce, setServerNonce,
     localNonce, setLocalNonce,
     setMessages,
-    persistence
-  }: LoadLocalMessagesOptions
+    persistence,
+  }: LoadLocalMessagesOptions,
 ) {
   launch(async () => {
-    const persistenceMessages = await persistence.message.list({chatId})
+    const persistenceMessages = await persistence.message.list({ url, queueId });
     const result: Message[] = [];
 
     for (const message of persistenceMessages) {
@@ -37,25 +38,25 @@ export function loadLocalMessages(
       localNonce++;
       setLocalNonce(localNonce);
 
-      let common = {
+      const common = {
         localNonce: localNonce,
         serverNonce: message.nonce,
         loading: false,
-        failure: false
-      }
+        failure: false,
+      };
 
       if (message.content.type == "regular") {
         result.push({
           ...common,
           content: {
             ...message.content,
-            author: nickname.get() == message.content.title
-          }
+            author: nickname.get() == message.content.title,
+          },
         });
       } else {
         result.push({
           ...common,
-          content: { type: "unknown" }
+          content: { type: "unknown" },
         });
       }
     }

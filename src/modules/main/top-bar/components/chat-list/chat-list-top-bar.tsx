@@ -20,11 +20,11 @@ export function createChatListTopBar({events, getNickname, setNickname, showNew}
       });
 
       return ChatListTopBarContent({
-        nickname, setNickname
+        nickname, setNickname,
       });
     },
     Create() {
       return <Button size="icon" variant="ghost" onClick={showNew}><Plus /></Button>;
-    }
+    },
   };
 }

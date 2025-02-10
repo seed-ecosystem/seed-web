@@ -10,9 +10,10 @@ export type SeedClientEvent = {
   url: string;
   message: SeedClientMessage;
 } | {
-  type: "wait";
+  type: "waiting";
   url: string;
   queueId: string;
+  waiting: boolean;
 }
 
 export type SeedClientMessage = {
@@ -48,16 +49,11 @@ export interface SeedClient {
 
   getConnected(): boolean;
 
+  getWaiting(url: string, queueId: string): boolean;
+
   send(url: string, options: SeedClientSendOptions): Promise<boolean>;
 
   subscribe(url: string, options: SeedClientSubscribeOptions): void;
-
-  /**
-   * SeedClient automatically manages connections
-   * with different servers and tries reconnect when
-   * server is disconnected.
-   */
-  addServer(url: string): void;
 
   /**
    * This should be synced with window lifecycle.
@@ -100,26 +96,74 @@ type SubscribeRequest = {
 export function createSeedClient(
   { engine: engineOptions }: CreateSeedClientOptions,
 ): SeedClient {
-  // TODO: proxy events
   const events: Observable<SeedClientEvent> = createObservable();
 
   const engine = createSeedEngine(engineOptions.mainUrl);
-  const subscribeChatIds: Set<string> = new Set();
+  const subscribeQueueIds: Set<string> = new Set();
+  const waitingQueues: Map<string, Set<string>> = new Map();
+
+  setInterval(() => {
+    void engine.executeOrThrow(
+      engineOptions.mainUrl,
+      {
+        "type": "ping",
+      },
+    );
+  }, 15_000);
+
+  function setWaitingQueue(url: string, queueId: string, waiting: boolean) {
+    const urlQueues = waitingQueues.get(url) ?? new Set();
+    waitingQueues.set(url, urlQueues);
+    if (waiting) {
+      urlQueues.add(queueId);
+    } else {
+      urlQueues.delete(queueId);
+    }
+    events.emit({
+      type: "waiting",
+      url, queueId, waiting,
+    });
+  }
+
+  function getWaitingQueue(url: string, queueId: string) {
+    const urlQueues = waitingQueues.get(url);
+    return urlQueues !== undefined && urlQueues.has(queueId);
+  }
 
   engine.events.subscribe(event => {
     switch (event.type) {
+      case "ready":
+        events.emit({
+          type: "connected",
+          connected: event.ready,
+        });
+        break;
       case "connected":
-        events.emit(event);
+        if (!event.connected) {
+          const urlQueues = waitingQueues.get(event.url) ?? new Set();
+          for (const queueId of urlQueues) {
+            setWaitingQueue(event.url, queueId, false);
+          }
+        }
         break;
       case "server":
         if (!typia.is<ServerEvent>(event.payload)) break;
-        events.emit({
-          url: event.url,
-          ...event.payload,
-        });
+        switch (event.payload.type) {
+          case "wait":
+            setWaitingQueue(event.url, event.payload.queueId, true);
+            break;
+          case "new":
+            events.emit({
+              url: event.url,
+              ...event.payload,
+            });
+            break;
+          default:
+            event.payload satisfies never;
+        }
         break;
       default:
-        event.type satisfies "ready";
+        event satisfies never;
     }
   });
 
@@ -131,6 +175,7 @@ export function createSeedClient(
     url: string,
     options: SeedClientSendOptions,
   ): Promise<boolean> {
+    ensureServer(url);
     const request: SendRequest = {
       type: "send",
       message: options,
@@ -143,10 +188,11 @@ export function createSeedClient(
   }
 
   function subscribe(url: string, { queueId, nonce }: SeedClientSubscribeOptions) {
-    if (subscribeChatIds.has(url)) {
+    if (subscribeQueueIds.has(url)) {
       throw new Error(`Already subscribed to this chat id ${queueId}`);
     }
-    subscribeChatIds.add(url);
+    ensureServer(url);
+    subscribeQueueIds.add(url);
     const request: SubscribeRequest = {
       type: "subscribe",
       queueId, nonce,
@@ -163,9 +209,14 @@ export function createSeedClient(
 
   const servers: Set<string> = new Set();
 
-  function addServer(url: string) {
+  /**
+   * SeedClient automatically manages connections
+   * with different servers and tries reconnect when
+   * server is disconnected.
+   */
+  function ensureServer(url: string) {
     if (servers.has(url)) {
-      throw new Error("Can't add a server multiple times");
+      return;
     }
     servers.add(url);
     engine.events.subscribe(event => {
@@ -202,10 +253,10 @@ export function createSeedClient(
 
   return {
     events,
+    getWaiting: getWaitingQueue,
     getConnected,
     send,
     subscribe,
-    addServer,
     setForeground,
   };
 }

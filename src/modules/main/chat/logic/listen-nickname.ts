@@ -21,17 +21,17 @@ export function listenNickname({nickname, getMessages, setMessages, setDisplayNi
           ...message,
           content: {
             ...content,
-            author: true
-          }
+            author: true,
+          },
         };
       } else if (content.author) {
         return {
           ...message,
           content: {
             ...content,
-            author: false
-          }
-        }
+            author: false,
+          },
+        };
       }
 
       return message;

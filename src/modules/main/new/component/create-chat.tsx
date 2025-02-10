@@ -23,6 +23,6 @@ export function CreateChat({events, getTitle, setTitle, create, cancel, selector
   return CreateChatContent({
     title, setTitle,
     create, cancel,
-    BackendSelector: () => BackendSelector(selector)
+    BackendSelector: () => BackendSelector(selector),
   });
 }

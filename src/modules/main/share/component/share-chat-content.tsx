@@ -2,7 +2,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
   AlertDialogHeader,
-  AlertDialogTitle
+  AlertDialogTitle,
 } from "@/modules/core/components/alert-dialog.tsx";
 import {useEffect, useState} from "react";
 import QRCodeStyling from "qr-code-styling";
@@ -33,10 +33,10 @@ export function ShareChatContent({shareUrl, close}: ShareChatProps) {
       type: "svg",
       data: shareUrl,
       dotsOptions: {
-        type: "rounded"
+        type: "rounded",
       },
       qrOptions: {
-        errorCorrectionLevel: "L"
+        errorCorrectionLevel: "L",
       },
     });
     qrCode.append(qrCodeContainer);

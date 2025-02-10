@@ -5,7 +5,7 @@ import {
   DropdownMenu,
   DropdownMenuContent, DropdownMenuItem,
   DropdownMenuLabel, DropdownMenuSeparator,
-  DropdownMenuTrigger
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu.tsx";
 
 export interface ChatTopBarProps {
@@ -18,7 +18,7 @@ export function ChatTopBarContent({waiting, title}: ChatTopBarProps) {
     ? <div className="w-full h-full flex justify-center items-center">
       <h4 className="text-lg font-medium">{title}</h4>
     </div>
-    : <Updating/>
+    : <Updating/>;
 }
 
 function Updating() {

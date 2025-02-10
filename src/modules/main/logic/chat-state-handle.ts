@@ -1,7 +1,8 @@
-import {createObservable, Observable} from "@/coroutines/observable.ts";
+import { createObservable, Observable } from "@/coroutines/observable.ts";
 
 export type Chat = {
-  chatId: string;
+  url: string;
+  queueId: string;
   title: string;
 } | undefined
 
@@ -29,6 +30,6 @@ export function createChatStateHandle(): ChatStateHandle {
     rename: (title) => {
       if (!chat) return;
       setChat({ ...chat, title });
-    }
+    },
   };
 }

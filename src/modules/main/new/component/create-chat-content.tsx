@@ -5,7 +5,7 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
-  AlertDialogTitle
+  AlertDialogTitle,
 } from "@/modules/core/components/alert-dialog.tsx";
 import {Input} from "@/modules/core/components/input.tsx";
 import {ReactNode, useEffect, useRef} from "react";
@@ -31,7 +31,7 @@ export function CreateChatContent({title, setTitle, create, cancel, BackendSelec
   }, [title]);
 
   const createRef = useRef(create);
-  createRef.current = create
+  createRef.current = create;
 
   useEffect(() => {
     const listener = (event: KeyboardEvent) => {
@@ -54,7 +54,7 @@ export function CreateChatContent({title, setTitle, create, cancel, BackendSelec
           <AlertDialogTitle>New Chat</AlertDialogTitle>
           <AlertDialogDescription>Enter chat title and start chatting right away</AlertDialogDescription>
         </AlertDialogHeader>
-        <Input ref={titleRef} enterKeyHint="done" placeholder="Title" onChange={(e) => setTitle(e.target.value)} autoFocus />
+        <Input ref={titleRef} enterKeyHint="done" placeholder="Title" onChange={(e) => { setTitle(e.target.value); }} autoFocus />
         <BackendSelector />
         <AlertDialogFooter>
           <AlertDialogCancel onClick={cancel}>Cancel</AlertDialogCancel>

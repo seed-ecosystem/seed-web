@@ -1,4 +1,4 @@
-import { decryptAes256, encryptAes256, hmacSha256, verifyHmacSha256 } from "./crypto/subtle-crypto";
+import { decryptAes256, encryptAes256, hmacSha256, verifyHmacSha256 } from "@/crypto/subtle";
 
 export interface DecryptContentOptions {
   content: string;

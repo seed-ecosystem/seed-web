@@ -15,11 +15,11 @@ export function createDeleteLogic(
     chatId: string;
   }): DeleteLogic {
   return {
-    close: () => deleteStateHandle.set({ shown: false }),
+    close: () => { deleteStateHandle.set({ shown: false }); },
     delete: () => {
       chatListStateHandle.delete(chatId);
       deleteStateHandle.set({ shown: false });
       chatStateHandle.set(undefined);
     },
-  }
+  };
 }

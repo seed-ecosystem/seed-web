@@ -1,8 +1,8 @@
-import {createObservable, Observable} from "@/coroutines/observable.ts";
-import {ShareStateHandle} from "@/modules/main/logic/share-state-handle.ts";
-import {launch} from "@/coroutines/launch.ts";
-import {SeedPersistence} from "@/modules/umbrella/persistence/seed-persistence.ts";
-import {deriveNextKey} from "@/sdk/crypto/derive-next-key.ts";
+import { createObservable, Observable } from "@/coroutines/observable.ts";
+import { ShareStateHandle } from "@/modules/main/logic/share-state-handle.ts";
+import { launch } from "@/coroutines/launch.ts";
+import { SeedPersistence } from "@/modules/umbrella/persistence/seed-persistence.ts";
+import { deriveNextKey } from "@/sdk-v2/seed-crypto";
 
 export type ShareChatEvent = {
   type: "shareUrl";
@@ -18,7 +18,7 @@ export interface ShareChatLogic {
 }
 
 export function createShareChatLogic(
-  {shareStateHandle, persistence, chatId}: {
+  { shareStateHandle, persistence, chatId }: {
     shareStateHandle: ShareStateHandle;
     persistence: SeedPersistence;
     chatId: string;
@@ -33,13 +33,16 @@ export function createShareChatLogic(
   }
 
   launch(async () => {
-    const {title, initialNonce, initialKey, serverUrl} = (await persistence.chat.get(chatId))!;
-    const lastKey = await persistence.key.lastKey({chatId});
+    const chat = await persistence.chat.get(chatId);
+    if (!chat) throw new Error("Share chat not found");
+    const { title, initialNonce, initialKey, serverUrl } = chat;
+
+    const lastKey = await persistence.key.lastKey({ chatId });
 
     let nonce, key;
     if (lastKey) {
       nonce = lastKey.nonce + 1;
-      key = await deriveNextKey({key: lastKey.key});
+      key = await deriveNextKey({ key: lastKey.key });
     } else {
       nonce = initialNonce;
       key = initialKey;
@@ -48,7 +51,7 @@ export function createShareChatLogic(
     const origin = window.location.origin;
     const baseUrl = import.meta.env.BASE_URL;
 
-    setShareUrl(`${origin}${baseUrl}#/import/${encodeURIComponent(title)}/${encodeURIComponent(chatId)}/${encodeURIComponent(key)}/${nonce}/${encodeURIComponent(serverUrl)}`);
+    setShareUrl(`${origin}${baseUrl}#/import/${encodeURIComponent(title)}/${encodeURIComponent(chatId)}/${encodeURIComponent(key)}/${nonce.toString()}/${encodeURIComponent(serverUrl)}`);
   });
 
   return {
@@ -56,6 +59,6 @@ export function createShareChatLogic(
 
     getShareUrl: () => shareUrl,
 
-    close: () => shareStateHandle.set({ shown: false }),
+    close: () => { shareStateHandle.set({ shown: false }); },
   };
 }

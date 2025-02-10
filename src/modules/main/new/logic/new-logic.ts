@@ -1,14 +1,14 @@
-import {createObservable, Observable} from "@/coroutines/observable.ts";
-import {SeedPersistence} from "@/modules/umbrella/persistence/seed-persistence.ts";
-import {launch} from "@/coroutines/launch.ts";
-import {randomAESKey} from "@/sdk/crypto/subtle-crypto.ts";
-import {WorkerStateHandle} from "@/modules/umbrella/logic/worker-state-handle.ts";
-import {NewStateHandle} from "@/modules/main/logic/new-state-handle.ts";
-import {ChatListStateHandle} from "@/modules/main/chat-list/logic/chat-list-state-handle.ts";
+import { createObservable, Observable } from "@/coroutines/observable.ts";
+import { SeedPersistence } from "@/modules/umbrella/persistence/seed-persistence.ts";
+import { launch } from "@/coroutines/launch.ts";
+import { WorkerStateHandle } from "@/modules/umbrella/logic/worker-state-handle.ts";
+import { NewStateHandle } from "@/modules/main/logic/new-state-handle.ts";
+import { ChatListStateHandle } from "@/modules/main/chat-list/logic/chat-list-state-handle.ts";
 import {
   BackendSelectorLogic, BackendSelectorOptionLogic,
-  createBackendSelectorLogic
+  createBackendSelectorLogic,
 } from "@/modules/main/new/select-backend/logic/backend-selector-logic.ts";
+import { randomAESKey } from "@/crypto/subtle";
 
 export type NewEvent = {
   type: "title";
@@ -31,12 +31,12 @@ export interface NewLogic {
 }
 
 export function createNewLogic(
-  {persistence, worker, newStateHandle, chatListStateHandle}: {
+  { persistence, worker, newStateHandle, chatListStateHandle }: {
     persistence: SeedPersistence;
     worker: WorkerStateHandle;
     newStateHandle: NewStateHandle;
     chatListStateHandle: ChatListStateHandle;
-  }
+  },
 ): NewLogic {
   const events: Observable<NewEvent> = createObservable();
 
@@ -66,6 +66,7 @@ export function createNewLogic(
       launch(async () => {
         const privateKey = await randomAESKey();
         const chatId = await randomAESKey();
+        const serverUrl = getServerUrl(option);
         const chat = {
           id: chatId,
           title: title,
@@ -73,11 +74,11 @@ export function createNewLogic(
           initialNonce: 0,
           lastMessageDate: new Date(),
           unreadCount: 0,
-          serverUrl: getServerUrl(option)
+          serverUrl,
         };
         await persistence.chat.put(chat);
         events.emit({ type: "openChat", chatId });
-        worker.subscribe({ queueId: chatId, nonce: 0 });
+        worker.subscribe(serverUrl, { queueId: chatId, nonce: 0 });
         chatListStateHandle.unshift(chat);
         newStateHandle.setShown(false);
       });
@@ -87,16 +88,16 @@ export function createNewLogic(
       if (blocked) return;
       blocked = true;
       newStateHandle.setShown(false);
-    }
+    },
   };
 }
 
 function getServerUrl(option: BackendSelectorOptionLogic): string {
   switch (option.type) {
     case "go":
-      return "https://meetacy.app/seed-go"
+      return "https://meetacy.app/seed-go";
     case "kt":
-      return "https://meetacy.app/seed-kt"
+      return "https://meetacy.app/seed-kt";
     case "custom":
       return option.getValue();
   }

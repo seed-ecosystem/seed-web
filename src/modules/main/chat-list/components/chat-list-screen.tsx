@@ -17,6 +17,6 @@ export function ChatListScreen({events, getChats, mount}: ChatListLogic) {
   useEffect(mount, [mount]);
 
   return ChatListContent({
-    chats: chats
+    chats: chats,
   });
 }

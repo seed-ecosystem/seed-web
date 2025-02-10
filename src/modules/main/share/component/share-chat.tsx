@@ -16,5 +16,5 @@ export function ShareChat({getShareUrl, events, close}: ShareChatLogic) {
 
   return <>
     {shareUrl ? <ShareChatContent shareUrl={shareUrl} close={close} /> : undefined}
-  </>
+  </>;
 }

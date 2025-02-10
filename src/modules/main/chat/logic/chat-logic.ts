@@ -1,14 +1,14 @@
-import {SeedPersistence} from "@/modules/umbrella/persistence/seed-persistence.ts";
-import {Message} from "@/modules/main/chat/logic/message.ts";
-import {loadLocalMessages} from "@/modules/main/chat/logic/load-local-messages-usecase.ts";
-import {createObservable, Observable} from "@/coroutines/observable.ts";
-import {WorkerStateHandle} from "@/modules/umbrella/logic/worker-state-handle.ts";
-import {listenWorkerEvents} from "@/modules/main/chat/logic/listen-worker-events.ts";
-import {sendMessage} from "@/modules/main/chat/logic/send-message.ts";
-import {NicknameStateHandle} from "@/modules/main/logic/nickname-state-handle.ts";
-import {listenNickname} from "@/modules/main/chat/logic/listen-nickname.ts";
-import {Cancellation} from "@/coroutines/cancellation.ts";
-import {ChatListStateHandle} from "@/modules/main/chat-list/logic/chat-list-state-handle.ts";
+import { SeedPersistence } from "@/modules/umbrella/persistence/seed-persistence.ts";
+import { Message } from "@/modules/main/chat/logic/message.ts";
+import { loadLocalMessages } from "@/modules/main/chat/logic/load-local-messages-usecase.ts";
+import { createObservable, Observable } from "@/coroutines/observable.ts";
+import { WorkerStateHandle } from "@/modules/umbrella/logic/worker-state-handle.ts";
+import { listenWorkerEvents } from "@/modules/main/chat/logic/listen-worker-events.ts";
+import { sendMessage } from "@/modules/main/chat/logic/send-message.ts";
+import { NicknameStateHandle } from "@/modules/main/logic/nickname-state-handle.ts";
+import { listenNickname } from "@/modules/main/chat/logic/listen-nickname.ts";
+import { Cancellation } from "@/coroutines/cancellation.ts";
+import { ChatListStateHandle } from "@/modules/main/chat-list/logic/chat-list-state-handle.ts";
 
 export type ChatEvent = {
   type: "nickname";
@@ -41,9 +41,11 @@ export interface ChatLogic {
 
 export function createChatLogic(
   {
-    persistence, worker, nicknameStateHandle, chatListStateHandle, chatId
+    url, queueId,
+    persistence, worker, nicknameStateHandle, chatListStateHandle,
   }: {
-    chatId: string;
+    url: string;
+    queueId: string;
     nicknameStateHandle: NicknameStateHandle;
     chatListStateHandle: ChatListStateHandle;
     persistence: SeedPersistence;
@@ -77,16 +79,19 @@ export function createChatLogic(
     setMessages(
       messages.map(message => message.localNonce == modified.localNonce
         ? modified
-        : message
-      )
-    )
+        : message,
+      ),
+    );
   }
 
   loadLocalMessages({
-    chatId, nickname: nicknameStateHandle,
+    url,
+    queueId: queueId, nickname: nicknameStateHandle,
     serverNonce, setServerNonce: (value) => serverNonce = value,
     localNonce, setLocalNonce: (value) => localNonce = value,
-    setMessages, setUpdating: () => setUpdating(!worker.isWaiting(chatId)),
+    setMessages, setUpdating: () => {
+      setUpdating(!worker.getWaiting(url, queueId));
+    },
     persistence,
   });
 
@@ -99,10 +104,10 @@ export function createChatLogic(
       const cancel1 = listenNickname({
         nickname: nicknameStateHandle,
         getMessages: () => messages, setMessages,
-        setDisplayNickname: (value) => events.emit({ type: "nickname", value })
+        setDisplayNickname: (value) => { events.emit({ type: "nickname", value }); },
       });
       const cancel2 = listenWorkerEvents({
-        worker, chatId, nickname: nicknameStateHandle,
+        worker, chatId: queueId, nickname: nicknameStateHandle,
         getMessages: () => messages, setMessages,
         setUpdating,
         getLocalNonce: () => localNonce, setLocalNonce: (value) => localNonce = value,
@@ -115,7 +120,7 @@ export function createChatLogic(
     },
     sendMessage() {
       sendMessage({
-        queueId: chatId,
+        url, queueId,
         nickname: nicknameStateHandle.get(),
         text, setText,
         getLocalNonce: () => localNonce,
@@ -123,8 +128,8 @@ export function createChatLogic(
         getServerNonce: () => serverNonce,
         setServerNonce: (value) => serverNonce = value,
         getMessages: () => messages, setMessages,
-        editMessage, worker, chatListStateHandle
+        editMessage, worker, chatListStateHandle,
       });
-    }
-  }
+    },
+  };
 }

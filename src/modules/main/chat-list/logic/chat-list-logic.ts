@@ -25,7 +25,7 @@ export function createChatListLogic(
     persistence: SeedPersistence;
     worker: WorkerStateHandle;
     chatListStateHandle: ChatListStateHandle;
-  }
+  },
 ): ChatListLogic {
   const events: Observable<ChatListEvent> = createObservable();
 
@@ -35,13 +35,13 @@ export function createChatListLogic(
     events,
     getChats: chatListStateHandle.get,
     mount(): Cancellation {
-      let cancel1 = updateLastMessage({worker, chatListStateHandle});
-      let cancel2 = chatListStateHandle.updates.subscribe(value => events.emit({ type: "chats", value }));
+      const cancel1 = updateLastMessage({worker, chatListStateHandle});
+      const cancel2 = chatListStateHandle.updates.subscribe(value => { events.emit({ type: "chats", value }); });
 
       return () => {
         cancel1();
         cancel2();
-      }
-    }
+      };
+    },
   };
 }

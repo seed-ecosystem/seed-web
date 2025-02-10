@@ -2,7 +2,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
   AlertDialogHeader,
-  AlertDialogTitle
+  AlertDialogTitle,
 } from "@/modules/core/components/alert-dialog.tsx";
 import {useEffect, useRef} from "react";
 

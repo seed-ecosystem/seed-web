@@ -1,21 +1,28 @@
-import {IndexedKey} from "@/sdk/worker/indexed-key.ts";
-
 export type AddKeyOptions = {
   queueId: string;
+  url: string;
   keys: IndexedKey[];
 }
 
 export type GetKeyAt = {
   queueId: string;
+  url: string;
   nonce: number;
 }
 
 export type GetLastKeyOptions = {
   queueId: string;
+  url: string;
 }
 
 export type GetInitialKeyOptions = {
   queueId: string;
+  url: string;
+}
+
+export type IndexedKey = {
+  key: string;
+  nonce: number;
 }
 
 export interface KeyPersistence {

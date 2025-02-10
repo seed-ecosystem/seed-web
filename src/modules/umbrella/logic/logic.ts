@@ -1,10 +1,7 @@
 import { createPersistence, SeedPersistence } from "@/modules/umbrella/persistence/seed-persistence.ts";
-import { createSeedSocket } from "@/sdk/socket/seed-socket.ts";
 import { createMainLogic, MainLogic } from "@/modules/main/logic/main-logic.ts";
-import { createSeedClient, SeedClient } from "@/sdk/client/seed-client.ts";
-import { createSeedWorker as seedWorker, SeedWorker } from "@/sdk/worker/seed-worker.ts";
-import { AddKeyOptions, KeyPersistence } from "@/sdk/worker/key-persistence.ts";
-import { IndexedKey } from "@/sdk/worker/indexed-key.ts";
+import { createSeedWorker as seedWorker, SeedWorker } from "@/sdk-v2/seed-worker";
+import { AddKeyOptions, IndexedKey, KeyPersistence } from "@/sdk-v2/key-persistence";
 import { Chat } from "@/modules/main/chat-list/persistence/chat.ts";
 import { subscribeToChats } from "@/modules/umbrella/logic/subscribe-to-chats.ts";
 import { createWorkerStateHandle } from "@/modules/umbrella/logic/worker-state-handle.ts";
@@ -13,7 +10,7 @@ import { createChatListStateHandle } from "@/modules/main/chat-list/logic/chat-l
 import { pickRandomNickname } from "@/modules/umbrella/logic/pick-random-nickname.ts";
 import { launch } from "@/coroutines/launch.ts";
 import { createChatStateHandle } from "@/modules/main/logic/chat-state-handle.ts";
-import { createSeedEngine } from "@/sdk-v2/seed-engine";
+import { createSeedClient as seedClient, SeedClient } from "@/sdk-v2/seed-client";
 
 export type LogicEvent = {
   type: "open",
@@ -29,8 +26,7 @@ export interface Logic {
 export async function createLogic(): Promise<Logic> {
   const events: Observable<LogicEvent> = createObservable();
   const persistence = await createPersistence();
-  const engine = createSeedEngine("https://meetacy.app/seed-kt");
-  const client = createSeedClient({ engine });
+  const client = createSeedClient();
   const worker = createSeedWorker({ client, persistence });
   const workerStateHandle = createWorkerStateHandle({ worker, persistence });
   const chatStateHandle = createChatStateHandle();
@@ -48,7 +44,13 @@ export async function createLogic(): Promise<Logic> {
           events.emit({ type: "open", chatId: chat.id });
           return;
         }
-        await worker.subscribe({ queueId: chat.id, nonce: chat.initialNonce });
+        worker.subscribe(
+          chat.serverUrl,
+          {
+            queueId: chat.id,
+            nonce: chat.initialNonce,
+          },
+        );
         await persistence.chat.put(chat);
         chatListStateHandle.unshift(chat);
         events.emit({ type: "open", chatId: chat.id });
@@ -62,6 +64,24 @@ type CreateSeedWorkerOptions = {
   client: SeedClient;
   persistence: SeedPersistence;
 };
+
+function createSeedClient() {
+  const client = seedClient({
+    engine: {
+      mainUrl: "https://meetacy.app/seed-kt",
+    },
+  });
+  client.setForeground(true);
+  window.onfocus = function() {
+    console.log(">> foreground(true)");
+    client.setForeground(true);
+  };
+  window.onblur = function() {
+    console.log("<< foreground(false)");
+    client.setForeground(false);
+  };
+  return client;
+}
 
 function createSeedWorker({ client, persistence }: CreateSeedWorkerOptions): SeedWorker {
 
@@ -77,7 +97,8 @@ function createSeedWorker({ client, persistence }: CreateSeedWorkerOptions): See
     },
 
     async getInitialKey({ queueId }): Promise<IndexedKey> {
-      const data = (await persistence.chat.get(queueId))!;
+      const data = await persistence.chat.get(queueId);
+      if (!data) throw new Error("Don't have initial chat while should've");
       return {
         key: data.initialKey,
         nonce: data.initialNonce,

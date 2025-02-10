@@ -7,8 +7,8 @@ export function RenameChat(
   {
     events,
     getTitle, setTitle,
-    rename, cancel
-  }: RenameLogic
+    rename, cancel,
+  }: RenameLogic,
 ) {
   const [title, updateTitle] = useState(getTitle);
 
@@ -20,5 +20,5 @@ export function RenameChat(
     }
   });
 
-  return RenameContent({ title, setTitle, rename, cancel })
+  return RenameContent({ title, setTitle, rename, cancel });
 }

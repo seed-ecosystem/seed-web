@@ -13,7 +13,7 @@ export interface NicknameStateHandle {
 export function createNicknameStateHandle(
   {persistence}: {
     persistence: SeedPersistence;
-  }
+  },
 ): NicknameStateHandle {
   const updates: Observable<string> = createObservable();
   let nickname = "";

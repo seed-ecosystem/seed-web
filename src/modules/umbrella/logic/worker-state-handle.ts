@@ -1,25 +1,24 @@
-import {createObservable, Observable} from "@/coroutines/observable.ts";
-import {Message, MessageContent} from "@/sdk/worker/message.ts";
-import {SeedWorker} from "@/sdk/worker/seed-worker.ts";
-import {sanitizeContent} from "@/modules/umbrella/logic/sanitize-messages.ts";
-import {SeedPersistence} from "@/modules/umbrella/persistence/seed-persistence.ts";
+import { createObservable, Observable } from "@/coroutines/observable.ts";
+import { SeedWorker, SeedWorkerMessage, SeedWorkerMessageContent } from "@/sdk-v2/seed-worker";
+import { sanitizeContent } from "@/modules/umbrella/logic/sanitize-messages.ts";
+import { SeedPersistence } from "@/modules/umbrella/persistence/seed-persistence.ts";
 
 export type WorkStateHandleEvent = {
   type: "new";
   queueId: string;
-  messages: Message[];
+  messages: SeedWorkerMessage[];
 } | {
   type: "connected";
-  value: boolean;
+  connected: boolean;
 } | {
   type: "waiting";
   queueId: string;
-  value: boolean;
+  waiting: boolean;
 }
 
 export type SendMessageOptions = {
   queueId: string;
-  content: MessageContent;
+  content: SeedWorkerMessageContent;
 }
 
 export type SubscribeOptions = {
@@ -30,32 +29,34 @@ export type SubscribeOptions = {
 export interface WorkerStateHandle {
   events: Observable<WorkStateHandleEvent>;
 
-  isConnected(): boolean;
-  isWaiting(chatId: string): boolean;
+  getConnected(): boolean;
+  getWaiting(url: string, queueId: string): boolean;
 
-  sendMessage(options: SendMessageOptions): Promise<number | undefined>;
-  subscribe(options: SubscribeOptions): void;
+  send(url: string, options: SendMessageOptions): Promise<number | undefined>;
+  subscribe(url: string, options: SubscribeOptions): void;
 }
 
 export function createWorkerStateHandle(
-  {worker, persistence}: {
+  { worker, persistence }: {
     worker: SeedWorker;
     persistence: SeedPersistence;
-  }
+  },
 ): WorkerStateHandle {
   const events: Observable<WorkStateHandleEvent> = createObservable();
 
   worker.events.subscribeAsChannel().onEach(async event => {
     switch (event.type) {
       case "new":
-        const messages = event.messages.map(message => {
-          return {
-            ...message,
-            content: sanitizeContent(message.content)
-          }
-        });
-        await persistence.message.add(messages);
-        events.emit({ ...event, messages });
+        {
+          const messages = event.messages.map(message => {
+            return {
+              ...message,
+              content: sanitizeContent(message.content),
+            };
+          });
+          await persistence.message.add(messages);
+          events.emit({ ...event, messages });
+        }
         break;
       case "waiting":
       case "connected":
@@ -66,10 +67,23 @@ export function createWorkerStateHandle(
 
   return {
     events,
-    isConnected: worker.isConnected,
-    isWaiting: worker.isWaiting,
-    sendMessage: ({queueId, content}) =>
-      worker.sendMessage({queueId: queueId, content: sanitizeContent(content)}),
-    subscribe: worker.subscribe
+    getConnected() {
+      return worker.getConnected();
+    },
+    getWaiting(url, queueId) {
+      return worker.getWaiting(url, queueId);
+    },
+    send(url, { queueId, content }) {
+      return worker.send(
+        url,
+        {
+          queueId,
+          content: sanitizeContent(content),
+        },
+      );
+    },
+    subscribe(url, queueId) {
+      worker.subscribe(url, queueId);
+    },
   };
 }

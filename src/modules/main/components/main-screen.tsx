@@ -24,8 +24,8 @@ export function MainScreen(
     getDeleteChat,
     getRenameChat,
 
-    escape
-  }: MainLogic
+    escape,
+  }: MainLogic,
 ) {
   const [, navigate] = useLocation();
 
@@ -77,7 +77,7 @@ export function MainScreen(
       }
     };
     document.addEventListener("keydown", listener);
-    return () => document.removeEventListener("keydown", listener);
+    return () => { document.removeEventListener("keydown", listener); };
   }, []);
 
   return MainContent({

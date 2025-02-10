@@ -14,7 +14,7 @@ export interface KeyStorage {
 
 export function createKeyObjectStore(db: IDBPDatabase){
   db.createObjectStore("key", {
-    keyPath: ["nonce", "chatId"]
+    keyPath: ["nonce", "chatId"],
   }).createIndex("chatId", "chatId", { unique: false });
 }
 
@@ -31,10 +31,10 @@ export function createKeyStorage(db: IDBPDatabase): KeyStorage {
     },
 
     async add(keys: Key[]): Promise<void> {
-      const transaction = db.transaction("key", "readwrite")
+      const transaction = db.transaction("key", "readwrite");
       await Promise.all([
         ...keys.map(key => transaction.store.put(key)),
-        transaction.done
+        transaction.done,
       ]);
     },
 

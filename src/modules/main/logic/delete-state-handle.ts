@@ -25,6 +25,6 @@ export function createDeleteStateHandle(): DeleteStateHandle {
       props = value;
       updates.emit(value);
     },
-  }
+  };
 }
 

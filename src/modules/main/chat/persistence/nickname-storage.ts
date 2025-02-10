@@ -7,7 +7,7 @@ export interface NicknameStorage {
 
 export function createNicknameObjectStore(db: IDBPDatabase){
   db.createObjectStore("nickname", {
-    keyPath: "id"
+    keyPath: "id",
   });
 }
 
@@ -24,6 +24,6 @@ export function createNicknameStorage(db: IDBPDatabase): NicknameStorage {
         id: 1,
         nickname: nickname,
       });
-    }
+    },
   };
 }

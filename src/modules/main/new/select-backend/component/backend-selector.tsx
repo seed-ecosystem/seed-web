@@ -1,10 +1,10 @@
 import {
   BackendSelectorLogic,
-  BackendSelectorOptionLogic
+  BackendSelectorOptionLogic,
 } from "@/modules/main/new/select-backend/logic/backend-selector-logic.ts";
 import {
   BackendOption,
-  BackendSelectorContent
+  BackendSelectorContent,
 } from "@/modules/main/new/select-backend/component/backend-selector-content.tsx";
 import {useState} from "react";
 import {useEach} from "@/coroutines/observable.ts";
@@ -15,12 +15,12 @@ export function BackendSelector({events, getOption, setOption}: BackendSelectorL
   useEach(events, (event) => {
     switch (event.type) {
       case "option":
-        updateOption(createBackendOption(event.value))
+        updateOption(createBackendOption(event.value));
         break;
     }
   });
 
-  return BackendSelectorContent({option, setOption})
+  return BackendSelectorContent({option, setOption});
 }
 
 function createBackendOption(logic: BackendSelectorOptionLogic): BackendOption {
@@ -42,6 +42,6 @@ function createBackendOption(logic: BackendSelectorOptionLogic): BackendOption {
           });
           return [value, logic.setValue];
         },
-      }
+      };
   }
 }

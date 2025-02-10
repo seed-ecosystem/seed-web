@@ -1,8 +1,9 @@
-import {createObservable, Observable} from "@/coroutines/observable.ts";
-import {Chat, UiChat} from "@/modules/main/chat-list/logic/chat.ts";
-import {SeedPersistence} from "@/modules/umbrella/persistence/seed-persistence.ts";
-import {launch} from "@/coroutines/launch.ts";
-import {ChatStateHandle} from "@/modules/main/logic/chat-state-handle.ts";
+
+import { createObservable, Observable } from "@/coroutines/observable.ts";
+import { Chat, UiChat } from "@/modules/main/chat-list/logic/chat.ts";
+import { SeedPersistence } from "@/modules/umbrella/persistence/seed-persistence.ts";
+import { launch } from "@/coroutines/launch.ts";
+import { ChatStateHandle } from "@/modules/main/logic/chat-state-handle.ts";
 
 export interface ChatListStateHandle {
   updates: Observable<UiChat[]>;
@@ -15,10 +16,10 @@ export interface ChatListStateHandle {
 }
 
 export function createChatListStateHandle(
-  {persistence, chatStateHandle}: {
+  { persistence, chatStateHandle }: {
     persistence: SeedPersistence;
     chatStateHandle: ChatStateHandle;
-  }
+  },
 ): ChatListStateHandle {
   const updates: Observable<UiChat[]> = createObservable();
 
@@ -30,8 +31,10 @@ export function createChatListStateHandle(
   }
 
   chatStateHandle.updates.subscribe(active => {
-    chatList = chatList.map(chat => combine(chat, active?.chatId));
-    active && read(active.chatId);
+    chatList = chatList.map(chat => combine(chat, active?.queueId));
+    if (active) {
+      read(active.queueId);
+    }
   });
 
   function read(chatId: string) {
@@ -49,9 +52,11 @@ export function createChatListStateHandle(
     get: () => chatList,
 
     init(chatList: Chat[]) {
-      const uiChatList = chatList.map(chat => combine(chat, chatStateHandle.get()?.chatId));
+      const uiChatList = chatList.map(chat => combine(chat, chatStateHandle.get()?.queueId));
       const activeChat = chatStateHandle.get();
-      activeChat && read(activeChat.chatId);
+      if (activeChat) {
+        read(activeChat.queueId);
+      }
       setChatList(uiChatList);
     },
 
@@ -59,7 +64,7 @@ export function createChatListStateHandle(
       const newList = [...chatList];
       const index = chatList.findIndex(chat => chat.id === chatId);
       const [chat] = newList.splice(index, 1);
-      unreadCount = chatStateHandle.get()?.chatId == chatId ? 0 : unreadCount;
+      unreadCount = chatStateHandle.get()?.queueId == chatId ? 0 : unreadCount;
       unreadCount += chat.unreadCount;
       newList.unshift({
         ...chat,
@@ -72,9 +77,9 @@ export function createChatListStateHandle(
           chatId,
           {
             lastMessageDate: new Date(),
-            unreadCount
-          }
-        )
+            unreadCount,
+          },
+        ),
       );
     },
 
@@ -83,8 +88,8 @@ export function createChatListStateHandle(
         ...chat,
         isActive: false,
         unreadCount: 0,
-      }
-      setChatList([combine(uiChat, chatStateHandle.get()?.chatId), ...chatList]);
+      };
+      setChatList([combine(uiChat, chatStateHandle.get()?.queueId), ...chatList]);
     },
 
     delete(chatId: string) {
@@ -100,11 +105,11 @@ export function createChatListStateHandle(
       const index = chatList.findIndex(chat => chat.id === chatId);
       newList[index] = {
         ...newList[index],
-        title: title
+        title: title,
       };
       setChatList(newList);
       launch(() => persistence.chat.rename(chatId, title));
-    }
+    },
   };
 }
 

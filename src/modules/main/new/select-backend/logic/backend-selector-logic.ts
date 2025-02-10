@@ -40,7 +40,7 @@ export function createBackendSelectorLogic(): BackendSelectorLogic {
   return {
     events,
     getOption: () => option,
-    setOption
+    setOption,
   };
 }
 
@@ -67,6 +67,6 @@ function createBackendSelectorCustomOptionLogic(): BackendSelectorOptionLogic {
   return {
     type: "custom",
     events,
-    getValue: () => value, setValue
+    getValue: () => value, setValue,
   };
 }

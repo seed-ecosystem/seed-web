@@ -7,8 +7,8 @@ export interface LoadNicknameOptions {
 }
 
 export function loadNickname(
-  {persistence, nickname}: LoadNicknameOptions
+  {persistence, nickname}: LoadNicknameOptions,
 ) {
   persistence.nickname.getName()
-    .then(value => nickname.set(value));
+    .then(value => { nickname.set(value); });
 }

@@ -3,7 +3,7 @@ import {
   AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter,
   AlertDialogHeader,
-  AlertDialogTitle
+  AlertDialogTitle,
 } from "@/modules/core/components/alert-dialog.tsx";
 import {Input} from "@/modules/core/components/input.tsx";
 import {useEffect, useRef, useState} from "react";
@@ -25,7 +25,7 @@ export function RenameContent({title, setTitle, rename, cancel}: RenameContentPr
   }, [title, titleRef]);
 
   const renameRef = useRef(rename);
-  renameRef.current = rename
+  renameRef.current = rename;
 
   useEffect(() => {
     const listener = (event: KeyboardEvent) => {
@@ -36,7 +36,7 @@ export function RenameContent({title, setTitle, rename, cancel}: RenameContentPr
       }
     };
     document.addEventListener("keydown", listener);
-    return () => document.removeEventListener("keydown", listener);
+    return () => { document.removeEventListener("keydown", listener); };
   }, [titleRef]);
 
   return (
@@ -46,7 +46,7 @@ export function RenameContent({title, setTitle, rename, cancel}: RenameContentPr
           <AlertDialogTitle>Rename Chat</AlertDialogTitle>
           <AlertDialogDescription>Change chat title. This action is local</AlertDialogDescription>
         </AlertDialogHeader>
-        <Input ref={updateTitleRef} enterKeyHint="done" placeholder="Title" onChange={(e) => setTitle(e.target.value)} autoFocus />
+        <Input ref={updateTitleRef} enterKeyHint="done" placeholder="Title" onChange={(e) => { setTitle(e.target.value); }} autoFocus />
         <AlertDialogFooter>
           <AlertDialogCancel onClick={cancel}>Cancel</AlertDialogCancel>
           <AlertDialogAction onClick={rename}>Rename</AlertDialogAction>

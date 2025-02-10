@@ -13,7 +13,7 @@ export interface ChatStorage {
 
 export function createChatObjectStore(db: IDBPDatabase){
   db.createObjectStore("chat", {
-    keyPath: "id"
+    keyPath: "id",
   }).createIndex("lastMessageDate", "lastMessageDate");
 }
 
@@ -31,7 +31,7 @@ export function createChatStorage(db: IDBPDatabase): ChatStorage {
       const transaction = db.transaction("chat", "readwrite");
       const chat = {
         ...await transaction.store.get(IDBKeyRange.only(id)),
-        title
+        title,
       };
       await transaction.store.put(chat);
     },
@@ -53,7 +53,7 @@ export function createChatStorage(db: IDBPDatabase): ChatStorage {
       const store = tx.store;
       let chat = await store.get(IDBKeyRange.only(id));
       if (chat) {
-        chat = { ...chat, ...keys }
+        chat = { ...chat, ...keys };
         await store.put(chat);
       }
       await tx.done;

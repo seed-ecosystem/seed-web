@@ -1,5 +1,5 @@
-import {Cancellation} from "@/coroutines/cancellation.ts";
-import {launch} from "@/coroutines/launch.ts";
+import { Cancellation } from "@/coroutines/cancellation.ts";
+import { launch } from "@/coroutines/launch.ts";
 
 /**
  * Synchronization primitive which guarantees to yield
@@ -8,11 +8,11 @@ import {launch} from "@/coroutines/launch.ts";
 export interface Channel<T> {
   isActive: boolean;
 
-  send(element: T): Promise<boolean> & Cancellation;
-  receive(): Promise<T | null> & Cancellation;
+  send(element: T): Promise<boolean>;
+  receive(): Promise<T | null>;
   close(): void;
 
-  onEach(block: (element: T) => Promise<void>): Cancellation;
+  onEach(block: (element: T) => Promise<void> | void): Cancellation;
   map<R>(transform: (element: T) => R): Channel<R>;
 
   /**
@@ -44,47 +44,35 @@ export function createChannel<T>(): Channel<T> {
     receive() {
       let result: Receive<T>;
 
-      const promise: any = new Promise<T | null>(resolve => {
-        if (closed) return resolve(null);
+      const promise = new Promise<T | null>(resolve => {
+        if (closed) { resolve(null); return; }
         const firstSend = send.shift();
         if (firstSend) {
           resolve(firstSend.element);
           firstSend.resolve(true);
         } else {
-          result = {resolve};
+          result = { resolve };
           receive.push(result);
         }
       });
-
-      promise.cancel = () => {
-        const index = receive.indexOf(result);
-        receive.splice(index, 1);
-        result.resolve(null);
-      };
 
       return promise;
     },
 
     send(element: T) {
-      let result: Send<T>
+      let result: Send<T>;
 
-      const promise: any = new Promise<boolean>(resolve => {
-        if (closed) return resolve(false);
+      const promise = new Promise<boolean>(resolve => {
+        if (closed) { resolve(false); return; }
         const firstReceive = receive.shift();
         if (firstReceive) {
           firstReceive.resolve(element);
           resolve(true);
         } else {
-          result = {element, resolve}
+          result = { element, resolve };
           send.push(result);
         }
       });
-
-      promise.cancel = () => {
-        const index = send.indexOf(result);
-        send.splice(index, 1);
-        result.resolve(false);
-      }
 
       return promise;
     },
@@ -107,41 +95,41 @@ export function createChannel<T>(): Channel<T> {
         [Symbol.asyncIterator]: () => iterator,
         next: async () => {
           const item = await this.receive();
-          if (item == null) return { done: true, value: undefined }
-          return { value: item, done: false }
+          if (item == null) return { done: true, value: undefined };
+          return { value: item, done: false };
         },
-      }
+      };
 
-      return iterator
+      return iterator;
     },
 
-    onEach(block: (element: T) => Promise<void>) {
-      let cancellation: Cancellation | null;
+    onEach(block: (element: T) => Promise<void> | undefined) {
+      let cancelled = false;
 
       launch(async () => {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         while (true) {
-          const promise = this.receive();
-          cancellation = promise;
-          const element = await promise;
-          cancellation = null;
-          if (element == null) {
+          const element = await this.receive();
+          if (element == null || cancelled) {
             break;
           }
           await block(element);
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+          if (cancelled) {
+            break;
+          }
         }
       });
 
-      return () => {
-        if (cancellation) cancellation();
-      };
+      return () => { cancelled = true; };
     },
 
     map<R>(transform: (element: T) => R): Channel<R> {
       const result = createChannel<R>();
       this.onEach(async element => {
-        result.send(transform(element));
+        await result.send(transform(element));
       });
       return result;
-    }
-  }
+    },
+  };
 }

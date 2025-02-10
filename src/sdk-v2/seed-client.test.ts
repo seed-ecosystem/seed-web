@@ -1,10 +1,10 @@
 import { expect, test } from "vitest";
 import { createSeedClient, SeedClient } from "./seed-client";
-import { randomAESKey } from "@/sdk/crypto/subtle-crypto";
-import { encryptContent } from "@/sdk/crypto/encrypt-content";
+import { randomAESKey } from "@/crypto/subtle";
+import { encryptContent } from "./seed-crypto";
 
 test("seed-reconnect", async () => {
-  const client = connectClient();
+  connectClient();
   await new Promise(resolve => setTimeout(resolve, 4_000));
 });
 
@@ -31,8 +31,6 @@ test("seed-client-send", async () => {
   });
 
   await new Promise(resolve => setTimeout(resolve, 2_000));
-
-  console.log("After timeout");
 
   const goResult = await client.send(
     "wss://meetacy.app/seed-go",
@@ -101,8 +99,6 @@ function connectClient(): SeedClient {
     },
   });
   client.setForeground(true);
-  client.addServer("wss://meetacy.app/seed-kt");
-  client.addServer("wss://meetacy.app/seed-go");
   return client;
 }
 

@@ -8,12 +8,12 @@ export function MessageInput(
     text: string;
     setText: (text: string) => void;
     onClick: () => void;
-  }
+  },
 ) {
   const desktopRef= useRef<HTMLTextAreaElement>(null);
   const mobileRef= useRef<HTMLTextAreaElement>(null);
   const onClickRef = useRef(onClick);
-  onClickRef.current = onClick
+  onClickRef.current = onClick;
 
   useEffect(() => {
     const listener = (event: KeyboardEvent) => {
@@ -44,7 +44,7 @@ export function MessageInput(
       <div className="flex sm:hidden p-1">
         <ChatInput
           ref={mobileRef}
-          onChange={(event) => setText(event.target.value)}
+          onChange={(event) => { setText(event.target.value); }}
           placeholder="Type your message here..."
           className="flex-grow resize-none rounded-lg bg-background border-0 shadow-none focus-visible:ring--1 h-max"/>
 
@@ -59,7 +59,7 @@ export function MessageInput(
         className="hidden sm:block mx-10 mb-7 mt-1 p-1 relative rounded-lg border bg-background focus-within:ring-1 focus-within:ring-ring">
         <ChatInput
           ref={desktopRef}
-          onChange={(event) => setText(event.target.value)}
+          onChange={(event) => { setText(event.target.value); }}
           placeholder="Type your message here..."
           className="resize-none rounded-lg bg-background border-0 p-3 shadow-none focus-visible:ring--1 h-max"/>
 
@@ -75,5 +75,5 @@ export function MessageInput(
         </div>
       </div>
     </div>
-  </>
+  </>;
 }

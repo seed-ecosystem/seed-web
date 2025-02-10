@@ -25,7 +25,7 @@ export function createRenameLogic(
     chatStateHandle: ChatStateHandle;
     chatId: string;
     title: string;
-  }
+  },
 ): RenameLogic {
   const events: Observable<RenameEvent> = createObservable();
 
@@ -39,11 +39,11 @@ export function createRenameLogic(
 
     getTitle: () => title, setTitle,
 
-    cancel: () => renameStateHandle.set({ shown: false }),
+    cancel: () => { renameStateHandle.set({ shown: false }); },
     rename: () => {
       chatListStateHandle.rename(chatId, title);
       chatStateHandle.rename(title);
       renameStateHandle.set({ shown: false });
     },
-  }
+  };
 }

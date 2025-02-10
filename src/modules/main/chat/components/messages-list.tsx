@@ -13,7 +13,7 @@ import {IntermediateRepresentation} from "linkifyjs";
 export const MessagesList = memo((
   {messages}: {
     messages: Message[];
-  }
+  },
 ) => (
   <>
     <div className="relative flex-grow h-0 ">
@@ -26,11 +26,11 @@ export const MessagesList = memo((
           dataLength={messages.length}
           next={() => {}}
           hasMore={false}
-          style={{display: 'flex', flexDirection: 'column-reverse'}}>
+          style={{display: "flex", flexDirection: "column-reverse"}}>
           {messages.map((message) => {
             if (message.content.type != "regular") return;
 
-            const variant = message.content.author ? 'sent' : 'received';
+            const variant = message.content.author ? "sent" : "received";
 
             const key = `${message.localNonce}`;
 
@@ -38,13 +38,13 @@ export const MessagesList = memo((
               <ChatBubbleAvatar fallback={convertTitleToAvatar(message.content.title)}/>
               <ChatBubbleMessage variant={variant}>
                 <Label htmlFor="text">{message.content.title}</Label>
-                <Linkify options={{ target: '_blank', render: RenderLink }}>
+                <Linkify options={{ target: "_blank", render: RenderLink }}>
                   <p id="text">{message.content.text}</p>
                 </Linkify>
               </ChatBubbleMessage>
               {message.loading && <LoadingSpinner/>}
               {message.failure && <CircleX/>}
-            </ChatBubble>
+            </ChatBubble>;
           })}
         </ChatMessageList>
 

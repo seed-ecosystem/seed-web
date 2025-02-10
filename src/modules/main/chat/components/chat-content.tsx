@@ -26,11 +26,11 @@ export function ChatContent({updating, messages, text, setText, sendMessage}: Ch
             <MessageInput
               text={text}
               setText={setText}
-              onClick={() => sendMessage()}
+              onClick={() => { sendMessage(); }}
             />
           </div>
         </div>
       </div>
     </>
-  )
+  );
 }

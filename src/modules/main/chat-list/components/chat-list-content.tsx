@@ -18,7 +18,7 @@ export function ChatListContent({chats}: ChatListProps) {
             key={chat.id}
             href={`/chat/${encodeURIComponent(chat.id)}`}
             data-active={chat.isActive}
-            className={`data-[active=true]:bg-foreground/[9%] flex flex-row md:w-64 items-center px-2 py-2 gap-2 whitespace-nowrap rounded-md text-sm`}>
+            className={"data-[active=true]:bg-foreground/[9%] flex flex-row md:w-64 items-center px-2 py-2 gap-2 whitespace-nowrap rounded-md text-sm"}>
             <Avatar className="flex justify-center items-center">
               <AvatarFallback className="text-muted-foreground">{convertTitleToAvatar(chat.title)}</AvatarFallback>
             </Avatar>
@@ -33,7 +33,7 @@ export function ChatListContent({chats}: ChatListProps) {
               )}
             </div>
             {chat.unreadCount > 0 && <UnreadBadge count={chat.unreadCount} />}
-          </Link>
+          </Link>;
         })}
       </nav>
     </div>
@@ -45,5 +45,5 @@ export type UnreadBadgeProps = {
 }
 
 function UnreadBadge({count}: UnreadBadgeProps) {
-  return <span className="bg-primary py-1 px-2 rounded-full text-primary-foreground text-center content-center text-xs min-w-6 h-6">{count}</span>
+  return <span className="bg-primary py-1 px-2 rounded-full text-primary-foreground text-center content-center text-xs min-w-6 h-6">{count}</span>;
 }

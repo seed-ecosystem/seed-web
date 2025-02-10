@@ -20,5 +20,5 @@ export function createNewStateHandle(): NewStateHandle {
       shown = value;
       updates.emit(value);
     },
-  }
+  };
 }

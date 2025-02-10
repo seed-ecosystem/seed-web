@@ -3,6 +3,7 @@ import globals from 'globals'
 import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
+import parser from '@typescript-eslint/parser'
 
 export default tseslint.config(
   eslint.configs.recommended,
@@ -13,7 +14,7 @@ export default tseslint.config(
       ecmaVersion: 2020,
       globals: globals.browser,
       parserOptions: {
-        project: './tsconfig.app.json',
+        projectService: true,
         tsconfigRootDir: import.meta.dirname,
       },
     },
@@ -30,9 +31,10 @@ export default tseslint.config(
       'semi': [2, 'always'],
       "quotes": ["warn", "double", { "avoidEscape": true }],
       "comma-dangle": ["warn", "always-multiline"],
-      "require-await": "warn",
+      "require-await": "off",
       "@typescript-eslint/no-floating-promises": "warn",
       'no-unused-vars': 'off',
+      "no-constant-condition": ["error", { "checkLoops": "allExceptWhileTrue" }],
       '@typescript-eslint/no-unused-vars': [
         'warn',
         {

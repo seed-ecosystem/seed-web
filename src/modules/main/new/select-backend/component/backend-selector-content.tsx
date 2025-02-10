@@ -57,12 +57,12 @@ function CustomSelectOptionContent({useValue}: CustomSelectOption & { custom: tr
     </label>
     <Input
       ref={inputRef}
-      onChange={event => updateValue(event.target.value)}
+      onChange={event => { updateValue(event.target.value); }}
       type="text"
       placeholder="Server url"
       className="block w-full px-4 py-2 mt-1"
     />
-  </div>
+  </div>;
 }
 
 export type BackendSelectorProps = {

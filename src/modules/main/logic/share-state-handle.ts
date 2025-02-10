@@ -25,5 +25,5 @@ export function createShareStateHandle(): ShareStateHandle {
       props = value;
       updates.emit(value);
     },
-  }
+  };
 }

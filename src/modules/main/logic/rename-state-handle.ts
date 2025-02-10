@@ -26,5 +26,5 @@ export function createRenameStateHandle(): RenameStateHandle {
       props = value;
       updates.emit(value);
     },
-  }
+  };
 }

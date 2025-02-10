@@ -10,8 +10,8 @@ export function ChatScreen(
     getMessages,
     getText, setText,
     mount,
-    sendMessage
-  }: ChatLogic
+    sendMessage,
+  }: ChatLogic,
 ) {
   const [updating, updateUpdating] = useState(getUpdating);
   const [messages, updateMessages] = useState(getMessages);
@@ -31,12 +31,12 @@ export function ChatScreen(
     }
   });
 
-  useEffect(mount, [mount])
+  useEffect(mount, [mount]);
 
   return ChatContent({
     updating: updating,
     messages: messages,
     text, setText,
-    sendMessage
+    sendMessage,
   });
 }

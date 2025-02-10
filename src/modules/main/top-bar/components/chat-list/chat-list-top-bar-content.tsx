@@ -14,7 +14,7 @@ function NicknameInput(
   {text, setText}: {
     text: string;
     setText: (text: string) => void;
-  }
+  },
 ) {
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -27,7 +27,7 @@ function NicknameInput(
   return <div className="w-full h-full flex justify-center items-center">
     <Input
       ref={inputRef}
-      onChange={(e) => setText(e.target.value)}
+      onChange={(e) => { setText(e.target.value); }}
       placeholder={"Anonymous"} />
   </div>;
 }

@@ -1,11 +1,11 @@
-import {Logic} from "@/modules/umbrella/logic/logic.ts";
-import React, {useEffect, useMemo} from "react";
-import {MainScreen} from "@/modules/main/components/main-screen.tsx";
-import {useLocation, useRoute} from "wouter";
-import {useEach} from "@/coroutines/observable.ts";
-import {Toaster} from "@/components/ui/toaster.tsx";
+import { Logic } from "@/modules/umbrella/logic/logic.ts";
+import React, { useEffect, useMemo } from "react";
+import { MainScreen } from "@/modules/main/components/main-screen.tsx";
+import { useLocation, useRoute } from "wouter";
+import { useEach } from "@/coroutines/observable.ts";
+import { Toaster } from "@/components/ui/toaster.tsx";
 
-export function App({logic}: {logic: Logic}) {
+export function App({ logic }: { logic: Logic }) {
   const main = useMemo(() => logic.createMain(), [logic]);
 
   const [, navigate] = useLocation();
@@ -22,17 +22,18 @@ export function App({logic}: {logic: Logic}) {
       unreadCount: 0,
       serverUrl: decodeURIComponent(importChat.serverUrl),
     });
-  }, [importChat]);
+  }, [importChat, logic]);
 
   useEach(logic.events, event => {
     switch (event.type) {
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       case "open":
-        navigate(`/chat/${encodeURIComponent(event.chatId)}`)
+        navigate(`/chat/${encodeURIComponent(event.chatId)}`);
         break;
     }
   });
 
-  const MemoMainScreen = React.memo(MainScreen)
+  const MemoMainScreen = React.memo(MainScreen);
 
   return <>
     <MemoMainScreen {...main} />

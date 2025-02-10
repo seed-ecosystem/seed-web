@@ -1,5 +1,5 @@
 export function convertTitleToAvatar(title: string): string {
-  const alphanumeric = title.replace(/[^\p{L}\d\s]/gu, '');
+  const alphanumeric = title.replace(/[^\p{L}\d\s]/gu, "");
 
   const titleWords: string[] = [];
 
