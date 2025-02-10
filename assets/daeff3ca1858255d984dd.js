@@ -16929,6 +16929,7 @@ async function createPersistence() {
         while (cursor) {
           const message = cursor.value;
           message.queueId = message.chatId;
+          message.url = "wss://meetacy.app/seed-go";
           await messageV2Store.put(message);
           cursor = await cursor.continue();
         }
@@ -33895,4 +33896,4 @@ const logic = await createLogic();
 clientExports.createRoot(document.getElementById("root")).render(
   /* @__PURE__ */ jsxRuntimeExports.jsx(reactExports.StrictMode, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(Router, { hook: useHashLocation, children: /* @__PURE__ */ jsxRuntimeExports.jsx(App, { logic }) }) })
 );
-//# sourceMappingURL=6aef18b302815cdc32a3f.js.map
+//# sourceMappingURL=daeff3ca1858255d984dd.js.map
