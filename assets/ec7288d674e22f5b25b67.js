@@ -16921,25 +16921,23 @@ async function createPersistence() {
           await chatStore.put(chat);
         }
       }
-      if (version <= 9) {
+      if (version <= 10) {
         createMessageObjectStore(db2);
         const messageStore = transaction.objectStore("message");
         const messageV2Store = transaction.objectStore("message-v2");
-        const cursor = await messageStore.openCursor();
-        if (cursor) {
-          for await (const { value: message } of cursor) {
+        const messageCursor = await messageStore.openCursor();
+        if (messageCursor) {
+          for await (const { value: message } of messageCursor) {
             message.queueId = message.chatId;
             message.url = "wss://meetacy.app/seed-go";
             await messageV2Store.put(message);
           }
         }
         db2.deleteObjectStore("message");
-      }
-      if (version <= 10) {
         const chatStore = transaction.objectStore("chat");
-        const cursor = await chatStore.openCursor();
-        if (cursor) {
-          for await (const { value: chat } of cursor) {
+        const chatCursor = await chatStore.openCursor();
+        if (chatCursor) {
+          for await (const { value: chat } of chatCursor) {
             chat.serverUrl = "wss://meetacy.app/seed-go";
             await chatStore.put(chat);
           }
@@ -33898,4 +33896,4 @@ const logic = await createLogic();
 clientExports.createRoot(document.getElementById("root")).render(
   /* @__PURE__ */ jsxRuntimeExports.jsx(reactExports.StrictMode, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(Router, { hook: useHashLocation, children: /* @__PURE__ */ jsxRuntimeExports.jsx(App, { logic }) }) })
 );
-//# sourceMappingURL=7067490e404b5f4a0cdd0.js.map
+//# sourceMappingURL=ec7288d674e22f5b25b67.js.map
