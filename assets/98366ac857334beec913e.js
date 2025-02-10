@@ -16935,10 +16935,12 @@ async function createPersistence() {
       }
       if (version <= 10) {
         const chatStore = transaction.objectStore("chat");
-        const cursor = await chatStore.openCursor() ?? [];
-        for await (const { value: chat } of cursor) {
-          chat.serverUrl = "wss://meetacy.app/seed-go";
-          await chatStore.put(chat);
+        const cursor = await chatStore.openCursor();
+        if (cursor) {
+          for await (const { value: chat } of cursor) {
+            chat.serverUrl = "wss://meetacy.app/seed-go";
+            await chatStore.put(chat);
+          }
         }
       }
     }
@@ -33894,4 +33896,4 @@ const logic = await createLogic();
 clientExports.createRoot(document.getElementById("root")).render(
   /* @__PURE__ */ jsxRuntimeExports.jsx(reactExports.StrictMode, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(Router, { hook: useHashLocation, children: /* @__PURE__ */ jsxRuntimeExports.jsx(App, { logic }) }) })
 );
-//# sourceMappingURL=d4ea1420d954d23243264.js.map
+//# sourceMappingURL=98366ac857334beec913e.js.map
