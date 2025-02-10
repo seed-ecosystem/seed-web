@@ -18476,9 +18476,9 @@ Server: ${url}
 Request:`, payload);
     return new Promise((resolve, reject) => {
       if (!ready)
-        throw new SeedEngineDisconnected();
+        reject(new SeedEngineDisconnected());
       if (checkConnection && !connectedUrls.has(url)) {
-        throw new SeedEngineDisconnected();
+        reject(new SeedEngineDisconnected());
       }
       requests.push({
         url,
@@ -18625,8 +18625,8 @@ function createSeedClient$1({ engine: engineOptions }) {
     const urlQueues = waitingQueues.get(url);
     return urlQueues !== undefined && urlQueues.has(queueId);
   }
-  ensureServer(engineOptions.mainUrl);
   setInterval(() => {
+    ensureServer(engineOptions.mainUrl);
     void engine.executeOrThrow(engineOptions.mainUrl, {
       "type": "ping"
     });
@@ -33894,4 +33894,4 @@ const logic = await createLogic();
 clientExports.createRoot(document.getElementById("root")).render(
   /* @__PURE__ */ jsxRuntimeExports.jsx(reactExports.StrictMode, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(Router, { hook: useHashLocation, children: /* @__PURE__ */ jsxRuntimeExports.jsx(App, { logic }) }) })
 );
-//# sourceMappingURL=6344391b1953fc45158f3.js.map
+//# sourceMappingURL=366a1513258bd11ab44d7.js.map
