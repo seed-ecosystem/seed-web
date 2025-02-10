@@ -18593,13 +18593,19 @@ Payload:`, forward.forward);
 function createSeedClient$1({ engine: engineOptions }) {
   const events = createObservable();
   const engine = createSeedEngine(engineOptions.mainUrl);
-  const subscribeQueueIds = /* @__PURE__ */ new Set();
+  const subscribeQueues = /* @__PURE__ */ new Map();
+  function setSubscribeQueue(url, queueId, subscribed) {
+    const urlQueues = subscribeQueues.get(url) ?? /* @__PURE__ */ new Set();
+    subscribeQueues.set(url, urlQueues);
+    {
+      urlQueues.add(queueId);
+    }
+  }
+  function getSubscribeQueue(url, queueId) {
+    const urlQueues = subscribeQueues.get(url);
+    return urlQueues !== undefined && urlQueues.has(queueId);
+  }
   const waitingQueues = /* @__PURE__ */ new Map();
-  setInterval(() => {
-    void engine.executeOrThrow(engineOptions.mainUrl, {
-      "type": "ping"
-    });
-  }, 15e3);
   function setWaitingQueue(url, queueId, waiting) {
     const urlQueues = waitingQueues.get(url) ?? /* @__PURE__ */ new Set();
     waitingQueues.set(url, urlQueues);
@@ -18619,6 +18625,11 @@ function createSeedClient$1({ engine: engineOptions }) {
     const urlQueues = waitingQueues.get(url);
     return urlQueues !== undefined && urlQueues.has(queueId);
   }
+  setInterval(() => {
+    void engine.executeOrThrow(engineOptions.mainUrl, {
+      "type": "ping"
+    });
+  }, 15e3);
   engine.events.subscribe((event) => {
     switch (event.type) {
       case "ready":
@@ -18686,11 +18697,11 @@ function createSeedClient$1({ engine: engineOptions }) {
     return response.status;
   }
   function subscribe(url, { queueId, nonce }) {
-    if (subscribeQueueIds.has(url)) {
+    if (getSubscribeQueue(url, queueId)) {
       throw new Error(`Already subscribed to this chat id ${queueId}`);
     }
     ensureServer(url);
-    subscribeQueueIds.add(url);
+    setSubscribeQueue(url, queueId);
     const request = {
       type: "subscribe",
       queueId,
@@ -33882,4 +33893,4 @@ const logic = await createLogic();
 clientExports.createRoot(document.getElementById("root")).render(
   /* @__PURE__ */ jsxRuntimeExports.jsx(reactExports.StrictMode, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(Router, { hook: useHashLocation, children: /* @__PURE__ */ jsxRuntimeExports.jsx(App, { logic }) }) })
 );
-//# sourceMappingURL=d869092d15a0197e2147a.js.map
+//# sourceMappingURL=53fb4f952f32e2368de2b.js.map
