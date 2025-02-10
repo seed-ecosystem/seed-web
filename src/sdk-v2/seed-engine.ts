@@ -186,9 +186,9 @@ export function createSeedEngine(mainUrl: string): SeedEngine {
   ) {
     console.log(`>> execute\nServer: ${url}\nRequest:`, payload);
     return new Promise((resolve, reject) => {
-      if (!ready) throw new SeedEngineDisconnected();
+      if (!ready) reject(new SeedEngineDisconnected());
       if (checkConnection && !connectedUrls.has(url)) {
-        throw new SeedEngineDisconnected();
+        reject(new SeedEngineDisconnected());
       }
 
       requests.push({

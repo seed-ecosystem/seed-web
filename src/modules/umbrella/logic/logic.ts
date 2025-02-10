@@ -72,11 +72,11 @@ function createSeedClient() {
     },
   });
   client.setForeground(true);
-  window.onfocus = function() {
+  window.onoffline = function() {
     console.log(">> foreground(true)");
     client.setForeground(true);
   };
-  window.onblur = function() {
+  window.ononline = function() {
     console.log("<< foreground(false)");
     client.setForeground(false);
   };

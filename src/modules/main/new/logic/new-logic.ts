@@ -95,9 +95,9 @@ export function createNewLogic(
 function getServerUrl(option: BackendSelectorOptionLogic): string {
   switch (option.type) {
     case "go":
-      return "https://meetacy.app/seed-go";
+      return "wss://meetacy.app/seed-go";
     case "kt":
-      return "https://meetacy.app/seed-kt";
+      return "wss://meetacy.app/seed-kt";
     case "custom":
       return option.getValue();
   }

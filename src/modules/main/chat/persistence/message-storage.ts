@@ -17,7 +17,6 @@ export function createMessageObjectStore(db: IDBPDatabase) {
 export function createMessageStorage(db: IDBPDatabase): MessageStorage {
   return {
     async lastMessage({ url, queueId }): Promise<ChatMessage | undefined> {
-      console.log("TEST", url, queueId);
       const cursor = await db.transaction("message-v2")
         .store.index("queueId")
         .openCursor(IDBKeyRange.only([url, queueId]), "prev");

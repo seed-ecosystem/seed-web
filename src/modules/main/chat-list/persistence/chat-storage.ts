@@ -1,5 +1,5 @@
-import {IDBPDatabase} from "idb";
-import {Chat} from "@/modules/main/chat-list/persistence/chat.ts";
+import { IDBPDatabase } from "idb";
+import { Chat } from "@/modules/main/chat-list/persistence/chat.ts";
 
 export interface ChatStorage {
   put(chat: Chat): Promise<void>;
@@ -11,7 +11,7 @@ export interface ChatStorage {
   delete(id: string): Promise<void>;
 }
 
-export function createChatObjectStore(db: IDBPDatabase){
+export function createChatObjectStore(db: IDBPDatabase) {
   db.createObjectStore("chat", {
     keyPath: "id",
   }).createIndex("lastMessageDate", "lastMessageDate");
@@ -24,7 +24,7 @@ export function createChatStorage(db: IDBPDatabase): ChatStorage {
     },
 
     async get(id: string): Promise<Chat> {
-      return await db.transaction("chat").store.get(IDBKeyRange.only(id));
+      return await db.transaction("chat").store.get(IDBKeyRange.only(id)) as Chat;
     },
 
     async rename(id: string, title: string): Promise<void> {

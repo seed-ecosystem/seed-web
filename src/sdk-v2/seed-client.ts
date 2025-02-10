@@ -99,17 +99,27 @@ export function createSeedClient(
   const events: Observable<SeedClientEvent> = createObservable();
 
   const engine = createSeedEngine(engineOptions.mainUrl);
-  const subscribeQueueIds: Set<string> = new Set();
-  const waitingQueues: Map<string, Set<string>> = new Map();
+  const subscribeQueues: Map<string, Set<string>> = new Map();
 
-  setInterval(() => {
-    void engine.executeOrThrow(
-      engineOptions.mainUrl,
-      {
-        "type": "ping",
-      },
-    );
-  }, 15_000);
+  function setSubscribeQueue(
+    url: string,
+    queueId: string,
+    subscribed: boolean,
+  ) {
+    const urlQueues = subscribeQueues.get(url) ?? new Set();
+    subscribeQueues.set(url, urlQueues);
+    if (subscribed) {
+      urlQueues.add(queueId);
+    } else {
+      urlQueues.delete(queueId);
+    }
+  }
+  function getSubscribeQueue(url: string, queueId: string) {
+    const urlQueues = subscribeQueues.get(url);
+    return urlQueues !== undefined && urlQueues.has(queueId);
+  }
+
+  const waitingQueues: Map<string, Set<string>> = new Map();
 
   function setWaitingQueue(url: string, queueId: string, waiting: boolean) {
     const urlQueues = waitingQueues.get(url) ?? new Set();
@@ -129,6 +139,16 @@ export function createSeedClient(
     const urlQueues = waitingQueues.get(url);
     return urlQueues !== undefined && urlQueues.has(queueId);
   }
+
+  setInterval(() => {
+    ensureServer(engineOptions.mainUrl);
+    void engine.executeOrThrow(
+      engineOptions.mainUrl,
+      {
+        "type": "ping",
+      },
+    );
+  }, 15_000);
 
   engine.events.subscribe(event => {
     switch (event.type) {
@@ -188,11 +208,11 @@ export function createSeedClient(
   }
 
   function subscribe(url: string, { queueId, nonce }: SeedClientSubscribeOptions) {
-    if (subscribeQueueIds.has(url)) {
+    if (getSubscribeQueue(url, queueId)) {
       throw new Error(`Already subscribed to this chat id ${queueId}`);
     }
     ensureServer(url);
-    subscribeQueueIds.add(url);
+    setSubscribeQueue(url, queueId, true);
     const request: SubscribeRequest = {
       type: "subscribe",
       queueId, nonce,

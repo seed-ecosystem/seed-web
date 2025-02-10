@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {
   createMessageObjectStore,
   createMessageStorage,
@@ -55,19 +57,23 @@ export async function createPersistence(): Promise<SeedPersistence> {
       if (version <= 7) {
         const chatStore = transaction.objectStore("chat");
 
-        const cursor = await chatStore.openCursor() ?? [];
-        for await (const { value: chat } of cursor) {
-          (chat as Chat).unreadCount = 0;
-          await chatStore.put(chat);
+        const cursor = await chatStore.openCursor();
+        if (cursor) {
+          for await (const { value: chat } of cursor) {
+            (chat as Chat).unreadCount = 0;
+            await chatStore.put(chat);
+          }
         }
       }
       if (version <= 8) {
         const chatStore = transaction.objectStore("chat");
 
-        const cursor = await chatStore.openCursor() ?? [];
-        for await (const { value: chat } of cursor) {
-          (chat as Chat).serverUrl = "https://meetacy.app/seed-go";
-          await chatStore.put(chat);
+        const cursor = await chatStore.openCursor();
+        if (cursor) {
+          for await (const { value: chat } of cursor) {
+            (chat as Chat).serverUrl = "https://meetacy.app/seed-go";
+            await chatStore.put(chat);
+          }
         }
       }
       if (version <= 9) {
@@ -76,11 +82,13 @@ export async function createPersistence(): Promise<SeedPersistence> {
         const messageStore = transaction.objectStore("message");
         const messageV2Store = transaction.objectStore("message-v2");
 
-        const cursor = await messageStore.openCursor() ?? [];
-        for await (const { value } of cursor) {
-          // eslint-disable-next-line
-          value.queueId = value.chatId;
-          await messageV2Store.put(value);
+        const cursor = await messageStore.openCursor();
+        if (cursor) {
+          for await (const { value: message } of cursor) {
+            message.queueId = message.chatId;
+            message.url = "wss://meetacy.app/seed-go";
+            await messageV2Store.put(message);
+          }
         }
 
         db.deleteObjectStore("message");
@@ -88,10 +96,12 @@ export async function createPersistence(): Promise<SeedPersistence> {
       if (version <= 10) {
         const chatStore = transaction.objectStore("chat");
 
-        const cursor = await chatStore.openCursor() ?? [];
-        for await (const { value: chat } of cursor) {
-          (chat as Chat).serverUrl = "wss://meetacy.app/seed-go";
-          await chatStore.put(chat);
+        const cursor = await chatStore.openCursor();
+        if (cursor) {
+          for await (const { value: chat } of cursor) {
+            (chat as Chat).serverUrl = "wss://meetacy.app/seed-go";
+            await chatStore.put(chat);
+          }
         }
       }
     },
