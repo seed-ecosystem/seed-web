@@ -18625,6 +18625,7 @@ function createSeedClient$1({ engine: engineOptions }) {
     const urlQueues = waitingQueues.get(url);
     return urlQueues !== undefined && urlQueues.has(queueId);
   }
+  ensureServer(engineOptions.mainUrl);
   setInterval(() => {
     void engine.executeOrThrow(engineOptions.mainUrl, {
       "type": "ping"
@@ -33893,4 +33894,4 @@ const logic = await createLogic();
 clientExports.createRoot(document.getElementById("root")).render(
   /* @__PURE__ */ jsxRuntimeExports.jsx(reactExports.StrictMode, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(Router, { hook: useHashLocation, children: /* @__PURE__ */ jsxRuntimeExports.jsx(App, { logic }) }) })
 );
-//# sourceMappingURL=53fb4f952f32e2368de2b.js.map
+//# sourceMappingURL=6344391b1953fc45158f3.js.map
