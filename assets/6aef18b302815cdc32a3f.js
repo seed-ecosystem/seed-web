@@ -16925,12 +16925,12 @@ async function createPersistence() {
         createMessageObjectStore(db2);
         const messageStore = transaction.objectStore("message");
         const messageV2Store = transaction.objectStore("message-v2");
-        const cursor = await messageStore.openCursor();
+        let cursor = await messageStore.openCursor();
         while (cursor) {
           const message = cursor.value;
           message.queueId = message.chatId;
           await messageV2Store.put(message);
-          await cursor.continue();
+          cursor = await cursor.continue();
         }
         db2.deleteObjectStore("message");
       }
@@ -33895,4 +33895,4 @@ const logic = await createLogic();
 clientExports.createRoot(document.getElementById("root")).render(
   /* @__PURE__ */ jsxRuntimeExports.jsx(reactExports.StrictMode, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(Router, { hook: useHashLocation, children: /* @__PURE__ */ jsxRuntimeExports.jsx(App, { logic }) }) })
 );
-//# sourceMappingURL=8031389e9046451b80051.js.map
+//# sourceMappingURL=6aef18b302815cdc32a3f.js.map
