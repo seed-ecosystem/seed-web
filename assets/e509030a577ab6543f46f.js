@@ -16907,18 +16907,22 @@ async function createPersistence() {
       }
       if (version <= 7) {
         const chatStore = transaction.objectStore("chat");
-        const cursor = await chatStore.openCursor() ?? [];
-        for await (const { value: chat } of cursor) {
-          chat.unreadCount = 0;
-          await chatStore.put(chat);
+        const cursor = await chatStore.openCursor();
+        if (cursor) {
+          for await (const { value: chat } of cursor) {
+            chat.unreadCount = 0;
+            await chatStore.put(chat);
+          }
         }
       }
       if (version <= 8) {
         const chatStore = transaction.objectStore("chat");
-        const cursor = await chatStore.openCursor() ?? [];
-        for await (const { value: chat } of cursor) {
-          chat.serverUrl = "https://meetacy.app/seed-go";
-          await chatStore.put(chat);
+        const cursor = await chatStore.openCursor();
+        if (cursor) {
+          for await (const { value: chat } of cursor) {
+            chat.serverUrl = "https://meetacy.app/seed-go";
+            await chatStore.put(chat);
+          }
         }
       }
       if (version <= 9) {
@@ -33898,4 +33902,4 @@ const logic = await createLogic();
 clientExports.createRoot(document.getElementById("root")).render(
   /* @__PURE__ */ jsxRuntimeExports.jsx(reactExports.StrictMode, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(Router, { hook: useHashLocation, children: /* @__PURE__ */ jsxRuntimeExports.jsx(App, { logic }) }) })
 );
-//# sourceMappingURL=7067490e404b5f4a0cdd0.js.map
+//# sourceMappingURL=e509030a577ab6543f46f.js.map
