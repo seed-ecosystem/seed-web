@@ -16877,7 +16877,7 @@ function createKeyStorage(db) {
 }
 
 async function createPersistence() {
-  const db = await openDB("persistence", 11, {
+  const db = await openDB("persistence", 12, {
     async upgrade(db2, version, _, transaction) {
       if (version == 0) {
         createNicknameObjectStore(db2);
@@ -16933,7 +16933,7 @@ async function createPersistence() {
         }
         db2.deleteObjectStore("message");
       }
-      if (version <= 10) {
+      if (version <= 11) {
         const chatStore = transaction.objectStore("chat");
         const cursor = await chatStore.openCursor() ?? [];
         for await (const { value: chat } of cursor) {
@@ -33882,4 +33882,4 @@ const logic = await createLogic();
 clientExports.createRoot(document.getElementById("root")).render(
   /* @__PURE__ */ jsxRuntimeExports.jsx(reactExports.StrictMode, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(Router, { hook: useHashLocation, children: /* @__PURE__ */ jsxRuntimeExports.jsx(App, { logic }) }) })
 );
-//# sourceMappingURL=fc96ed7c7084b7d46590e.js.map
+//# sourceMappingURL=d869092d15a0197e2147a.js.map
