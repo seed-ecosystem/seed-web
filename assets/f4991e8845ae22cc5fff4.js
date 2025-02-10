@@ -16470,7 +16470,6 @@ function createMessageObjectStore(db) {
 function createMessageStorage(db) {
   return {
     async lastMessage({ url, queueId }) {
-      console.log("TEST", url, queueId);
       const cursor = await db.transaction("message-v2").store.index("queueId").openCursor(IDBKeyRange.only([url, queueId]), "prev");
       if (!cursor) return;
       return cursor.value;
@@ -18845,11 +18844,11 @@ function createSeedClient() {
     }
   });
   client.setForeground(true);
-  window.onfocus = function() {
+  window.onoffline = function() {
     console.log(">> foreground(true)");
     client.setForeground(true);
   };
-  window.onblur = function() {
+  window.ononline = function() {
     console.log("<< foreground(false)");
     client.setForeground(false);
   };
@@ -33894,4 +33893,4 @@ const logic = await createLogic();
 clientExports.createRoot(document.getElementById("root")).render(
   /* @__PURE__ */ jsxRuntimeExports.jsx(reactExports.StrictMode, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(Router, { hook: useHashLocation, children: /* @__PURE__ */ jsxRuntimeExports.jsx(App, { logic }) }) })
 );
-//# sourceMappingURL=366a1513258bd11ab44d7.js.map
+//# sourceMappingURL=f4991e8845ae22cc5fff4.js.map
