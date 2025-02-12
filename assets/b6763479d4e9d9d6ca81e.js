@@ -16876,7 +16876,7 @@ function createKeyStorage(db) {
 }
 
 async function createPersistence() {
-  const db = await openDB("persistence", 11, {
+  const db = await openDB("persistence", 12, {
     async upgrade(db2, version, _, transaction) {
       if (version == 0) {
         createNicknameObjectStore(db2);
@@ -16946,6 +16946,18 @@ async function createPersistence() {
           for await (const { value: chat } of cursor) {
             chat.serverUrl = "wss://meetacy.app/seed-go";
             await chatStore.put(chat);
+          }
+        }
+      }
+      if (version <= 11) {
+        const chatStore = transaction.objectStore("chat");
+        const cursor = await chatStore.openCursor();
+        if (cursor) {
+          for await (const { value: chat } of cursor) {
+            if (chat.serverUrl.startsWith("https")) {
+              chat.serverUrl = chat.serverUrl.replace("https", "wss");
+              await chatStore.put(chat);
+            }
           }
         }
       }
@@ -17167,7 +17179,8 @@ function createObservable() {
 
 function listenWorkerEvents({
   worker,
-  chatId,
+  url,
+  queueId,
   nickname,
   getMessages,
   setMessages,
@@ -17180,7 +17193,8 @@ function listenWorkerEvents({
   return worker.events.subscribe((event) => {
     switch (event.type) {
       case "new": {
-        if (event.queueId != chatId) return;
+        if (event.url !== url) return;
+        if (event.queueId != queueId) return;
         const messages = [];
         for (const eventMessage of event.messages) {
           if (getServerNonce() >= eventMessage.nonce) {
@@ -17212,7 +17226,8 @@ function listenWorkerEvents({
         break;
       }
       case "waiting":
-        if (event.queueId != chatId) break;
+        if (event.url !== url) break;
+        if (event.queueId != queueId) break;
         setUpdating(!event.waiting);
         break;
     }
@@ -17394,7 +17409,8 @@ function createChatLogic({
       });
       const cancel2 = listenWorkerEvents({
         worker,
-        chatId: queueId,
+        url,
+        queueId,
         nickname: nicknameStateHandle,
         getMessages: () => messages,
         setMessages,
@@ -18412,13 +18428,15 @@ function createChatStateHandle() {
   };
 }
 
+const LOG_LEVEL_INFO = 1;
+const LOG_LEVEL_DEBUG = 2;
 class SeedEngineDisconnected extends Error {
   constructor() {
     super("Disconnected while executing request");
     this.name = "SeedEngineDisconnected";
   }
 }
-function createSeedEngine(mainUrl) {
+function createSeedEngine(mainUrl, logLevel = LOG_LEVEL_INFO) {
   const events = createObservable();
   let ws;
   const requests = [];
@@ -18479,9 +18497,11 @@ function createSeedEngine(mainUrl) {
     });
   }
   function executeOrThrow(url, payload, checkConnection = true) {
-    console.log(`>> execute
+    if (logLevel >= LOG_LEVEL_INFO) {
+      console.log(`>> execute
 Server: ${url}
 Request:`, payload);
+    }
     return new Promise((resolve, reject) => {
       if (!ready)
         reject(new SeedEngineDisconnected());
@@ -18495,26 +18515,45 @@ Request:`, payload);
           reject(new SeedEngineDisconnected());
         }
       });
-      let message;
       if (url === mainUrl) {
-        message = payload;
-      } else {
-        message = {
-          type: "forward",
-          url,
-          request: payload
-        };
+        const string = JSON.stringify(payload);
+        if (logLevel >= LOG_LEVEL_DEBUG) {
+          console.log(">>> debug\n", string);
+        }
+        ws?.send(string);
+        return;
       }
-      ws?.send(JSON.stringify(message));
+      const request = {
+        type: "forward",
+        url,
+        request: payload
+      };
+      executeOrThrow(mainUrl, request, false).then((response) => {
+        if (!(/* @__PURE__ */ (() => {
+          const _io0 = (input) => "boolean" === typeof input.status;
+          return (input) => "object" === typeof input && null !== input && _io0(input);
+        })())(response)) {
+          reject(new Error("Unexpected response from backend"));
+          return;
+        }
+        if (!response.status) {
+          reject(new SeedEngineDisconnected());
+        }
+      }, reject);
     });
   }
   function open() {
     ws = new WebSocket(mainUrl);
     ws.onopen = () => {
-      console.log("<< ws: onopen");
+      if (logLevel >= LOG_LEVEL_INFO) {
+        console.log("<< ws: onopen");
+      }
       setReady(true);
     };
     ws.onmessage = (message) => {
+      if (logLevel >= LOG_LEVEL_DEBUG) {
+        console.log("<<< debug\n", message.data);
+      }
       const data = JSON.parse(message.data);
       if (!(/* @__PURE__ */ (() => {
         const _io0 = (input) => "forward" === input.type && "string" === typeof input.url && ("object" === typeof input.forward && null !== input.forward && _iu0(input.forward));
@@ -18552,9 +18591,11 @@ Request:`, payload);
           forward: data
         };
       }
-      console.log(`<< message
+      if (logLevel >= LOG_LEVEL_INFO) {
+        console.log(`<< message
 Server: ${forward.url}
 Payload:`, forward.forward);
+      }
       if (forward.forward.type === "response") {
         const index = requests.findIndex((request) => request.url === forward.url);
         if (index === -1) {
@@ -18584,7 +18625,9 @@ Payload:`, forward.forward);
       }
     };
     ws.onclose = () => {
-      console.log("<< ws: onclose");
+      if (logLevel >= LOG_LEVEL_INFO) {
+        console.log("<< ws: onclose");
+      }
       setReady(false);
     };
   }
@@ -18600,7 +18643,7 @@ Payload:`, forward.forward);
 
 function createSeedClient$1({ engine: engineOptions }) {
   const events = createObservable();
-  const engine = createSeedEngine(engineOptions.mainUrl);
+  const engine = createSeedEngine(engineOptions.mainUrl, LOG_LEVEL_INFO);
   const subscribeQueues = /* @__PURE__ */ new Map();
   function setSubscribeQueue(url, queueId, subscribed) {
     const urlQueues = subscribeQueues.get(url) ?? /* @__PURE__ */ new Set();
@@ -18849,7 +18892,7 @@ async function createLogic() {
 function createSeedClient() {
   const client = createSeedClient$1({
     engine: {
-      mainUrl: "https://meetacy.app/seed-kt"
+      mainUrl: "wss://meetacy.app/seed-kt"
     }
   });
   client.setForeground(true);
@@ -33902,4 +33945,4 @@ const logic = await createLogic();
 clientExports.createRoot(document.getElementById("root")).render(
   /* @__PURE__ */ jsxRuntimeExports.jsx(reactExports.StrictMode, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(Router, { hook: useHashLocation, children: /* @__PURE__ */ jsxRuntimeExports.jsx(App, { logic }) }) })
 );
-//# sourceMappingURL=b4f915a22bf239f423915.js.map
+//# sourceMappingURL=b6763479d4e9d9d6ca81e.js.map
