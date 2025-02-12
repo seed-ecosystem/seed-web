@@ -5,7 +5,8 @@ import { Cancellation } from "@/coroutines/cancellation.ts";
 
 export type ListenWorkerEventsOptions = {
   worker: WorkerStateHandle;
-  chatId: string;
+  url: string;
+  queueId: string;
   nickname: NicknameStateHandle;
   getMessages: () => Message[];
   setMessages: (value: Message[]) => void;
@@ -18,7 +19,7 @@ export type ListenWorkerEventsOptions = {
 
 export function listenWorkerEvents(
   {
-    worker, chatId, nickname,
+    worker, url, queueId, nickname,
     getMessages, setMessages,
     setUpdating,
     getLocalNonce, setLocalNonce,
@@ -29,7 +30,8 @@ export function listenWorkerEvents(
     switch (event.type) {
       case "new":
         {
-          if (event.queueId != chatId) return;
+          if (event.url !== url) return;
+          if (event.queueId != queueId) return;
 
           const messages: Message[] = [];
 
@@ -70,7 +72,8 @@ export function listenWorkerEvents(
           break;
         }
       case "waiting":
-        if (event.queueId != chatId) break;
+        if (event.url !== url) break;
+        if (event.queueId != queueId) break;
         setUpdating(!event.waiting);
         break;
     }

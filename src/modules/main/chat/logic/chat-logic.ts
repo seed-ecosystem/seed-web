@@ -107,7 +107,7 @@ export function createChatLogic(
         setDisplayNickname: (value) => { events.emit({ type: "nickname", value }); },
       });
       const cancel2 = listenWorkerEvents({
-        worker, chatId: queueId, nickname: nicknameStateHandle,
+        worker, url, queueId, nickname: nicknameStateHandle,
         getMessages: () => messages, setMessages,
         setUpdating,
         getLocalNonce: () => localNonce, setLocalNonce: (value) => localNonce = value,

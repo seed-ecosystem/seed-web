@@ -5,6 +5,7 @@ import { SeedPersistence } from "@/modules/umbrella/persistence/seed-persistence
 
 export type WorkStateHandleEvent = {
   type: "new";
+  url: string;
   queueId: string;
   messages: SeedWorkerMessage[];
 } | {
@@ -12,6 +13,7 @@ export type WorkStateHandleEvent = {
   connected: boolean;
 } | {
   type: "waiting";
+  url: string;
   queueId: string;
   waiting: boolean;
 }

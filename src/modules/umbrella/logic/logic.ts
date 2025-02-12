@@ -68,7 +68,7 @@ type CreateSeedWorkerOptions = {
 function createSeedClient() {
   const client = seedClient({
     engine: {
-      mainUrl: "https://meetacy.app/seed-kt",
+      mainUrl: "wss://meetacy.app/seed-kt",
     },
   });
   client.setForeground(true);

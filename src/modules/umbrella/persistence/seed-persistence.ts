@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {
@@ -23,7 +24,7 @@ export interface SeedPersistence {
 }
 
 export async function createPersistence(): Promise<SeedPersistence> {
-  const db = await openDB("persistence", 11, {
+  const db = await openDB("persistence", 12, {
     async upgrade(db, version, _, transaction) {
       // Full schema creation
       if (version == 0) {
@@ -101,6 +102,19 @@ export async function createPersistence(): Promise<SeedPersistence> {
           for await (const { value: chat } of cursor) {
             (chat as Chat).serverUrl = "wss://meetacy.app/seed-go";
             await chatStore.put(chat);
+          }
+        }
+      }
+      if (version <= 11) {
+        const chatStore = transaction.objectStore("chat");
+
+        const cursor = await chatStore.openCursor();
+        if (cursor) {
+          for await (const { value: chat } of cursor) {
+            if (chat.serverUrl.startsWith("https")) {
+              (chat as Chat).serverUrl = chat.serverUrl.replace("https", "wss");
+              await chatStore.put(chat);
+            }
           }
         }
       }

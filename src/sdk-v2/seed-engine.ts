@@ -2,6 +2,10 @@ import { launch } from "@/coroutines/launch";
 import { createObservable, Observable } from "@/coroutines/observable";
 import typia from "typia";
 
+export const LOG_LEVEL_NONE = 0;
+export const LOG_LEVEL_INFO = 1;
+export const LOG_LEVEL_DEBUG = 2;
+
 export type SeedEngineEvent = {
   type: "ready";
   ready: boolean;
@@ -61,6 +65,10 @@ type SeedEngineSentMessage = {
   request: unknown;
 }
 
+type ForwardResponse = {
+  status: boolean;
+}
+
 type SeedEnginePendingRequest = {
   url: string;
   resolve: (payload: unknown) => void;
@@ -101,7 +109,10 @@ export interface SeedEngine {
   open(): void;
 }
 
-export function createSeedEngine(mainUrl: string): SeedEngine {
+export function createSeedEngine(
+  mainUrl: string,
+  logLevel: number = LOG_LEVEL_INFO,
+): SeedEngine {
   const events: Observable<SeedEngineEvent> = createObservable();
 
   let ws: WebSocket | undefined;
@@ -184,7 +195,9 @@ export function createSeedEngine(mainUrl: string): SeedEngine {
     payload: unknown,
     checkConnection: boolean = true,
   ) {
-    console.log(`>> execute\nServer: ${url}\nRequest:`, payload);
+    if (logLevel >= LOG_LEVEL_INFO) {
+      console.log(`>> execute\nServer: ${url}\nRequest:`, payload);
+    }
     return new Promise((resolve, reject) => {
       if (!ready) reject(new SeedEngineDisconnected());
       if (checkConnection && !connectedUrls.has(url)) {
@@ -198,19 +211,35 @@ export function createSeedEngine(mainUrl: string): SeedEngine {
         },
       });
 
-      let message: unknown;
-
       if (url === mainUrl) {
-        message = payload;
-      } else {
-        message = {
-          type: "forward",
-          url,
-          request: payload,
-        } satisfies SeedEngineSentMessage;
+        const string = JSON.stringify(payload);
+        if (logLevel >= LOG_LEVEL_DEBUG) {
+          console.log(">>> debug\n", string);
+        }
+        ws?.send(string);
+        return;
       }
 
-      ws?.send(JSON.stringify(message));
+      const request = {
+        type: "forward",
+        url,
+        request: payload,
+      } satisfies SeedEngineSentMessage;
+
+      // checkConnection is false since it's just forward
+      // request and I don't actually need to call connect
+      // on mainUrl to make forward requests
+      executeOrThrow(mainUrl, request, false).then((response) => {
+        if (!typia.is<ForwardResponse>(response)) {
+          reject(new Error("Unexpected response from backend"));
+          return;
+        }
+        if (!response.status) {
+          reject(new SeedEngineDisconnected());
+        }
+        // We don't call resolve here, because it will be called
+        // when message with type 'forward' is received
+      }, reject);
     });
   }
 
@@ -218,11 +247,16 @@ export function createSeedEngine(mainUrl: string): SeedEngine {
     ws = new WebSocket(mainUrl);
 
     ws.onopen = () => {
-      console.log("<< ws: onopen");
+      if (logLevel >= LOG_LEVEL_INFO) {
+        console.log("<< ws: onopen");
+      }
       setReady(true);
     };
 
     ws.onmessage = (message) => {
+      if (logLevel >= LOG_LEVEL_DEBUG) {
+        console.log("<<< debug\n", message.data);
+      }
       const data = JSON.parse(message.data as string) as SeedEngineReceivedMessage;
       if (!typia.is<SeedEngineReceivedMessage>(data)) {
         return;
@@ -237,7 +271,9 @@ export function createSeedEngine(mainUrl: string): SeedEngine {
           forward: data,
         };
       }
-      console.log(`<< message\nServer: ${forward.url}\nPayload:`, forward.forward);
+      if (logLevel >= LOG_LEVEL_INFO) {
+        console.log(`<< message\nServer: ${forward.url}\nPayload:`, forward.forward);
+      }
       if (forward.forward.type === "response") {
         const index = requests.findIndex((request) => request.url === forward.url);
         if (index === -1) {
@@ -265,7 +301,9 @@ export function createSeedEngine(mainUrl: string): SeedEngine {
     };
 
     ws.onclose = () => {
-      console.log("<< ws: onclose");
+      if (logLevel >= LOG_LEVEL_INFO) {
+        console.log("<< ws: onclose");
+      }
       setReady(false);
     };
   }

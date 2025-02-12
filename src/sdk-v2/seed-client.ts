@@ -1,5 +1,5 @@
 import { createObservable, Observable } from "@/coroutines/observable";
-import { createSeedEngine, SeedEngine, SeedEngineDisconnected } from "./seed-engine";
+import { createSeedEngine, LOG_LEVEL_INFO, SeedEngine, SeedEngineDisconnected } from "./seed-engine";
 import typia from "typia";
 
 export type SeedClientEvent = {
@@ -98,7 +98,7 @@ export function createSeedClient(
 ): SeedClient {
   const events: Observable<SeedClientEvent> = createObservable();
 
-  const engine = createSeedEngine(engineOptions.mainUrl);
+  const engine = createSeedEngine(engineOptions.mainUrl, LOG_LEVEL_INFO);
   const subscribeQueues: Map<string, Set<string>> = new Map();
 
   function setSubscribeQueue(
