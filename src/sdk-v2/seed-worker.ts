@@ -4,6 +4,7 @@ import { IndexedKey, KeyPersistence } from "@/sdk-v2/key-persistence";
 import { SeedClient, SeedClientEvent } from "./seed-client";
 import { randomAESKey } from "@/crypto/subtle";
 import { decryptContent, deriveNextKey, encryptContent } from "./seed-crypto";
+import { createAQueue } from "@/coroutines/aqueue";
 
 export type SeedWorkerEvent = {
   type: "connected";
@@ -144,16 +145,10 @@ export function createSeedWorker(
     }
   });
 
-  return {
-    events,
+  const queue = createAQueue();
 
-    getConnected(): boolean {
-      return client.getConnected();
-    },
-    getWaiting(url: string, queueId: string): boolean {
-      return client.getWaiting(url, queueId);
-    },
-    async send(url, { content, queueId }): Promise<number | undefined> {
+  function send(url: string, { content, queueId }: SeedWorkerSendOptions) {
+    return queue.execute(`${url}:${queueId}`, async () => {
       for (let i = 0; i < SEND_MESSAGE_ATTEMPTS; i++) {
         const { key, nonce } = await generateNewKey({
           url,
@@ -175,7 +170,20 @@ export function createSeedWorker(
 
         if (status) return nonce;
       }
+    });
+  }
+
+  return {
+    events,
+
+    getConnected(): boolean {
+      return client.getConnected();
     },
+    getWaiting(url: string, queueId: string): boolean {
+      return client.getWaiting(url, queueId);
+    },
+
+    send,
 
     subscribe(url: string, { queueId, nonce }) {
       if (addSubscription(url, queueId)) {

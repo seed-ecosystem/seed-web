@@ -140,16 +140,6 @@ export function createSeedClient(
     return urlQueues !== undefined && urlQueues.has(queueId);
   }
 
-  setInterval(() => {
-    ensureServer(engineOptions.mainUrl);
-    void engine.executeOrThrow(
-      engineOptions.mainUrl,
-      {
-        "type": "ping",
-      },
-    );
-  }, 15_000);
-
   engine.events.subscribe(event => {
     switch (event.type) {
       case "ready":
@@ -239,16 +229,27 @@ export function createSeedClient(
       return;
     }
     servers.add(url);
+    pingServer(url);
     engine.events.subscribe(event => {
       if (event.type !== "connected") return;
       if (event.url !== url) return;
-      if (event.connected) {
-        // TODO: Do initial subscribes, etc.
-      } else {
+      if (!event.connected) {
         connectUrlSafely(engine, url);
       }
     });
     connectUrlSafely(engine, url);
+  }
+
+  function pingServer(url: string) {
+    setInterval(() => {
+      if (!engine.getConnected(url)) return;
+      void engine.executeOrThrow(
+        url,
+        {
+          "type": "ping",
+        },
+      );
+    }, 15_000);
   }
 
   let foreground: boolean = false;
