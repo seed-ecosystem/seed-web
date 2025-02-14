@@ -18075,6 +18075,23 @@ function createMainLogic({ persistence, worker, chatListStateHandle, chatStateHa
   };
 }
 
+function createAQueue() {
+  const promises = /* @__PURE__ */ new Map();
+  async function execute(key, block) {
+    const existing = promises.get(key);
+    async function promise() {
+      await existing;
+      return await block();
+    }
+    const result = promise();
+    promises.set(key, result);
+    return await result;
+  }
+  return {
+    execute
+  };
+}
+
 const SEND_MESSAGE_ATTEMPTS = 20;
 function createSeedWorker$1({ client, persistence }) {
   const events = createObservable();
@@ -18136,15 +18153,9 @@ function createSeedWorker$1({ client, persistence }) {
         break;
     }
   });
-  return {
-    events,
-    getConnected() {
-      return client.getConnected();
-    },
-    getWaiting(url, queueId) {
-      return client.getWaiting(url, queueId);
-    },
-    async send(url, { content, queueId }) {
+  const queue = createAQueue();
+  function send(url, { content, queueId }) {
+    return queue.execute(`${url}:${queueId}`, async () => {
       for (let i = 0; i < SEND_MESSAGE_ATTEMPTS; i++) {
         const { key, nonce } = await generateNewKey({
           url,
@@ -18161,7 +18172,17 @@ function createSeedWorker$1({ client, persistence }) {
         if (status)
           return nonce;
       }
+    });
+  }
+  return {
+    events,
+    getConnected() {
+      return client.getConnected();
     },
+    getWaiting(url, queueId) {
+      return client.getWaiting(url, queueId);
+    },
+    send,
     subscribe(url, { queueId, nonce }) {
       if (addSubscription(url, queueId)) {
         client.subscribe(url, { queueId, nonce });
@@ -18676,12 +18697,6 @@ function createSeedClient$1({ engine: engineOptions }) {
     const urlQueues = waitingQueues.get(url);
     return urlQueues !== undefined && urlQueues.has(queueId);
   }
-  setInterval(() => {
-    ensureServer(engineOptions.mainUrl);
-    void engine.executeOrThrow(engineOptions.mainUrl, {
-      "type": "ping"
-    });
-  }, 15e3);
   engine.events.subscribe((event) => {
     switch (event.type) {
       case "ready":
@@ -18776,16 +18791,26 @@ function createSeedClient$1({ engine: engineOptions }) {
       return;
     }
     servers.add(url);
+    pingServer(url);
     engine.events.subscribe((event) => {
       if (event.type !== "connected")
         return;
       if (event.url !== url)
         return;
-      if (event.connected) ; else {
+      if (!event.connected) {
         connectUrlSafely(engine, url);
       }
     });
     connectUrlSafely(engine, url);
+  }
+  function pingServer(url) {
+    setInterval(() => {
+      if (!engine.getConnected(url))
+        return;
+      void engine.executeOrThrow(url, {
+        "type": "ping"
+      });
+    }, 15e3);
   }
   let foreground = false;
   function setForeground(value) {
@@ -33945,4 +33970,4 @@ const logic = await createLogic();
 clientExports.createRoot(document.getElementById("root")).render(
   /* @__PURE__ */ jsxRuntimeExports.jsx(reactExports.StrictMode, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(Router, { hook: useHashLocation, children: /* @__PURE__ */ jsxRuntimeExports.jsx(App, { logic }) }) })
 );
-//# sourceMappingURL=b6763479d4e9d9d6ca81e.js.map
+//# sourceMappingURL=232092d2bfb69b359611e.js.map
