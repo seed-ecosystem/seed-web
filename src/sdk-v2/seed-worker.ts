@@ -247,6 +247,12 @@ async function generateNewKey(
   if (last) {
     newKey = await deriveNextKey({ key: last.key });
     newNonce = last.nonce + 1;
+    const key: IndexedKey = { key: newKey, nonce: newNonce };
+    await persistence.add({
+      queueId,
+      url,
+      keys: [key],
+    });
   } else {
     const { key, nonce } = await persistence.getInitialKey({ queueId, url });
     newKey = key;
