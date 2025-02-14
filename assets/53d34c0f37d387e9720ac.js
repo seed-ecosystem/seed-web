@@ -18234,6 +18234,12 @@ async function generateNewKey({ queueId, url, persistence, cache }) {
   if (last) {
     newKey = await deriveNextKey({ key: last.key });
     newNonce = last.nonce + 1;
+    const key = { key: newKey, nonce: newNonce };
+    await persistence.add({
+      queueId,
+      url,
+      keys: [key]
+    });
   } else {
     const { key, nonce } = await persistence.getInitialKey({ queueId, url });
     newKey = key;
@@ -33970,4 +33976,4 @@ const logic = await createLogic();
 clientExports.createRoot(document.getElementById("root")).render(
   /* @__PURE__ */ jsxRuntimeExports.jsx(reactExports.StrictMode, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(Router, { hook: useHashLocation, children: /* @__PURE__ */ jsxRuntimeExports.jsx(App, { logic }) }) })
 );
-//# sourceMappingURL=232092d2bfb69b359611e.js.map
+//# sourceMappingURL=53d34c0f37d387e9720ac.js.map
