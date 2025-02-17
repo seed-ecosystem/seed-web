@@ -18695,7 +18695,7 @@ Payload:`, event);
 
 function createSeedClient$1({ engine: engineOptions }) {
   const events = createObservable();
-  const engine = createSeedEngine(engineOptions.mainUrl, LOG_LEVEL_DEBUG);
+  const engine = createSeedEngine(engineOptions.mainUrl, LOG_LEVEL_INFO);
   const subscribeQueues = /* @__PURE__ */ new Map();
   function setSubscribeQueue(url, queueId, subscribed) {
     const urlQueues = subscribeQueues.get(url) ?? /* @__PURE__ */ new Set();
@@ -18851,6 +18851,7 @@ function createSeedClient$1({ engine: engineOptions }) {
     }
     servers.add(url);
     pingServer(url);
+    let timeout = 1;
     engine.events.subscribe((event) => {
       if (event.type !== "connected")
         return;
@@ -18858,7 +18859,10 @@ function createSeedClient$1({ engine: engineOptions }) {
         return;
       if (event.connected)
         return;
-      connectUrlSafely(engine, url);
+      timeout = Math.min(timeout * 2, 15e3);
+      setTimeout(() => {
+        connectUrlSafely(engine, url);
+      }, timeout);
     });
     connectUrlSafely(engine, url);
   }
@@ -34010,4 +34014,4 @@ const logic = await createLogic();
 clientExports.createRoot(document.getElementById("root")).render(
   /* @__PURE__ */ jsxRuntimeExports.jsx(reactExports.StrictMode, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(Router, { hook: useHashLocation, children: /* @__PURE__ */ jsxRuntimeExports.jsx(App, { logic }) }) })
 );
-//# sourceMappingURL=41972dcaf970d99e837eb.js.map
+//# sourceMappingURL=f94be258187a7797ded0a.js.map
