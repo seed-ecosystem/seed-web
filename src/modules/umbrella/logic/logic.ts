@@ -71,14 +71,16 @@ function createSeedClient() {
       mainUrl: "wss://meetacy.app/seed-kt",
     },
   });
+  // eslint-disable-next-line
+  (window as any).seedClient = client;
   client.setForeground(true);
   window.onoffline = function() {
-    console.log(">> foreground(true)");
-    client.setForeground(true);
+    console.log("<< offline");
+    client.setForeground(false);
   };
   window.ononline = function() {
-    console.log("<< foreground(false)");
-    client.setForeground(false);
+    console.log("<< online");
+    client.setForeground(true);
   };
   return client;
 }

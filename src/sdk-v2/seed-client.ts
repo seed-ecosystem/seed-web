@@ -1,5 +1,5 @@
 import { createObservable, Observable } from "@/coroutines/observable";
-import { createSeedEngine, LOG_LEVEL_INFO, SeedEngine, SeedEngineDisconnected } from "./seed-engine";
+import { createSeedEngine, LOG_LEVEL_DEBUG, LOG_LEVEL_INFO, SeedEngine, SeedEngineDisconnected } from "./seed-engine";
 import typia from "typia";
 
 export type SeedClientEvent = {
@@ -56,10 +56,9 @@ export interface SeedClient {
   subscribe(url: string, options: SeedClientSubscribeOptions): void;
 
   /**
-   * This should be synced with window lifecycle.
-   * setForeground(false) doesn't immediately shut
-   * down socket, but rather prevents reconnects
-   * in case if connection was lost.
+   * For some reason WebSockets are laggy and
+   * don't disconnect right away, so we need to do it
+   * manually in the window.ononline/window.onoffline callback
    */
   setForeground(value: boolean): void;
 }
@@ -98,7 +97,7 @@ export function createSeedClient(
 ): SeedClient {
   const events: Observable<SeedClientEvent> = createObservable();
 
-  const engine = createSeedEngine(engineOptions.mainUrl, LOG_LEVEL_INFO);
+  const engine = createSeedEngine(engineOptions.mainUrl, LOG_LEVEL_DEBUG);
   const subscribeQueues: Map<string, Set<string>> = new Map();
 
   function setSubscribeQueue(
@@ -190,7 +189,7 @@ export function createSeedClient(
       type: "send",
       message: options,
     };
-    const response = await executeSafely(engine, url, request);
+    const response = await executeSafely(url, request);
     if (!typia.is<SendResponse>(response)) {
       throw new Error(`Unexpected response from server: ${JSON.stringify(response)}`);
     }
@@ -201,24 +200,69 @@ export function createSeedClient(
     if (getSubscribeQueue(url, queueId)) {
       throw new Error(`Already subscribed to this chat id ${queueId}`);
     }
-    ensureServer(url);
     setSubscribeQueue(url, queueId, true);
     const request: SubscribeRequest = {
       type: "subscribe",
       queueId, nonce,
     };
+    ensureServer(url);
     if (engine.getConnected(url)) {
       void engine.executeOrThrow(url, request);
     }
     engine.events.subscribe(event => {
       if (event.type !== "connected") return;
       if (event.url !== url) return;
+      if (!event.connected) return;
+      ensureServer(url);
       void engine.executeOrThrow(url, request);
     });
   }
 
   const servers: Set<string> = new Set();
 
+  /**
+   * Retries request infinetely until internet connection
+   * is fine.
+   *
+   * For now it's completely fine that this starts
+   * executing even before some init logic for url
+   * did. 
+   * 
+   * The example is `send` might be sent before all `subcsribe`
+   * requests are processed. And that's no problem in current setup.
+   *
+   * However, later we might want asynchonous init logic to run before
+   * any request (for example some handshake, etc.). So we might
+   * introduce a new (private) observable with lifecycle events specifically 
+   * for SeedClient.
+   */
+  async function executeSafely(
+    url: string,
+    payload: unknown,
+  ): Promise<unknown> {
+    if (engine.getConnected(url)) {
+      try {
+        ensureServer(url);
+        const result = await engine.executeOrThrow(url, payload);
+        return result;
+      } catch (error) {
+        if (!(error instanceof SeedEngineDisconnected)) {
+          throw error;
+        }
+      }
+    }
+    return new Promise((resolve, reject) => {
+      const cancel = engine.events.subscribe(
+        (event) => {
+          if (event.type !== "connected") return;
+          if (event.url !== url) return;
+          if (!event.connected) return;
+          cancel();
+          executeSafely(url, payload).then(resolve, reject);
+        },
+      );
+    });
+  }
   /**
    * SeedClient automatically manages connections
    * with different servers and tries reconnect when
@@ -233,9 +277,8 @@ export function createSeedClient(
     engine.events.subscribe(event => {
       if (event.type !== "connected") return;
       if (event.url !== url) return;
-      if (!event.connected) {
-        connectUrlSafely(engine, url);
-      }
+      if (event.connected) return;
+      connectUrlSafely(engine, url);
     });
     connectUrlSafely(engine, url);
   }
@@ -256,8 +299,16 @@ export function createSeedClient(
 
   function setForeground(value: boolean) {
     foreground = value;
-    if (!foreground) return;
-    if (engine.getReady()) return;
+
+    if (!foreground) {
+      engine.close();
+      return;
+    }
+
+    const engineAlreadyConnected = engine.getReady();
+    if (engineAlreadyConnected) {
+      return;
+    }
 
     const cancel = engine.events.subscribe(event => {
       if (event.type !== "ready") return;
@@ -280,47 +331,6 @@ export function createSeedClient(
     subscribe,
     setForeground,
   };
-}
-
-/**
- * For now it's completely fine that this starts
- * executing even before some init logic for url
- * did. 
- * 
- * The example is `send` might be sent before all `subcsribe`
- * requests are processed. And that's no problem in current setup.
- *
- * However, later we might want asynchonous init logic to run before
- * any request (for example some handshake, etc.). So we might
- * introduce a new (private) observable with lifecycle events specifically 
- * for SeedClient.
- */
-async function executeSafely(
-  engine: SeedEngine,
-  url: string,
-  payload: unknown,
-): Promise<unknown> {
-  if (engine.getConnected(url)) {
-    try {
-      const result = await engine.executeOrThrow(url, payload);
-      return result;
-    } catch (error) {
-      if (!(error instanceof SeedEngineDisconnected)) {
-        throw error;
-      }
-    }
-  }
-  return new Promise((resolve, reject) => {
-    const cancel = engine.events.subscribe(
-      (event) => {
-        if (event.type !== "connected") return;
-        if (event.url !== url) return;
-        if (!event.connected) return;
-        cancel();
-        executeSafely(engine, url, payload).then(resolve, reject);
-      },
-    );
-  });
 }
 
 function connectUrlSafely(engine: SeedEngine, url: string) {

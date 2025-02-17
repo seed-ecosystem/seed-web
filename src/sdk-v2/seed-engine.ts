@@ -3,8 +3,9 @@ import { createObservable, Observable } from "@/coroutines/observable";
 import typia from "typia";
 
 export const LOG_LEVEL_NONE = 0;
-export const LOG_LEVEL_INFO = 1;
-export const LOG_LEVEL_DEBUG = 2;
+export const LOG_LEVEL_WARN = 1;
+export const LOG_LEVEL_INFO = 2;
+export const LOG_LEVEL_DEBUG = 3;
 
 export type SeedEngineEvent = {
   type: "ready";
@@ -71,6 +72,7 @@ type ForwardResponse = {
 
 type SeedEnginePendingRequest = {
   url: string;
+  log: boolean;
   resolve: (payload: unknown) => void;
   reject: () => void;
 }
@@ -107,6 +109,7 @@ export interface SeedEngine {
   executeOrThrow(url: string, payload: unknown): Promise<unknown>;
 
   open(): void;
+  close(): void;
 }
 
 export function createSeedEngine(
@@ -140,6 +143,13 @@ export function createSeedEngine(
   const connectedUrls: Set<string> = new Set();
 
   function setConnectedUrl(url: string, connected: boolean) {
+    if (logLevel >= LOG_LEVEL_INFO) {
+      if (connected) {
+        console.log(`>> connected:\nServer: ${url}`);
+      } else {
+        console.log(`>> disconnected:\nServer: ${url}`);
+      }
+    }
     if (connected) {
       connectedUrls.add(url);
     } else {
@@ -167,14 +177,21 @@ export function createSeedEngine(
       // Don't actually execute any requests
       // since we are already connected to this url
       if (url === mainUrl) {
+        if (logLevel >= LOG_LEVEL_INFO) {
+          console.log(`>> connecting (url === mainUrl):\nServer: ${url}`);
+        }
         setConnectedUrl(url, getReady());
         return;
+      }
+
+      if (logLevel >= LOG_LEVEL_INFO) {
+        console.log(`>> connecting:\nServer: ${url}`);
       }
 
       const payload: ConnectRequest = { type: "connect", url };
 
       try {
-        await executeOrThrow(mainUrl, payload, false);
+        await executeOrThrow(mainUrl, payload, false, false);
         setConnectedUrl(url, true);
       } catch (error) {
         setConnectedUrl(url, false);
@@ -193,9 +210,10 @@ export function createSeedEngine(
   function executeOrThrow(
     url: string,
     payload: unknown,
+    log: boolean = true,
     checkConnection: boolean = true,
   ) {
-    if (logLevel >= LOG_LEVEL_INFO) {
+    if (log && logLevel >= LOG_LEVEL_INFO) {
       console.log(`>> execute\nServer: ${url}\nRequest:`, payload);
     }
     return new Promise((resolve, reject) => {
@@ -205,7 +223,7 @@ export function createSeedEngine(
       }
 
       requests.push({
-        url, resolve,
+        url, resolve, log,
         reject: () => {
           reject(new SeedEngineDisconnected());
         },
@@ -226,10 +244,12 @@ export function createSeedEngine(
         request: payload,
       } satisfies SeedEngineSentMessage;
 
+      // log is false since we already logged that request
+      // 
       // checkConnection is false since it's just forward
       // request and I don't actually need to call connect
       // on mainUrl to make forward requests
-      executeOrThrow(mainUrl, request, false).then((response) => {
+      executeOrThrow(mainUrl, request, false, false).then((response) => {
         if (!typia.is<ForwardResponse>(response)) {
           reject(new Error("Unexpected response from backend"));
           return;
@@ -271,26 +291,34 @@ export function createSeedEngine(
           forward: data,
         };
       }
-      if (logLevel >= LOG_LEVEL_INFO) {
-        console.log(`<< message\nServer: ${forward.url}\nPayload:`, forward.forward);
-      }
       if (forward.forward.type === "response") {
+        const response = forward.forward.response ?? forward.forward;
+
         const index = requests.findIndex((request) => request.url === forward.url);
+
         if (index === -1) {
-          console.warn("Got response without any request");
+          if (logLevel >= LOG_LEVEL_WARN) {
+            console.warn("Got response without any request");
+          }
+          console.log(`<< response\nServer: ${forward.url}\nPayload:`, response);
           return;
         }
-        const { resolve } = requests[index];
+
+        const { resolve, log } = requests[index];
         requests.splice(index, 1);
-        if (forward.forward.response) {
-          resolve(forward.forward.response);
-        } else {
-          resolve(forward.forward);
+
+        if (log && logLevel >= LOG_LEVEL_INFO) {
+          console.log(`<< response\nServer: ${forward.url}\nPayload:`, response);
         }
+        resolve(response);
       } else {
-        if (typia.is<DisconnectedEvent>(forward.forward.event)) {
-          setConnectedUrl(forward.forward.event.url, false);
+        const event = forward.forward.event;
+        if (typia.is<DisconnectedEvent>(event)) {
+          setConnectedUrl(event.url, false);
           return;
+        }
+        if (logLevel >= LOG_LEVEL_INFO) {
+          console.log(`<< event\nServer: ${forward.url}\nPayload:`, event);
         }
         events.emit({
           type: "server",
@@ -308,6 +336,10 @@ export function createSeedEngine(
     };
   }
 
+  function close() {
+    ws?.close();
+  }
+
   return {
     events,
     getReady,
@@ -315,6 +347,7 @@ export function createSeedEngine(
     connectUrl,
     executeOrThrow,
     open,
+    close,
   };
 }
 
