@@ -18806,7 +18806,11 @@ function createSeedClient$1({ engine: engineOptions }) {
     };
     ensureServer(url);
     if (engine.getConnected(url)) {
-      void engine.executeOrThrow(url, request);
+      engine.executeOrThrow(url, request).catch((error) => {
+        if (error instanceof SeedEngineDisconnected)
+          return;
+        throw error;
+      });
     }
     engine.events.subscribe((event) => {
       if (event.type !== "connected")
@@ -18816,7 +18820,11 @@ function createSeedClient$1({ engine: engineOptions }) {
       if (!event.connected)
         return;
       ensureServer(url);
-      void engine.executeOrThrow(url, request);
+      engine.executeOrThrow(url, request).catch((error) => {
+        if (error instanceof SeedEngineDisconnected)
+          return;
+        throw error;
+      });
     });
   }
   const servers = /* @__PURE__ */ new Set();
@@ -18870,8 +18878,12 @@ function createSeedClient$1({ engine: engineOptions }) {
     setInterval(() => {
       if (!engine.getConnected(url))
         return;
-      void engine.executeOrThrow(url, {
+      engine.executeOrThrow(url, {
         "type": "ping"
+      }).catch((error) => {
+        if (error instanceof SeedEngineDisconnected)
+          return;
+        throw error;
       });
     }, 15e3);
   }
@@ -34014,4 +34026,4 @@ const logic = await createLogic();
 clientExports.createRoot(document.getElementById("root")).render(
   /* @__PURE__ */ jsxRuntimeExports.jsx(reactExports.StrictMode, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(Router, { hook: useHashLocation, children: /* @__PURE__ */ jsxRuntimeExports.jsx(App, { logic }) }) })
 );
-//# sourceMappingURL=f94be258187a7797ded0a.js.map
+//# sourceMappingURL=aad0c705313e30a073b93.js.map
