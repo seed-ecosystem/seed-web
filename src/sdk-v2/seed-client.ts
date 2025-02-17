@@ -207,14 +207,24 @@ export function createSeedClient(
     };
     ensureServer(url);
     if (engine.getConnected(url)) {
-      void engine.executeOrThrow(url, request);
+      engine.executeOrThrow(url, request).catch((error: unknown) => {
+        // Supress disconnection errors here. We receive them
+        // as events and retry request
+        if (error instanceof SeedEngineDisconnected) return;
+        throw error;
+      });
     }
     engine.events.subscribe(event => {
       if (event.type !== "connected") return;
       if (event.url !== url) return;
       if (!event.connected) return;
       ensureServer(url);
-      void engine.executeOrThrow(url, request);
+      engine.executeOrThrow(url, request).catch((error: unknown) => {
+        // Supress disconnection errors here. We receive them
+        // as events and retry request
+        if (error instanceof SeedEngineDisconnected) return;
+        throw error;
+      });
     });
   }
 
@@ -291,12 +301,16 @@ export function createSeedClient(
   function pingServer(url: string) {
     setInterval(() => {
       if (!engine.getConnected(url)) return;
-      void engine.executeOrThrow(
+      engine.executeOrThrow(
         url,
         {
           "type": "ping",
         },
-      );
+      ).catch((error: unknown) => {
+        // Ignore disconnect errors
+        if (error instanceof SeedEngineDisconnected) return;
+        throw error;
+      });
     }, 15_000);
   }
 
