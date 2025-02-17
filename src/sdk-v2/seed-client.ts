@@ -1,5 +1,5 @@
 import { createObservable, Observable } from "@/coroutines/observable";
-import { createSeedEngine, LOG_LEVEL_DEBUG, LOG_LEVEL_INFO, SeedEngine, SeedEngineDisconnected } from "./seed-engine";
+import { createSeedEngine, LOG_LEVEL_INFO, SeedEngine, SeedEngineDisconnected } from "./seed-engine";
 import typia from "typia";
 
 export type SeedClientEvent = {
@@ -97,7 +97,7 @@ export function createSeedClient(
 ): SeedClient {
   const events: Observable<SeedClientEvent> = createObservable();
 
-  const engine = createSeedEngine(engineOptions.mainUrl, LOG_LEVEL_DEBUG);
+  const engine = createSeedEngine(engineOptions.mainUrl, LOG_LEVEL_INFO);
   const subscribeQueues: Map<string, Set<string>> = new Map();
 
   function setSubscribeQueue(
@@ -274,11 +274,16 @@ export function createSeedClient(
     }
     servers.add(url);
     pingServer(url);
+    let timeout = 1;
     engine.events.subscribe(event => {
       if (event.type !== "connected") return;
       if (event.url !== url) return;
       if (event.connected) return;
-      connectUrlSafely(engine, url);
+      // Remove constant throttling for unreachable servers
+      timeout = Math.min(timeout * 2, 15_000);
+      setTimeout(() => {
+        connectUrlSafely(engine, url);
+      }, timeout);
     });
     connectUrlSafely(engine, url);
   }
