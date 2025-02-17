@@ -18234,12 +18234,6 @@ async function generateNewKey({ queueId, url, persistence, cache }) {
   if (last) {
     newKey = await deriveNextKey({ key: last.key });
     newNonce = last.nonce + 1;
-    const key = { key: newKey, nonce: newNonce };
-    await persistence.add({
-      queueId,
-      url,
-      keys: [key]
-    });
   } else {
     const { key, nonce } = await persistence.getInitialKey({ queueId, url });
     newKey = key;
@@ -18455,8 +18449,9 @@ function createChatStateHandle() {
   };
 }
 
-const LOG_LEVEL_INFO = 1;
-const LOG_LEVEL_DEBUG = 2;
+const LOG_LEVEL_WARN = 1;
+const LOG_LEVEL_INFO = 2;
+const LOG_LEVEL_DEBUG = 3;
 class SeedEngineDisconnected extends Error {
   constructor() {
     super("Disconnected while executing request");
@@ -18486,6 +18481,15 @@ function createSeedEngine(mainUrl, logLevel = LOG_LEVEL_INFO) {
   }
   const connectedUrls = /* @__PURE__ */ new Set();
   function setConnectedUrl(url, connected) {
+    if (logLevel >= LOG_LEVEL_INFO) {
+      if (connected) {
+        console.log(`>> connected:
+Server: ${url}`);
+      } else {
+        console.log(`>> disconnected:
+Server: ${url}`);
+      }
+    }
     if (connected) {
       connectedUrls.add(url);
     } else {
@@ -18508,12 +18512,20 @@ function createSeedEngine(mainUrl, logLevel = LOG_LEVEL_INFO) {
   function connectUrl(url) {
     launch(async () => {
       if (url === mainUrl) {
+        if (logLevel >= LOG_LEVEL_INFO) {
+          console.log(`>> connecting (url === mainUrl):
+Server: ${url}`);
+        }
         setConnectedUrl(url, getReady());
         return;
       }
+      if (logLevel >= LOG_LEVEL_INFO) {
+        console.log(`>> connecting:
+Server: ${url}`);
+      }
       const payload = { type: "connect", url };
       try {
-        await executeOrThrow(mainUrl, payload, false);
+        await executeOrThrow(mainUrl, payload, false, false);
         setConnectedUrl(url, true);
       } catch (error) {
         setConnectedUrl(url, false);
@@ -18523,8 +18535,8 @@ function createSeedEngine(mainUrl, logLevel = LOG_LEVEL_INFO) {
       }
     });
   }
-  function executeOrThrow(url, payload, checkConnection = true) {
-    if (logLevel >= LOG_LEVEL_INFO) {
+  function executeOrThrow(url, payload, log = true, checkConnection = true) {
+    if (log && logLevel >= LOG_LEVEL_INFO) {
       console.log(`>> execute
 Server: ${url}
 Request:`, payload);
@@ -18538,6 +18550,7 @@ Request:`, payload);
       requests.push({
         url,
         resolve,
+        log,
         reject: () => {
           reject(new SeedEngineDisconnected());
         }
@@ -18555,7 +18568,7 @@ Request:`, payload);
         url,
         request: payload
       };
-      executeOrThrow(mainUrl, request, false).then((response) => {
+      executeOrThrow(mainUrl, request, false, false).then((response) => {
         if (!(/* @__PURE__ */ (() => {
           const _io0 = (input) => "boolean" === typeof input.status;
           return (input) => "object" === typeof input && null !== input && _io0(input);
@@ -18618,31 +18631,39 @@ Request:`, payload);
           forward: data
         };
       }
-      if (logLevel >= LOG_LEVEL_INFO) {
-        console.log(`<< message
-Server: ${forward.url}
-Payload:`, forward.forward);
-      }
       if (forward.forward.type === "response") {
+        const response = forward.forward.response ?? forward.forward;
         const index = requests.findIndex((request) => request.url === forward.url);
         if (index === -1) {
-          console.warn("Got response without any request");
+          if (logLevel >= LOG_LEVEL_WARN) {
+            console.warn("Got response without any request");
+          }
+          console.log(`<< response
+Server: ${forward.url}
+Payload:`, response);
           return;
         }
-        const { resolve } = requests[index];
+        const { resolve, log } = requests[index];
         requests.splice(index, 1);
-        if (forward.forward.response) {
-          resolve(forward.forward.response);
-        } else {
-          resolve(forward.forward);
+        if (log && logLevel >= LOG_LEVEL_INFO) {
+          console.log(`<< response
+Server: ${forward.url}
+Payload:`, response);
         }
+        resolve(response);
       } else {
+        const event = forward.forward.event;
         if ((/* @__PURE__ */ (() => {
           const _io0 = (input) => "disconnected" === input.type && "string" === typeof input.url;
           return (input) => "object" === typeof input && null !== input && _io0(input);
-        })())(forward.forward.event)) {
-          setConnectedUrl(forward.forward.event.url, false);
+        })())(event)) {
+          setConnectedUrl(event.url, false);
           return;
+        }
+        if (logLevel >= LOG_LEVEL_INFO) {
+          console.log(`<< event
+Server: ${forward.url}
+Payload:`, event);
         }
         events.emit({
           type: "server",
@@ -18658,19 +18679,23 @@ Payload:`, forward.forward);
       setReady(false);
     };
   }
+  function close() {
+    ws?.close();
+  }
   return {
     events,
     getReady,
     getConnected,
     connectUrl,
     executeOrThrow,
-    open
+    open,
+    close
   };
 }
 
 function createSeedClient$1({ engine: engineOptions }) {
   const events = createObservable();
-  const engine = createSeedEngine(engineOptions.mainUrl, LOG_LEVEL_INFO);
+  const engine = createSeedEngine(engineOptions.mainUrl, LOG_LEVEL_DEBUG);
   const subscribeQueues = /* @__PURE__ */ new Map();
   function setSubscribeQueue(url, queueId, subscribed) {
     const urlQueues = subscribeQueues.get(url) ?? /* @__PURE__ */ new Set();
@@ -18760,7 +18785,7 @@ function createSeedClient$1({ engine: engineOptions }) {
       type: "send",
       message: options
     };
-    const response = await executeSafely(engine, url, request);
+    const response = await executeSafely(url, request);
     if (!(/* @__PURE__ */ (() => {
       const _io0 = (input) => "boolean" === typeof input.status;
       return (input) => "object" === typeof input && null !== input && _io0(input);
@@ -18773,13 +18798,13 @@ function createSeedClient$1({ engine: engineOptions }) {
     if (getSubscribeQueue(url, queueId)) {
       throw new Error(`Already subscribed to this chat id ${queueId}`);
     }
-    ensureServer(url);
     setSubscribeQueue(url, queueId);
     const request = {
       type: "subscribe",
       queueId,
       nonce
     };
+    ensureServer(url);
     if (engine.getConnected(url)) {
       void engine.executeOrThrow(url, request);
     }
@@ -18788,10 +18813,38 @@ function createSeedClient$1({ engine: engineOptions }) {
         return;
       if (event.url !== url)
         return;
+      if (!event.connected)
+        return;
+      ensureServer(url);
       void engine.executeOrThrow(url, request);
     });
   }
   const servers = /* @__PURE__ */ new Set();
+  async function executeSafely(url, payload) {
+    if (engine.getConnected(url)) {
+      try {
+        ensureServer(url);
+        const result = await engine.executeOrThrow(url, payload);
+        return result;
+      } catch (error) {
+        if (!(error instanceof SeedEngineDisconnected)) {
+          throw error;
+        }
+      }
+    }
+    return new Promise((resolve, reject) => {
+      const cancel = engine.events.subscribe((event) => {
+        if (event.type !== "connected")
+          return;
+        if (event.url !== url)
+          return;
+        if (!event.connected)
+          return;
+        cancel();
+        executeSafely(url, payload).then(resolve, reject);
+      });
+    });
+  }
   function ensureServer(url) {
     if (servers.has(url)) {
       return;
@@ -18803,9 +18856,9 @@ function createSeedClient$1({ engine: engineOptions }) {
         return;
       if (event.url !== url)
         return;
-      if (!event.connected) {
-        connectUrlSafely(engine, url);
-      }
+      if (event.connected)
+        return;
+      connectUrlSafely(engine, url);
     });
     connectUrlSafely(engine, url);
   }
@@ -18821,10 +18874,14 @@ function createSeedClient$1({ engine: engineOptions }) {
   let foreground = false;
   function setForeground(value) {
     foreground = value;
-    if (!foreground)
+    if (!foreground) {
+      engine.close();
       return;
-    if (engine.getReady())
+    }
+    const engineAlreadyConnected = engine.getReady();
+    if (engineAlreadyConnected) {
       return;
+    }
     const cancel = engine.events.subscribe((event) => {
       if (event.type !== "ready")
         return;
@@ -18846,30 +18903,6 @@ function createSeedClient$1({ engine: engineOptions }) {
     subscribe,
     setForeground
   };
-}
-async function executeSafely(engine, url, payload) {
-  if (engine.getConnected(url)) {
-    try {
-      const result = await engine.executeOrThrow(url, payload);
-      return result;
-    } catch (error) {
-      if (!(error instanceof SeedEngineDisconnected)) {
-        throw error;
-      }
-    }
-  }
-  return new Promise((resolve, reject) => {
-    const cancel = engine.events.subscribe((event) => {
-      if (event.type !== "connected")
-        return;
-      if (event.url !== url)
-        return;
-      if (!event.connected)
-        return;
-      cancel();
-      executeSafely(engine, url, payload).then(resolve, reject);
-    });
-  });
 }
 function connectUrlSafely(engine, url) {
   if (engine.getReady()) {
@@ -18926,14 +18959,15 @@ function createSeedClient() {
       mainUrl: "wss://meetacy.app/seed-kt"
     }
   });
+  window.seedClient = client;
   client.setForeground(true);
   window.onoffline = function() {
-    console.log(">> foreground(true)");
-    client.setForeground(true);
+    console.log("<< offline");
+    client.setForeground(false);
   };
   window.ononline = function() {
-    console.log("<< foreground(false)");
-    client.setForeground(false);
+    console.log("<< online");
+    client.setForeground(true);
   };
   return client;
 }
@@ -33976,4 +34010,4 @@ const logic = await createLogic();
 clientExports.createRoot(document.getElementById("root")).render(
   /* @__PURE__ */ jsxRuntimeExports.jsx(reactExports.StrictMode, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(Router, { hook: useHashLocation, children: /* @__PURE__ */ jsxRuntimeExports.jsx(App, { logic }) }) })
 );
-//# sourceMappingURL=53d34c0f37d387e9720ac.js.map
+//# sourceMappingURL=41972dcaf970d99e837eb.js.map
