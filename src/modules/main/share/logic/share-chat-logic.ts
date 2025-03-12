@@ -1,8 +1,7 @@
-import { createObservable, Observable } from "@/coroutines/observable.ts";
-import { ShareStateHandle } from "@/modules/main/logic/share-state-handle.ts";
-import { launch } from "@/coroutines/launch.ts";
-import { SeedPersistence } from "@/modules/umbrella/persistence/seed-persistence.ts";
-import { deriveNextKey } from "@/sdk-v2/seed-crypto";
+import { Cancellation } from "@/coroutines/cancellation";
+import { createObservable, Observable } from "@/coroutines/observable";
+import { launch } from "@/coroutines/launch";
+import { randomAESKey, randomRSA4096KeyPair } from "@/crypto/subtle";
 
 export type ShareChatEvent = {
   type: "shareUrl";
@@ -12,17 +11,18 @@ export type ShareChatEvent = {
 export interface ShareChatLogic {
   events: Observable<ShareChatEvent>;
 
-  getShareUrl(): string | undefined;
+  getShareUrl: () => string | undefined;
+
+  mount(): Cancellation;
 
   close(): void;
 }
 
-export function createShareChatLogic(
-  { shareStateHandle, persistence, chatId }: {
-    shareStateHandle: ShareStateHandle;
-    persistence: SeedPersistence;
-    chatId: string;
-  }): ShareChatLogic {
+export interface CreateShareChatLogicOptions {
+
+}
+
+export function createShareChatLogic(): ShareChatLogic {
   const events: Observable<ShareChatEvent> = createObservable();
 
   let shareUrl: string | undefined;
@@ -32,33 +32,26 @@ export function createShareChatLogic(
     events.emit({ type: "shareUrl", value });
   }
 
-  launch(async () => {
-    const chat = await persistence.chat.get(chatId);
-    if (!chat) throw new Error("Share chat not found");
-    const { title, initialNonce, initialKey, serverUrl } = chat;
-
-    const lastKey = await persistence.key.lastKey({ chatId });
-
-    let nonce, key;
-    if (lastKey) {
-      nonce = lastKey.nonce + 1;
-      key = await deriveNextKey({ key: lastKey.key });
-    } else {
-      nonce = initialNonce;
-      key = initialKey;
-    }
-
-    const origin = window.location.origin;
-    const baseUrl = import.meta.env.BASE_URL;
-
-    setShareUrl(`${origin}${baseUrl}#/import/${encodeURIComponent(title)}/${encodeURIComponent(chatId)}/${encodeURIComponent(key)}/${nonce.toString()}/${encodeURIComponent(serverUrl)}`);
-  });
-
   return {
     events,
 
     getShareUrl: () => shareUrl,
 
-    close: () => { shareStateHandle.set({ shown: false }); },
+    mount() {
+      launch(async () => {
+        const queueId = await randomAESKey();
+        const { publicKey, privateKey } = await randomRSA4096KeyPair();
+        setShareUrl(`seed://share/serverUrl/${queueId}/${publicKey}`);
+      });
+
+      return () => {
+
+      };
+    },
+
+    close: () => {
+
+    },
   };
 }
+

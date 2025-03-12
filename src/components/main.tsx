@@ -6,12 +6,19 @@ import {App} from "@/modules/umbrella/components/app.tsx";
 import {Router} from "wouter";
 import {useHashLocation} from "wouter/use-hash-location";
 
-const logic = await createLogic();
+async function main() {
+  const logic = await createLogic();
+  const element = document.getElementById("root");
+  if (!element) return;
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <Router hook={useHashLocation}>
-      <App logic={logic}/>
-    </Router>
-  </StrictMode>,
-);
+  createRoot(element).render(
+    <StrictMode>
+      <Router hook={useHashLocation}>
+        <App logic={logic}/>
+      </Router>
+    </StrictMode>,
+  );
+}
+
+await main();
+

@@ -9,7 +9,7 @@ import { createTopBarLogic, TopBarLogic } from "@/modules/main/top-bar/logic/top
 import { NewLogic, createNewLogic } from "@/modules/main/new/logic/new-logic.ts";
 import { launch } from "@/coroutines/launch.ts";
 import { ChatStateHandle } from "@/modules/main/logic/chat-state-handle.ts";
-import { createShareChatLogic, ShareChatLogic } from "@/modules/main/share/logic/share-chat-logic.ts";
+import { createShareChatLogic, ShareChatLogic } from "@/modules/main/share/logic/old-share-chat-logic.ts";
 import { createShareStateHandle } from "@/modules/main/logic/share-state-handle.ts";
 import { createNewStateHandle } from "@/modules/main/logic/new-state-handle.ts";
 import { ChatListStateHandle } from "@/modules/main/chat-list/logic/chat-list-state-handle.ts";

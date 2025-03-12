@@ -1,4 +1,4 @@
-import {ShareChatLogic} from "@/modules/main/share/logic/share-chat-logic.ts";
+import {ShareChatLogic} from "@/modules/main/share/logic/old-share-chat-logic.ts";
 import {ShareChatContent} from "@/modules/main/share/component/share-chat-content.tsx";
 import {useState} from "react";
 import {useEach} from "@/coroutines/observable.ts";

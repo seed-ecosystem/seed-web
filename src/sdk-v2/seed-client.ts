@@ -196,6 +196,8 @@ export function createSeedClient(
     return response.status;
   }
 
+  // TODO: load nonce dynamically, since after a network failure you
+  //  otherwise receive all the messages again including the old ones
   function subscribe(url: string, { queueId, nonce }: SeedClientSubscribeOptions) {
     if (getSubscribeQueue(url, queueId)) {
       throw new Error(`Already subscribed to this chat id ${queueId}`);

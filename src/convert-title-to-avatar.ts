@@ -4,7 +4,7 @@ export function convertTitleToAvatar(title: string): string {
   const titleWords: string[] = [];
 
   if (alphanumeric.trim().length == 0) {
-    titleWords.push(...title);
+    titleWords.push(...title.split(""));
   } else {
     titleWords.push(...alphanumeric.split(" "));
   }

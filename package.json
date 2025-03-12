@@ -5,11 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "diagnostics": "tsc -b -w --noEmit",
     "build": "tsc -b && vite build",
-    "lint": "eslint .",
+    "lint": "eslint src",
     "preview": "vite build && vite preview",
-    "test": "vitest",
-    "test:browser": "vitest --workspace=vitest.workspace.ts",
+    "test": "vitest --no-color",
+    "test:watch": "vitest watch --no-color",
+    "test:browser": "vitest --workspace=vitest.workspace.ts --no-color",
     "prepare": "ts-patch install && typia patch"
   },
   "dependencies": {
@@ -32,7 +34,7 @@
     "qr-code-styling": "^1.9.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-infinite-scroll-component": "^6.1.0",
+    "react-infinite-scroll-compt": "^6.1.0",
     "react-responsive": "^10.0.0",
     "tailwind-merge": "^3.0.1",
     "tailwindcss-animate": "^1.0.7",
